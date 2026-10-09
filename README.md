@@ -29,6 +29,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
 
 Use `-Check` with that script for typecheck, lint, and tests. `pnpm` is also available through the runtime reported by `load_workspace_dependencies`; use its reported executable path if npm is unavailable. Do not mix lockfiles or dependency managers. This checkout's lockfile is authoritative. Installing a system Node runtime is optional, not a prerequisite for this session.
 
+### Expo Go cannot download the app
+
+Android's `java.io.IOException: Failed to download remote update` can occur when the phone cannot reach the development server over LAN. Stop the running server with **Ctrl+C**, then use this checkout's launcher:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 -Tunnel -Clear
+```
+
+If prompted to install Expo's `@expo/ngrok` tunnel helper, accept the installation. Wait for **Tunnel ready**, close/reopen Expo Go, and scan the **new** QR code rather than opening the old recent-project entry. Both devices need internet. The tunnel forwards the development server through ngrok at a public temporary URL; keep the terminal open during testing and stop it with Ctrl+C afterward. It is slower than LAN. The launcher invokes Expo directly so the switches do not depend on npm argument forwarding. [Expo tunnel documentation](https://docs.expo.dev/more/expo-cli/#tunneling).
+
+If the same error persists, record the PowerShell output after scanning and the installed Expo Go version. This message alone cannot distinguish a network failure from another startup/download problem. The project requires an Expo Go version compatible with SDK 57.
+
 ## Checkpoint scope
 
 The working increment targets Home, Map, and Prepare navigation; distinct simulated scenarios; foreground/manual location; and an NWS point-alert adapter. Check [MILESTONES.md](MILESTONES.md) for scope and [TESTING.md](TESTING.md) for executed checks and remaining phone verification. Offline safety text is bundled in the app. Live, cached, simulated, and unavailable information must retain distinct labels.
