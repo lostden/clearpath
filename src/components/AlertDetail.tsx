@@ -1,0 +1,6 @@
+import { Modal } from 'react-native';
+import type { OfficialAlert } from '@/domain/types';
+import { ActionButton, Body, Heading, Panel, Screen, SectionTitle, SourceBadge, openLink } from '@/ui/components';
+export function AlertDetail({ alert, source, onClose }: { alert: OfficialAlert | null; source: 'live' | 'cached' | 'demo' | 'unavailable'; onClose: () => void }) {
+  return <Modal visible={!!alert} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">{alert && <Screen><ActionButton title="Close warning" onPress={onClose} secondary /><SourceBadge source={source} /><Heading>{alert.event}</Heading><Body>{alert.headline}</Body><Panel><SectionTitle>Original instructions</SectionTitle><Body>{alert.instruction || 'No instructions were supplied with this warning.'}</Body></Panel><SectionTitle>Full warning text</SectionTitle><Body>{alert.description}</Body><Body>Agency: {alert.agency}</Body><Body>Severity: {alert.severity} · Urgency: {alert.urgency} · Certainty: {alert.certainty}</Body><Body>Sent: {new Date(alert.sent).toLocaleString()}</Body><Body>Onset: {alert.onset ? new Date(alert.onset).toLocaleString() : 'Not provided'}</Body><Body>Expires: {new Date(alert.expires).toLocaleString()}</Body>{alert.sourceUrl && <ActionButton title="Open official NWS source" onPress={() => void openLink(alert.sourceUrl!)} />}</Screen>}</Modal>;
+}
