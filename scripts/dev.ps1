@@ -11,6 +11,6 @@ if ($Check) {
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   npm run lint
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-  npm test -- --runInBand
+  npm test
 } else { npm start }
 exit $LASTEXITCODE

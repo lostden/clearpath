@@ -6,9 +6,9 @@ The demonstration must show a functioning native app on a phone. Use clearly sim
 
 Run `powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1` on this machine, or `npm start` with a system Node installation. Launch in compatible Expo Go on Android/iOS. Verify the checklist/contact persistence and scenarios on the actual phone before recording; results are recorded in TESTING.md.
 
-Use the app's demo controls to choose the Hill Country flash-flood, tornado, normal/no-alert, and internet-outage scenarios. Confirm **SIMULATED DEMO** stays visible on Home, warning details, and Map. Demo fixtures must not write to the real NWS snapshot. Exit the demo with the live-mode control, choose/confirm the location, and refresh to establish a live retrieval.
+A fresh installation opens the labeled **Flood** scenario. On Home, scroll to **Presentation scenarios** and use **Flood**, **Tornado**, **No alerts**, and **Outage**. Confirm **SIMULATED DEMO** stays visible on Home, warning details, and Map. Demo fixtures must not write to the real NWS snapshot. Tap the persistent **Exit demo** control or **Return to live mode**, then **Choose location** or the location row at the top; choose a Texas city center, foreground GPS, or precise coordinates. Selecting the point starts live retrieval. Use **Refresh official alerts** or pull down on Home when the cooldown allows. **Explore simulated demo** returns to the fixtures. Later launches restore the one last selected point in live mode; use **Explore simulated demo** to start the recorded scenarios in that case.
 
-An outage scenario illustrates cached presentation; it does not prove actual airplane-mode persistence. Test that separately. Tiles and source websites may need internet even when the local preparedness screen works offline. Never activate an actual emergency telephone call for a demonstration.
+An outage scenario illustrates cached presentation; it does not prove actual airplane-mode persistence. Test that separately. For independent offline startup, force-close and restart an installed binary with embedded JavaScript; Expo Go/development-client sessions may depend on Metro. Tiles and source websites may need internet even when the local preparedness screen works offline. Never activate an actual emergency telephone call for a demonstration.
 
 ## Three-minute walkthrough
 

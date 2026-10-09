@@ -1,0 +1,17 @@
+# Authored, unrun flow. Verifies local persistence across app restart.
+appId: ${APP_ID}
+name: Emergency kit persistence
+---
+- launchApp:
+    clearState: true
+- tapOn: "Prepare"
+- assertVisible: "AVAILABLE OFFLINE"
+- assertVisible: "0/12"
+- tapOn:
+    id: "checklist-water"
+- assertVisible: "1/12"
+- launchApp
+- tapOn: "Prepare"
+- assertVisible: "1/12"
+- assertVisible:
+    id: "checklist-water"

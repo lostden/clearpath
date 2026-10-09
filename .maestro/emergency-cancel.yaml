@@ -1,0 +1,14 @@
+# This flow stops at Cancel. It never opens the phone dialer or places a call.
+appId: ${APP_ID}
+name: Deliberate emergency action cancellation
+---
+- launchApp
+- tapOn: "Home"
+- scrollUntilVisible:
+    element:
+      text: "Emergency\\? Call 911"
+    direction: DOWN
+- tapOn: "Emergency\\? Call 911"
+- assertVisible: "Call 911\\?"
+- tapOn: "Cancel"
+- assertNotVisible: "Call 911\\?"

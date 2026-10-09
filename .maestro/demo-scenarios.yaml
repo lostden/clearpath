@@ -1,0 +1,41 @@
+# Authored, unrun flow. Each fixture remains visibly simulated.
+appId: ${APP_ID}
+name: Simulation source separation
+---
+- launchApp:
+    clearState: true
+- assertVisible: "SIMULATED DEMO"
+- scrollUntilVisible:
+    element:
+      id: "demo-tornado"
+    direction: DOWN
+- tapOn:
+    id: "demo-tornado"
+- scrollUntilVisible:
+    element:
+      text: "Tornado Warning"
+    direction: UP
+- assertVisible: "SIMULATED DEMO"
+- scrollUntilVisible:
+    element:
+      id: "demo-normal"
+    direction: DOWN
+- tapOn:
+    id: "demo-normal"
+- scrollUntilVisible:
+    element:
+      text: "No active alerts in this simulated scenario."
+    direction: UP
+- assertVisible: "SIMULATED DEMO"
+- scrollUntilVisible:
+    element:
+      id: "demo-offline"
+    direction: DOWN
+- tapOn:
+    id: "demo-offline"
+- scrollUntilVisible:
+    element:
+      text: "Simulated internet outage"
+    direction: UP
+- assertVisible: "SIMULATED DEMO"
+- assertNotVisible: "LIVE · OFFICIAL NWS"

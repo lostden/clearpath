@@ -16,7 +16,7 @@ Generated parsing, expiry, and update handling form a runnable foundation. Readi
 
 ## Milestone 5 exercise
 
-Implement deterministic, explainable relevance and display ordering using `OfficialAlert` and selected-location types. Keep the network adapter and provenance boundary intact. Work in `src/student/`, add student-authored tests, then request a Codex review. No original prioritization algorithm is provided in this checkpoint.
+Implement deterministic, explainable relevance and display ordering using `OfficialAlert` and selected-location types. Keep the network adapter and provenance boundary intact. Start with the deliberately unimplemented contract in `src/student/priority.ts`, add student-authored tests, then request a Codex review. No original prioritization algorithm is provided in this checkpoint.
 
 Before coding, write a short design note answering:
 

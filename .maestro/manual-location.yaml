@@ -1,0 +1,33 @@
+# Authored, unrun flow. Live NWS content varies; this tests explicit point selection.
+appId: ${APP_ID}
+name: Manual point selection
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- tapOn:
+    id: "location-picker-button"
+- assertVisible: "Where should we check\\?"
+- scrollUntilVisible:
+    element:
+      id: "location-manual-latitude"
+    direction: DOWN
+- tapOn:
+    id: "location-manual-latitude"
+- inputText: "30.0474"
+- hideKeyboard
+- tapOn:
+    id: "location-manual-longitude"
+- inputText: "-99.1403"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "location-manual-save"
+    direction: DOWN
+- tapOn:
+    id: "location-manual-save"
+- assertNotVisible: "Where should we check\\?"
+- assertVisible: "30.0474, -99.1403 →"
+- assertVisible: "Manual selection · change location"
+- assertNotVisible: "SIMULATED DEMO"

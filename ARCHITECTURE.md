@@ -12,6 +12,8 @@ ClearPath uses Expo Router for native navigation, strict TypeScript for data bou
 | `src/domain/types.ts` | App domain models; distinguish provenance and freshness |
 | `src/data/` | NWS network boundary, snapshots, bundled references/fixtures |
 | `src/domain/` | Validation, identity, update, and expiration helpers |
+| `src/services/location.ts` | City points, coordinate validation, foreground GPS |
+| `src/state/` and `src/hooks/` | Shared mode, selected point, query observer, connectivity, local preparation |
 | `src/student/` | Reserved original student relevance/prioritization work |
 | Tests | Unit/component coverage; see TESTING.md for actual locations and results |
 
@@ -42,9 +44,12 @@ The wire response is untrusted data. The adapter retains official text and enum 
 - Query keys must include location, and a canceled/obsolete request must not overwrite a newer selection. The polling controller must operate only while relevant app activity is in the foreground.
 - Each snapshot records its selected point and successful retrieval time. It cannot stand in for another location. Rehydrating a snapshot cannot update its retrieval time or establish current verification.
 - Simulated scenarios use an independent source path and never enter the real-data cache. Their coordinates, timestamps, warnings, and geometry are fictional presentation fixtures.
+- A fresh installation defaults to the labeled Flood scenario; returning to live mode requires a selected point before NWS retrieval. Selecting a GPS/manual point also exits demo. The single last selected point is stored locally and restored in live mode on later launches; restored GPS is explicitly a saved selection, not a current reading. One shared alert observer serves the tabs.
 - Provider order is retained at this checkpoint; no combined priority score is generated. The first result must not be claimed to be a personalized highest-priority result. Keep every applicable warning accessible.
 - An alert lacking a polygon can still apply through the NWS point endpoint. Map geometry is optional and cannot independently invalidate such a warning.
 - Preparedness content is compiled into the app; completing a checklist changes only local state. AsyncStorage is not encrypted secret storage. Contacts should be limited to user-entered name/number data and deletable locally.
+
+The current foreground NWS schedule is 60 seconds. A selected point cannot start another request within 30 seconds of its previous request; Retry-After can extend that gate. Network/timeout/429/5xx failures have at most two retries with a 30/60-second minimum delay. A previously successful response is presented as cached after a failed verification, lost connection, or 90 seconds without a new successful retrieval. Expiration has its own clock boundary. These intervals are display/network policies, not a promise of continuous emergency monitoring.
 
 ## Milestone 5 design boundary
 

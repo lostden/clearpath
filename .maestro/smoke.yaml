@@ -1,0 +1,14 @@
+# Authored flow; not executed in this workspace. Requires an installed native build.
+appId: ${APP_ID}
+name: Startup and primary navigation
+---
+- launchApp:
+    clearState: true
+- assertVisible: "ClearPath"
+- assertVisible: "SIMULATED DEMO"
+- tapOn: "Map"
+- assertVisible: "Around you"
+- tapOn: "Prepare"
+- assertVisible: "A little preparation."
+- tapOn: "Home"
+- assertVisible: "ClearPath"

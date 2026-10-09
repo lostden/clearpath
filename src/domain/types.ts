@@ -4,19 +4,34 @@ export type Coordinates = { latitude: number; longitude: number };
 export type SelectedLocation = {
   label: string;
   coordinates: Coordinates;
-  kind: 'manual' | 'gps';
+  kind: "manual" | "gps";
 };
 
 /** GeoJSON positions use longitude first, unlike native map coordinates. */
 export type GeoPosition = [longitude: number, latitude: number];
 export type AlertGeometry =
-  | { type: 'Polygon'; coordinates: GeoPosition[][] }
-  | { type: 'MultiPolygon'; coordinates: GeoPosition[][][] };
+  | { type: "Polygon"; coordinates: GeoPosition[][] }
+  | { type: "MultiPolygon"; coordinates: GeoPosition[][][] };
 
-export type AlertSeverity = 'Extreme' | 'Severe' | 'Moderate' | 'Minor' | 'Unknown';
-export type AlertUrgency = 'Immediate' | 'Expected' | 'Future' | 'Past' | 'Unknown';
-export type AlertCertainty = 'Observed' | 'Likely' | 'Possible' | 'Unlikely' | 'Unknown';
-export type AlertMessageType = 'Alert' | 'Update' | 'Cancel' | 'Ack' | 'Error';
+export type AlertSeverity =
+  | "Extreme"
+  | "Severe"
+  | "Moderate"
+  | "Minor"
+  | "Unknown";
+export type AlertUrgency =
+  | "Immediate"
+  | "Expected"
+  | "Future"
+  | "Past"
+  | "Unknown";
+export type AlertCertainty =
+  | "Observed"
+  | "Likely"
+  | "Possible"
+  | "Unlikely"
+  | "Unknown";
+export type AlertMessageType = "Alert" | "Update" | "Cancel" | "Ack" | "Error";
 
 export type OfficialAlert = {
   id: string;
@@ -40,10 +55,10 @@ export type OfficialAlert = {
 };
 
 export type AlertSnapshot = {
-  source: 'live' | 'cached' | 'demo';
+  source: "live" | "cached" | "demo";
   alerts: OfficialAlert[];
   fetchedAt: string;
   locationKey: string;
 };
 
-export type DemoScenario = 'flood' | 'tornado' | 'normal' | 'offline';
+export type DemoScenario = "flood" | "tornado" | "normal" | "offline";
