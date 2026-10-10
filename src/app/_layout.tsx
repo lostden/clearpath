@@ -7,6 +7,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/state/queryClient";
 import { AlertsProvider } from "@/state/AlertsProvider";
 import { useFonts } from "expo-font";
+import { FeedPreferencesProvider } from "@/state/FeedPreferences";
 
 export default function TabLayout() {
   // Bundled static faces work in Expo Go and installed builds. Rendering stays
@@ -21,11 +22,13 @@ export default function TabLayout() {
       <StatusBar style="light" />
       <QueryClientProvider client={queryClient}>
         <AppProvider>
-          <AlertsProvider>
-            <PreparednessProvider>
-              <AppTabs />
-            </PreparednessProvider>
-          </AlertsProvider>
+          <FeedPreferencesProvider>
+            <AlertsProvider>
+              <PreparednessProvider>
+                <AppTabs />
+              </PreparednessProvider>
+            </AlertsProvider>
+          </FeedPreferencesProvider>
         </AppProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

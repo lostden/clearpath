@@ -77,10 +77,10 @@ The new USGS adapter/hook files passed TypeScript and scoped ESLint. Their two f
 
 | Current October 10 combined check | Executed result |
 | --- | --- |
-| Full Jest run | **27 suites / 284 tests passed**, 25.747 seconds, no console warnings |
+| Full Jest run | **28 suites / 327 tests passed**, 19.917 seconds, no console warnings; includes manual-mode, persistence-status and pan refinements |
 | SDK dependency compatibility | `expo install --check`: dependencies are up to date |
 | Final TypeScript / Expo lint | Full typecheck and ESLint across source/tests passed with no diagnostic output |
-| Final native JavaScript export | Android **3.3 MB**, iOS **3.0 MB**, Hermes, **37 assets**; final export passed after metadata/timer changes |
+| Final native JavaScript export | Android **3.3 MB**, iOS **3.0 MB**, Hermes, **37 assets**; export passed after manual-mode, local-save and coordinate-pan changes |
 | Expo Doctor | **21/21 passed** with the bundled Git executable available on PATH |
 | Current browser layout | Tactical screens inspected at **320 × 568** and **390 × 844**; details below |
 | Tactical text contrast | Eight foreground/background token pairs exceeded **4.5:1**; exact ratios below |
@@ -110,7 +110,7 @@ The phone is currently unplugged. Current font rendering, large-text layout, suc
 
 The warning's zone-area action opens a preflight without downloading. An explicit request draws independently labeled administrative outlines and reports failed/omitted areas; it does not fill missing warning geometry or decide whether the warning applies to the selected point. Its retained RAM copies keep original retrieval times. Current warning identity, issuance time, zone membership, verified source, active tab, connectivity, foreground state, and expiry gate the viewer. Close/background/expiry abort synchronously; late results and double taps are guarded. Coverage changes explicitly clear selection.
 
-The focused viewer and geometry-fit suites passed **18 tests**, including the added independent zone-definition expiry case. Those checks cover manual preflight, download/cancellation behavior, expiry/foreground guards, source labels, and fitting supplied geometry. The zone service's focused tests passed **49 checks** with TypeScript/scoped lint clean, covering strict identities/geometry, budgets, memory cache, cancellation, cooldown, and effective/expiration dates. These results are included in the combined evidence above; they do not establish successful native rendering. The phone remains unplugged.
+The focused viewer and geometry-fit suites passed **18 tests**, including the added independent zone-definition expiry case. Those checks cover manual preflight, download/cancellation behavior, expiry/foreground guards, source labels, and fitting supplied geometry. The combined boundary-service and NWS adapter focused suites passed **49 checks** with TypeScript/scoped lint clean, covering strict identities/geometry, budgets, memory cache, cancellation, cooldown, and effective/expiration dates. These results are included in the combined evidence above; they do not establish successful native rendering. The phone remains unplugged.
 
 ### Current browser inspection — October 10, 2026
 
@@ -121,6 +121,18 @@ The live Corpus Christi Coastal Flood Advisory had six linked NWS zones. Explici
 Web SVG property errors found during inspection were corrected. The subsequent browser run had **no new console errors after 22:29 UTC**. These checks verify shared browser layout, explicit manual source requests, the coordinate fallback, keyboard activation, and visible zone separation. They do not verify Google Maps tiles, physical phone rendering, native screen-reader behavior, all accessibility settings, or successful offline binary startup.
 
 Local proof images: [simulated Map screen](artifacts/flood-map-preview.jpg) and [live NWS zone outlines](artifacts/nws-zone-preview.jpg). Both files were saved and inspected; the zone image shows the settled white outlines and partial-coverage counts. The `artifacts` directory is Git-ignored, so these local screenshots are not promised as part of a cloned checkout or submission.
+
+### Manual updates, local saves and coordinate pan — October 10, 2026
+
+The final combined run after these changes passed **28 suites / 327 tests**, with no console warnings. Full TypeScript and source/test ESLint also passed. Android/iOS Hermes exports passed at **3.3 MB / 3.0 MB**, with **37 assets**, to `.expo/validated-native`. The new preference/control suite passed 10 focused cases, the updated preparedness suite passed 15, and the coordinate plot suite passed 24. Manual scheduling tests cover hydration, initial/poll/resume/reconnect suppression, explicit refresh, source age/expiry, location/coverage isolation, cancellation and disabled-layer guards. Two USGS race cases first reproduced a repeated refresh canceling the first request; passing `cancelRefetch: false` made both calls share that request and preserve its original cooldown. No dependency or native map configuration changed in this refinement.
+
+At **320 × 568**, the named Auto updates switch toggled off with clear manual-mode copy and the persistent footer. After a browser reload and preference hydration, it remained off, all fresh regional/USGS counts remained zero/unavailable, and explicit refresh actions were enabled. **Refresh weather** retrieved nine regional NWS records at **22:50:08 UTC**; earthquakes stayed unavailable. At **22:53:11 UTC**, with no automatic weather refresh, that exact timestamp remained and the copy was labeled cached/unverified. An explicit earthquake refresh at **22:57:44 UTC** displayed 198 events; the formerly long magnitude `1.75372219085693` displayed as `1.75`, with underlying values unchanged. The preview was restored to live Home, automatic updates on, no selected point, and a 0/12 checklist. No new browser warning/error logs appeared after **22:49:30 UTC**. This checks policy and presentation in the browser; exact request suppression is additionally covered by the scheduling tests.
+
+At **390 × 844**, Prepare showed **LOCAL COPY / SAVED ON THIS PHONE**. A water-item check advanced to 1/12 and was restored to 0/12; save status settled back to saved. Deferred/failing storage tests cover saving/session-only feedback and ensure old completions cannot claim a newer edit is saved. Successful restoration performs no redundant write, and unreadable storage stays protected.
+
+Coordinate **Pan east** moved the Texas viewport from `31.1000,-100.0000` to `31.1000,-93.0000` at the same 14-degree span. Recenter restored the original center/span; the selected location stayed unset and the NWS timestamp remained unchanged. Focused cases cover dateline wrapping, polar limits, exact overlay coordinates, selected-point separation, prop resets, compact behavior and exhausted controls. This does not establish native rendering.
+
+Saved and inspected local proof: [manual update mode](artifacts/manual-updates-preview.jpg), [preparation save status](artifacts/preparation-status-preview.jpg), and [coordinate pan controls](artifacts/coordinate-pan-preview.jpg). These share the ignored local artifact limitation above.
 
 Record phone model, OS version, build identifier, date, steps, and result for each run. Test an Android phone and an iPhone where available; include a smaller screen and the largest accessibility font size.
 

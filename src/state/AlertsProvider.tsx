@@ -22,6 +22,7 @@ import type {
   SelectedLocation,
 } from "@/domain/types";
 import { useAppState } from "./AppState";
+import { useFeedPreferences } from "./FeedPreferences";
 
 const MIN_REQUEST_INTERVAL = 30_000;
 const MAX_VERIFIED_AGE = 90_000;
@@ -86,6 +87,7 @@ export function waitForRequestSlot(
 /** One observer, connectivity subscription, and display clock are shared by every tab. */
 export function AlertsProvider({ children }: PropsWithChildren) {
   const { mode, scenario, location } = useAppState();
+  const { automatic, ready } = useFeedPreferences();
   const client = useQueryClient();
   const network = useNetInfo();
   const offline =
@@ -102,8 +104,9 @@ export function AlertsProvider({ children }: PropsWithChildren) {
   const persisted = useRef<string | null>(null);
   const persistenceQueue = useRef<Promise<void>>(Promise.resolve());
   const pointKey = location ? locationKey(location) : null;
-  const enabled =
-    mode === "live" && pointKey !== null && !offline && foreground;
+  const requestAllowed =
+    ready && mode === "live" && pointKey !== null && !offline && foreground;
+  const enabled = requestAllowed && automatic;
   const availability = useRef({ enabled, pointKey });
   const selectedLocation = mode === "demo" ? DEMO_LOCATION : location;
   const demo = useMemo(
@@ -129,7 +132,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     refetchOnReconnect: false,
     refetchInterval: enabled ? 60_000 : false,
     refetchIntervalInBackground: false,
-    retry: shouldRetryAlerts,
+    retry: automatic ? shouldRetryAlerts : false,
     retryDelay: alertRetryDelay,
     queryFn: async ({ signal }) => {
       if (!location || !pointKey)
@@ -192,13 +195,13 @@ export function AlertsProvider({ children }: PropsWithChildren) {
 
   // Stop retrying or polling when the app is backgrounded or connectivity is lost.
   useEffect(() => {
-    if (mode === "live" && pointKey && !enabled) {
+    if (mode === "live" && pointKey && (!requestAllowed || !automatic)) {
       void client.cancelQueries({
         queryKey: ["nws-alerts", pointKey],
         exact: true,
       });
     }
-  }, [client, enabled, mode, pointKey]);
+  }, [automatic, client, mode, pointKey, requestAllowed]);
 
   // A short interruption can leave Query's cached response within staleTime.
   // Recheck when this point becomes available again; the query function still
@@ -266,7 +269,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     [demo, knownSnapshot, mode, verified],
   );
   const nextAllowed = pointKey ? (requestGates[pointKey] ?? 0) : 0;
-  const canRefresh = enabled && !query.isFetching && now >= nextAllowed;
+  const canRefresh = requestAllowed && !query.isFetching && now >= nextAllowed;
 
   useEffect(() => {
     if (mode !== "live" || !liveSnapshot) return;
@@ -340,7 +343,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     alerts,
     snapshot,
     selectedLocation,
-    isLoading: mode === "live" && enabled && query.isPending,
+    isLoading: mode === "live" && requestAllowed && query.isPending && query.isFetching,
     isRefreshing: mode === "live" && query.isFetching,
     error: mode === "live" ? verificationError : null,
     offline: mode === "demo" ? scenario === "offline" : offline,

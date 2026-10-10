@@ -26,7 +26,7 @@ import {
 import { usePreparation } from "@/state/PreparednessState";
 import { colors, typography } from "@/ui/tokens";
 export default function PrepareScreen() {
-  const { saved, ready, storageError, update, toggle } = usePreparation();
+  const { saved, ready, saveStatus, storageError, update, toggle } = usePreparation();
   const [guide, setGuide] = useState<string | null>(null);
   const [showContact, setShowContact] = useState(false);
   const [name, setName] = useState("");
@@ -67,6 +67,9 @@ export default function PrepareScreen() {
       <View style={s.offlinePill}>
         <Text style={s.offlineText}>AVAILABLE OFFLINE</Text>
       </View>
+      <Text accessibilityLiveRegion="polite" aria-live="polite" style={[s.saveStatus, saveStatus === "session" && s.unsaved]}>
+        {saveStatus === "loading" ? "LOCAL COPY / LOADING" : saveStatus === "saving" ? "LOCAL COPY / SAVING" : saveStatus === "saved" ? "LOCAL COPY / SAVED ON THIS PHONE" : "SESSION ONLY / CHANGES NOT SAVED"}
+      </Text>
       {!ready && <Body>Loading saved preparation…</Body>}
       {storageError && (
         <Panel>
@@ -156,8 +159,8 @@ export default function PrepareScreen() {
       <SectionTitle>03 / FAMILY PLAN</SectionTitle>
       <Panel>
         <Body>
-          Choose a meeting place and an out-of-area contact. Save the plan.
-          Share it with your household.
+          Set a meeting place and an out-of-area contact. Edits save
+          automatically. Check LOCAL COPY before closing.
         </Body>
         <Text style={s.inputLabel}>Meeting place</Text>
         <TextInput
@@ -295,14 +298,17 @@ export default function PrepareScreen() {
         Home warning requests send your selected coordinates directly to the
         National Weather Service. Nearby river searches send them directly to
         USGS. Regional weather requests send the selected Texas or U.S.
-        coverage; earthquake requests use a global feed. Google Maps, or
+        coverage; earthquake requests use a global feed. Explicit zone
+        downloads send the linked public NWS zone IDs. Google Maps, or
         Apple Maps on iOS, receives the map area you view.
       </Body>
       <Body>
         Preparedness, contacts, the last selected point, and one latest Home
         NWS snapshot are saved in local app storage. The app does not encrypt
         this storage. Regional weather, earthquake, and river copies stay in
-        memory and are not saved for reopening offline. There is no stored
+        memory and are not saved for reopening offline. Requested NWS zone
+        boundaries remain in memory for up to 24 hours. The automatic/manual
+        feed update preference is saved locally. There is no stored
         location history. Demo data never enters the live cache.
       </Body>
       <Body>
@@ -320,6 +326,8 @@ export default function PrepareScreen() {
   );
 }
 const s = StyleSheet.create({
+  saveStatus: { color: colors.ink, fontFamily: typography.bodyStrong, fontSize: 14, lineHeight: 22 },
+  unsaved: { color: colors.yellow },
   offlinePill: {
     alignSelf: "flex-start",
     backgroundColor: colors.orange,

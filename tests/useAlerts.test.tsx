@@ -22,6 +22,8 @@ import { officialAlert, TEST_NOW } from "./fixtures/alerts";
 import type { SelectedLocation } from "../src/domain/types";
 
 const mockNetwork = { isConnected: true, isInternetReachable: true };
+const mockPreferences = { automatic: true, ready: true };
+jest.mock("../src/state/FeedPreferences", () => ({ useFeedPreferences: () => mockPreferences }));
 jest.mock("@react-native-community/netinfo", () => ({
   useNetInfo: () => mockNetwork,
 }));
@@ -54,11 +56,8 @@ function Probe({ duplicate = false }: { duplicate?: boolean }) {
   return <Text>{duplicate ? "second" : observed.source}</Text>;
 }
 
-async function mount() {
-  client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
-  });
-  await render(
+function Fixture() {
+  return (
     <QueryClientProvider client={client}>
       <AppProvider>
         <AlertsProvider>
@@ -66,11 +65,18 @@ async function mount() {
           <Probe duplicate />
         </AlertsProvider>
       </AppProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+}
+async function mount() {
+  client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+  });
+  const view = await render(<Fixture />);
   // Scenario tests choose demo explicitly; the product's fresh-launch default
   // is independent of this provider test fixture.
   await act(() => settings.setMode("demo"));
+  return view;
 }
 
 async function selectLive(location = point) {
@@ -94,6 +100,8 @@ beforeEach(async () => {
   jest.clearAllMocks();
   mockNetwork.isConnected = true;
   mockNetwork.isInternetReachable = true;
+  mockPreferences.automatic = true;
+  mockPreferences.ready = true;
   readCache.mockResolvedValue(null);
   writeCache.mockResolvedValue();
   fetchAlerts.mockResolvedValue([]);
@@ -113,6 +121,142 @@ afterEach(async () => {
   client?.clear();
   jest.restoreAllMocks();
   jest.useRealTimers();
+});
+
+test("manual mode waits for a press and never polls, resumes, reconnects, or retries automatically", async () => {
+  mockPreferences.automatic = false;
+  const view = await mount();
+  await selectLive();
+  expect(state.canRefresh).toBe(true);
+  expect(state.isLoading).toBe(false);
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  await advance(120_000);
+  await act(() => notifyAppState("background"));
+  await act(() => notifyAppState("active"));
+  mockNetwork.isConnected = false;
+  await view.rerender(<Fixture />);
+  expect(state.canRefresh).toBe(false);
+  mockNetwork.isConnected = true;
+  await view.rerender(<Fixture />);
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  fetchAlerts.mockRejectedValueOnce(new ClearPathDataError("network", "unavailable"));
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.error).toBeTruthy());
+  await advance(120_000);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  fetchAlerts.mockResolvedValueOnce([officialAlert()]);
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  const fetchedAt = state.snapshot?.fetchedAt;
+  // Let React reschedule the next boundary after the 30-second request gate.
+  await advance(30_000);
+  await advance(60_000);
+  expect(state.source).toBe("cached");
+  expect(state.snapshot?.fetchedAt).toBe(fetchedAt);
+  expect(fetchAlerts).toHaveBeenCalledTimes(2);
+});
+
+test("manual snapshots retain exact expiry filtering and offline persistence", async () => {
+  mockPreferences.automatic = false;
+  fetchAlerts.mockResolvedValue([officialAlert({ expires: new Date(TEST_NOW + 10_000).toISOString() })]);
+  await mount();
+  await selectLive();
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.alerts).toHaveLength(1));
+  await waitFor(() => expect(writeCache).toHaveBeenCalledTimes(1));
+  await advance(TEST_NOW + 10_000 - Date.now());
+  expect(state.alerts).toEqual([]);
+  expect(state.expiredCount).toBe(1);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("backgrounding cancels an explicit manual Home request without resuming it automatically", async () => {
+  mockPreferences.automatic = false;
+  let signal: AbortSignal | undefined;
+  let finish!: (alerts: ReturnType<typeof officialAlert>[]) => void;
+  fetchAlerts.mockImplementationOnce((_location, received) => { signal = received; return new Promise((resolve) => { finish = resolve; }); });
+  await mount();
+  await selectLive();
+  await act(() => { void state.refresh(); });
+  await waitFor(() => expect(fetchAlerts).toHaveBeenCalledTimes(1));
+  await act(() => notifyAppState("background"));
+  expect(signal?.aborted).toBe(true);
+  await act(() => finish([officialAlert()]));
+  await act(() => notifyAppState("active"));
+  await advance(60_000);
+  expect(state.source).toBe("unavailable");
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("preference hydration blocks automatic and manual requests until ready", async () => {
+  mockPreferences.ready = false;
+  const view = await mount();
+  await selectLive();
+  await advance(60_000);
+  expect(state.canRefresh).toBe(false);
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  mockPreferences.ready = true;
+  mockPreferences.automatic = false;
+  await view.rerender(<Fixture />);
+  expect(state.canRefresh).toBe(true);
+  expect(fetchAlerts).not.toHaveBeenCalled();
+});
+
+test("turning automatic updates off cancels pending work and rejects its late result", async () => {
+  let signal: AbortSignal | undefined;
+  let resolveRequest!: (alerts: ReturnType<typeof officialAlert>[]) => void;
+  fetchAlerts.mockImplementationOnce((_location, received) => {
+    signal = received;
+    return new Promise((resolve) => { resolveRequest = resolve; });
+  });
+  const view = await mount();
+  await selectLive();
+  await waitFor(() => expect(fetchAlerts).toHaveBeenCalledTimes(1));
+  mockPreferences.automatic = false;
+  await view.rerender(<Fixture />);
+  expect(signal?.aborted).toBe(true);
+  await act(() => resolveRequest([officialAlert()]));
+  await advance(60_000);
+  expect(state.source).toBe("unavailable");
+  expect(writeCache).not.toHaveBeenCalled();
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  expect(fetchAlerts).toHaveBeenCalledTimes(2);
+});
+
+test("turning automatic updates off cancels retry timers while retaining provider cooldown", async () => {
+  fetchAlerts.mockRejectedValueOnce(new ClearPathDataError("http", "limited", { status: 429, retryAfterMs: 120_000 }));
+  const view = await mount();
+  await selectLive();
+  await waitFor(() => expect(state.error).toBeTruthy());
+  mockPreferences.automatic = false;
+  await view.rerender(<Fixture />);
+  await advance(119_000);
+  expect(state.canRefresh).toBe(false);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await advance(1_000);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  expect(fetchAlerts).toHaveBeenCalledTimes(2);
+});
+
+test("a manual point change never displays or automatically refreshes the previous point", async () => {
+  mockPreferences.automatic = false;
+  const view = await mount();
+  await selectLive();
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  await selectLive({ ...point, coordinates: { latitude: 30.2, longitude: -99.2 } });
+  await view.rerender(<Fixture />);
+  expect(state.source).toBe("unavailable");
+  expect(state.alerts).toEqual([]);
+  await advance(60_000);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  expect(fetchAlerts.mock.calls[1][0]).toMatchObject({ coordinates: { latitude: 30.2, longitude: -99.2 } });
 });
 
 test("demo mode never reads or writes the real cache and shares one feed across consumers", async () => {

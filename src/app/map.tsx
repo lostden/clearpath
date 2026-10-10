@@ -12,6 +12,9 @@ import { DEMO_DATE_LABEL, DEMO_GAUGE } from "@/data/demo";
 import { colors, typography } from "@/ui/tokens";
 import { isRiverObservationDelayed } from "@/services/usgsTypes";
 import { ZoneAreaDetail } from "@/components/ZoneAreaDetail";
+import { FeedUpdateControl } from "@/components/FeedUpdateControl";
+import { useFeedPreferences } from "@/state/FeedPreferences";
+import { magnitudeLabel } from "@/ui/format";
 
 function LayerToggle({ title, value, onChange }: { title: string; value: boolean; onChange: (value: boolean) => void }) {
   return <View style={s.toggle}><Text style={s.label}>{title}</Text><Pressable accessibilityRole="switch" accessibilityLabel={`Show ${title.toLowerCase()}`} accessibilityState={{ checked: value }} aria-checked={value} onPress={() => onChange(!value)} style={[s.switch, value && s.active]}><Text style={[s.switchText, value && s.darkText]}>{value ? "ON" : "OFF"}</Text></Pressable></View>;
@@ -25,6 +28,7 @@ function FeedStamp({ label, source, fetchedAt, loading }: { label: string; sourc
 export default function MapScreen() {
   const feed = useAlerts();
   const demo = feed.source === "demo";
+  const { automatic, ready } = useFeedPreferences();
   const [focused, setFocused] = useState(false);
   useFocusEffect(useCallback(() => { setFocused(true); return () => setFocused(false); }, []));
   const [coverage, setCoverage] = useState<"TX" | "US">("TX");
@@ -37,8 +41,8 @@ export default function MapScreen() {
   const [zoneSelection, setZoneSelection] = useState<AlertSelection | null>(null);
   const closeZoneAreas = useCallback(() => setZoneSelection(null), []);
   const point = feed.selectedLocation?.coordinates ?? null;
-  const regional = useRegionalAlerts({ enabled: !demo && focused && warnings, coverage });
-  const layers = useDisasterLayers(point, !demo && focused, { earthquakes, rivers: gauges });
+  const regional = useRegionalAlerts({ enabled: !demo && focused && warnings && ready, coverage, automatic });
+  const layers = useDisasterLayers(point, !demo && focused && ready, { earthquakes, rivers: gauges, automatic });
   const alerts = demo ? feed.alerts : regional.alerts;
   const warningSource = demo ? "demo" : regional.source;
   const warningTime = demo ? feed.snapshot?.fetchedAt ?? null : regional.fetchedAt;
@@ -72,6 +76,7 @@ export default function MapScreen() {
         {!demo && <LayerToggle title="Earthquakes" value={earthquakes} onChange={setEarthquakes} />}
         <Body>Warning polygons show issued areas, not measured flood extent. An empty map does not establish safety.</Body>
       </Panel>
+      {!demo && <FeedUpdateControl />}
       {warnings && <>
         <SectionTitle>{demo ? "Simulated warnings" : `${coverage === "TX" ? "Texas" : "U.S."} / Regional alerts`}</SectionTitle>
         <SourceBadge source={warningSource} />
@@ -95,7 +100,7 @@ export default function MapScreen() {
       {!demo && earthquakes && <>
         <SectionTitle>USGS / Earthquakes</SectionTitle><FeedStamp label="EARTHQUAKES" source={layers.earthquakes.source} fetchedAt={layers.earthquakes.fetchedAt} loading={layers.earthquakes.loading} /><Body>{layers.earthquakes.coverage}</Body>
         {layers.earthquakes.error && <Body>Earthquake reports could not be verified.</Body>}
-        {layers.earthquakes.items.slice(0, 6).map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Read earthquake ${item.name}`} onPress={() => setHazard({ kind: "earthquake", item, fetchedAt: layers.earthquakes.fetchedAt })} style={s.record}><Text style={s.recordTitle}>M {item.magnitude ?? "?"} / {item.name}</Text><Text style={s.metadata}>{new Date(item.observedAt).toLocaleString()}</Text></Pressable>)}
+        {layers.earthquakes.items.slice(0, 6).map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Read earthquake ${item.name}`} onPress={() => setHazard({ kind: "earthquake", item, fetchedAt: layers.earthquakes.fetchedAt })} style={s.record}><Text style={s.recordTitle}>M {magnitudeLabel(item.magnitude)} / {item.name}</Text><Text style={s.metadata}>{new Date(item.observedAt).toLocaleString()}</Text></Pressable>)}
         <Text style={s.metadata}>{layers.earthquakes.items.length} GLOBAL EVENTS / LATEST 6 LISTED</Text><Body>Pan to see epicenters. Markers do not show impact areas.</Body>
         <ActionButton title={layers.earthquakes.refreshing ? "Updating earthquakes" : "Refresh earthquakes"} disabled={!layers.earthquakes.canRefresh} secondary onPress={() => void layers.earthquakes.refresh()} />
       </>}

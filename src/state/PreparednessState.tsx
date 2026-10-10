@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -53,6 +54,7 @@ export function parsePreparation(raw: string | null): SavedPreparation {
 type PreparationState = {
   saved: SavedPreparation;
   ready: boolean;
+  saveStatus: "loading" | "saving" | "saved" | "session";
   storageError: string | null;
   update: (change: Partial<SavedPreparation>) => void;
   toggle: (id: string) => void;
@@ -61,54 +63,88 @@ const Context = createContext<PreparationState | null>(null);
 export function PreparednessProvider({ children }: PropsWithChildren) {
   const [saved, setSaved] = useState(empty);
   const [ready, setReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<PreparationState["saveStatus"]>("loading");
   const [storageError, setStorageError] = useState<string | null>(null);
   const writeQueue = useRef(Promise.resolve());
   const readFailed = useRef(false);
+  const revision = useRef(0);
+  const latestWrite = useRef(0);
+  const mounted = useRef(true);
   useEffect(() => {
     let cancelled = false;
+    mounted.current = true;
     AsyncStorage.getItem(key)
       .then((raw) => {
-        if (!cancelled) setSaved(parsePreparation(raw));
+        if (!cancelled) {
+          setSaved(parsePreparation(raw));
+          setSaveStatus("saved");
+        }
       })
       .catch(() => {
-        readFailed.current = true;
-        if (!cancelled)
+        if (!cancelled) {
+          readFailed.current = true;
+          setSaveStatus("session");
           setStorageError(
             "Saved preparation could not be loaded. Existing storage will not be overwritten.",
           );
+        }
       })
       .finally(() => {
         if (!cancelled) setReady(true);
       });
     return () => {
       cancelled = true;
+      mounted.current = false;
     };
   }, []);
   useEffect(() => {
-    if (!ready || readFailed.current) return;
-    writeQueue.current = writeQueue.current
-      .then(() => AsyncStorage.setItem(key, JSON.stringify(saved)))
-      .then(() => setStorageError(null))
-      .catch(() =>
-        setStorageError(
-          "Changes are available this session, but could not be saved on this device.",
-        ),
+    if (!ready || readFailed.current || revision.current === 0) return;
+    const version = revision.current;
+    const write = ++latestWrite.current;
+    setSaveStatus("saving");
+    const task = writeQueue.current
+      .catch(() => {})
+      .then(() => AsyncStorage.setItem(key, JSON.stringify(saved)));
+    // Keep writes ordered while allowing a later edit to retry a failed write.
+    writeQueue.current = task.catch(() => {});
+    const isLatest = () => mounted.current && version === revision.current && write === latestWrite.current;
+    void task.then(() => {
+      if (!isLatest()) return;
+      setStorageError(null);
+      setSaveStatus("saved");
+    }, () => {
+      if (!isLatest()) return;
+      setSaveStatus("session");
+      setStorageError(
+        "Changes are available this session, but could not be saved on this device.",
       );
+    });
   }, [saved, ready]);
+  const edited = useCallback(() => {
+    // Advance immediately, before React commits the new value, so an older
+    // completion cannot claim that the newly edited preparation was saved.
+    revision.current += 1;
+    setSaveStatus(readFailed.current ? "session" : ready ? "saving" : "loading");
+  }, [ready]);
   const value = useMemo(
     () => ({
       saved,
       ready,
+      saveStatus,
       storageError,
-      update: (change: Partial<SavedPreparation>) =>
-        setSaved((old) => ({ ...old, ...change })),
-      toggle: (id: string) =>
+      update: (change: Partial<SavedPreparation>) => {
+        edited();
+        setSaved((old) => ({ ...old, ...change }));
+      },
+      toggle: (id: string) => {
+        edited();
         setSaved((old) => ({
           ...old,
           checked: { ...old.checked, [id]: !old.checked[id] },
-        })),
+        }));
+      },
     }),
-    [saved, ready, storageError],
+    [edited, saved, ready, saveStatus, storageError],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

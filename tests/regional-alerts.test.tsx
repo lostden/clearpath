@@ -20,7 +20,7 @@ jest.mock("../src/data/nws", () => ({
 }));
 
 const fetchAlerts = jest.mocked(getRegionalAlerts);
-type Options = { enabled: boolean; coverage: WeatherCoverage };
+type Options = { enabled: boolean; coverage: WeatherCoverage; automatic?: boolean };
 let state: RegionalAlertsState;
 let client: QueryClient;
 let notifyAppState: (state: AppStateStatus) => void;
@@ -85,6 +85,94 @@ const polygon = officialAlert({
     type: "Polygon",
     coordinates: [[[-99.1, 30.1], [-98.9, 30.1], [-99, 29.9], [-99.1, 30.1]]],
   },
+});
+
+test("manual regional updates do not fetch on mount, coverage change, foreground resume, or reconnect", async () => {
+  const screen = await mount({ enabled: true, coverage: "TX", automatic: false });
+  expect(state.canRefresh).toBe(true);
+  expect(state.isLoading).toBe(false);
+  await advance(120_000);
+  await act(() => notifyAppState("background"));
+  await act(() => notifyAppState("active"));
+  mockNetwork.isConnected = false;
+  await screen.update({ enabled: true, coverage: "TX", automatic: false });
+  expect(state.canRefresh).toBe(false);
+  mockNetwork.isConnected = true;
+  await screen.update({ enabled: true, coverage: "US", automatic: false });
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  expect(fetchAlerts.mock.calls[0][0]).toBe("US");
+  const fetchedAt = state.fetchedAt;
+  await advance(30_000);
+  await advance(60_000);
+  expect(state.source).toBe("cached");
+  expect(state.fetchedAt).toBe(fetchedAt);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("manual regional refresh keeps cooldowns, filters exact expiry, and never retries a failure", async () => {
+  fetchAlerts.mockResolvedValueOnce([officialAlert({ expires: new Date(TEST_NOW + 10_000).toISOString() })]);
+  await mount({ enabled: true, coverage: "TX", automatic: false });
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.alerts).toHaveLength(1));
+  await act(() => state.refresh());
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await advance(TEST_NOW + 10_000 - Date.now());
+  expect(state.alerts).toEqual([]);
+  await advance(20_000);
+  fetchAlerts.mockRejectedValueOnce(new ClearPathDataError("network", "unavailable"));
+  await act(() => state.refresh());
+  await advance(120_000);
+  expect(fetchAlerts).toHaveBeenCalledTimes(2);
+  expect(state.source).toBe("cached");
+});
+
+test("disabling automatic regional updates aborts its pending request but allows a later explicit refresh", async () => {
+  let signal: AbortSignal | undefined;
+  let finish!: (alerts: ReturnType<typeof officialAlert>[]) => void;
+  fetchAlerts.mockImplementationOnce((_coverage, received) => { signal = received; return new Promise((resolve) => { finish = resolve; }); });
+  const screen = await mount();
+  await waitFor(() => expect(fetchAlerts).toHaveBeenCalledTimes(1));
+  await screen.update({ enabled: true, coverage: "TX", automatic: false });
+  expect(signal?.aborted).toBe(true);
+  await act(() => finish([polygon]));
+  await advance(60_000);
+  expect(state.alerts).toEqual([]);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  expect(fetchAlerts).toHaveBeenCalledTimes(2);
+});
+
+test("a manual coverage switch cannot reuse a prior region snapshot", async () => {
+  const screen = await mount({ enabled: true, coverage: "TX", automatic: false });
+  fetchAlerts.mockResolvedValueOnce([polygon]);
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.alerts).toHaveLength(1));
+  await screen.update({ enabled: true, coverage: "US", automatic: false });
+  expect(state.source).toBe("unavailable");
+  expect(state.alerts).toEqual([]);
+  await advance(60_000);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("manual regional requests are cancelled when connectivity is lost", async () => {
+  let signal: AbortSignal | undefined;
+  let finish!: (alerts: ReturnType<typeof officialAlert>[]) => void;
+  fetchAlerts.mockImplementationOnce((_coverage, received) => { signal = received; return new Promise((resolve) => { finish = resolve; }); });
+  const screen = await mount({ enabled: true, coverage: "TX", automatic: false });
+  await act(() => { void state.refresh(); });
+  await waitFor(() => expect(fetchAlerts).toHaveBeenCalledTimes(1));
+  mockNetwork.isConnected = false;
+  await screen.update({ enabled: true, coverage: "TX", automatic: false });
+  expect(signal?.aborted).toBe(true);
+  await act(() => finish([polygon]));
+  mockNetwork.isConnected = true;
+  await screen.update({ enabled: true, coverage: "TX", automatic: false });
+  await advance(60_000);
+  expect(state.alerts).toEqual([]);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
 });
 
 test("a disabled or offline layer makes no request; enabling keeps advisories and counts unmapped text", async () => {

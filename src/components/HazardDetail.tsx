@@ -4,6 +4,7 @@ import { ActionButton, Body, Heading, Panel, Screen, SectionTitle, openLink } fr
 import { colors } from "@/ui/tokens";
 import type { OfficialEarthquake, RiverGauge, RiverMeasurement } from "@/services/usgsTypes";
 import { isRiverObservationDelayed } from "@/services/usgsTypes";
+import { magnitudeLabel } from "@/ui/format";
 
 export type HazardSelection = {
   kind: "earthquake";
@@ -42,7 +43,7 @@ export function HazardDetail({ selection, source, onClose }: {
         <Body>{item.name}</Body>
         {selection.fetchedAt && <Body>Retrieved: {new Date(selection.fetchedAt).toLocaleString()}</Body>}
         {selection.kind === "earthquake" ? <Panel>
-          <Heading>M {selection.item.magnitude ?? "UNAVAILABLE"}</Heading>
+          <Heading>M {selection.item.magnitude === null ? "UNAVAILABLE" : magnitudeLabel(selection.item.magnitude)}</Heading>
           <Body>Observed: {new Date(selection.item.observedAt).toLocaleString()}</Body>
           <Body>Updated: {new Date(selection.item.updatedAt).toLocaleString()}</Body>
           <Body>Seismic depth: {selection.item.depthKm} km</Body>

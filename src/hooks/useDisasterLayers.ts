@@ -24,7 +24,7 @@ export type DisasterLayers = {
   earthquakes: DisasterLayer<OfficialEarthquake>;
   rivers: DisasterLayer<RiverGauge>;
 };
-export type DisasterLayerOptions = { earthquakes?: boolean; rivers?: boolean };
+export type DisasterLayerOptions = { earthquakes?: boolean; rivers?: boolean; automatic?: boolean };
 
 /** Cached here means retained in React Query memory; these layers do not promise offline disk storage. */
 export function layerSource(
@@ -82,6 +82,7 @@ function useLayer<T>(
   key: readonly string[],
   request: (signal: AbortSignal) => Promise<UsgsSnapshot<T>>,
   enabled: boolean,
+  automatic: boolean,
   visible: boolean,
   offline: boolean,
   interval: number,
@@ -99,10 +100,10 @@ function useLayer<T>(
   [interval, keyString, request]);
   const query = useQuery<UsgsSnapshot<T>, Error>({
     queryKey: key,
-    enabled,
+    enabled: enabled && automatic,
     staleTime: interval,
     gcTime: 30 * 60_000,
-    refetchInterval: enabled ? interval : false,
+    refetchInterval: enabled && automatic ? interval : false,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -110,13 +111,13 @@ function useLayer<T>(
     queryFn: requestFn,
   });
   useEffect(() => {
-    if (!enabled) void client.cancelQueries({ queryKey: key, exact: true });
+    if (!enabled || !automatic) void client.cancelQueries({ queryKey: key, exact: true });
     // The serialized key changes only when the actual query identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, enabled, keyString]);
+  }, [automatic, client, enabled, keyString]);
   const canRefresh = enabled && !query.isFetching && now >= (requestGates[keyString] ?? 0);
   const refresh = useCallback(async () => {
-    if (canRefresh) await query.refetch();
+    if (canRefresh) await query.refetch({ cancelRefetch: false });
   }, [canRefresh, query]);
   const snapshot = visible ? query.data : undefined;
   const error = visible ? query.error : null;
@@ -126,7 +127,7 @@ function useLayer<T>(
     fetchedAt: snapshot?.fetchedAt ?? null,
     generatedAt: snapshot?.generatedAt ?? null,
     coverage: snapshot?.coverage ?? coverage,
-    loading: visible && enabled && query.isPending,
+    loading: visible && enabled && query.isPending && query.isFetching,
     refreshing: visible && query.isFetching,
     error,
     canRefresh,
@@ -149,8 +150,11 @@ export function useDisasterLayers(point: Coordinates | null, enabled = true, opt
   }, []);
   useEffect(() => {
     if (!enabled || !foreground) return;
+    // A Map focus change can resume presentation without a feed request in
+    // manual mode. Catch up its age/window clock immediately in that case.
+    const resume = setTimeout(() => setNow(Date.now()), 0);
     const timer = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(timer);
+    return () => { clearTimeout(resume); clearInterval(timer); };
   }, [enabled, foreground]);
   const latitude = point?.latitude;
   const longitude = point?.longitude;
@@ -160,10 +164,10 @@ export function useDisasterLayers(point: Coordinates | null, enabled = true, opt
     return getNearbyRiverGauges(selectedPoint, signal);
   }, [selectedPoint]);
   const earth = useLayer(["usgs-earthquakes", "last-day"], getEarthquakes,
-    enabled && options.earthquakes !== false && foreground && !offline, enabled, offline, 60_000, 90_000, now,
+    enabled && options.earthquakes !== false && foreground && !offline, options.automatic !== false, enabled, offline, 60_000, 90_000, now,
     "USGS reported earthquakes worldwide in the past 24 hours; epicenters are not impact areas.");
   const rivers = useLayer(["usgs-rivers", selectedPoint ? `${selectedPoint.latitude},${selectedPoint.longitude}` : "none"], requestRivers,
-    enabled && options.rivers !== false && !!selectedPoint && foreground && !offline, enabled && !!selectedPoint, offline,
+    enabled && options.rivers !== false && !!selectedPoint && foreground && !offline, options.automatic !== false, enabled && !!selectedPoint, offline,
     5 * 60_000, 10 * 60_000, now,
     "Up to 12 nearest USGS Texas stream stations within 50 km. Missing readings are unavailable.");
   return {

@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, typography } from "@/ui/tokens";
 import { useAppState } from "@/state/AppState";
 import { useAlerts } from "@/hooks/useAlerts";
+import { useFeedPreferences } from "@/state/FeedPreferences";
 
 function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   return (
@@ -31,6 +32,7 @@ export default function AppTabs() {
   const insets = useSafeAreaInsets();
   const { mode, setMode } = useAppState();
   const feed = useAlerts();
+  const { automatic, ready } = useFeedPreferences();
   return (
     <Tabs style={styles.container}>
       <TabSlot style={styles.content} />
@@ -49,6 +51,7 @@ export default function AppTabs() {
       )}
       {mode === "live" && (
         <View style={styles.liveBar}>
+          {ready && !automatic && <Text style={[styles.demoLabel, styles.manual]}>FEEDS / MANUAL REFRESH</Text>}
           <Text style={styles.demoLabel}>
             {feed.source === "cached"
               ? "POINT ALERTS / CACHED · UNVERIFIED"
@@ -123,6 +126,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   darkText: { color: colors.background },
+  manual: { color: colors.orange, marginBottom: 4 },
   exit: { minHeight: 48, justifyContent: "center", paddingHorizontal: 6 },
   exitText: { color: colors.background, fontSize: 13, fontFamily: typography.bodyStrong },
   liveBar: {

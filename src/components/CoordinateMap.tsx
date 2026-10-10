@@ -15,6 +15,13 @@ const MAX_SPAN = 360;
 const GRAY = "#B0B0B0";
 const wrapLongitude = (value: number) => ((value + 540) % 360) - 180;
 const clampSpan = (value: number) => Math.max(MIN_SPAN, Math.min(MAX_SPAN, Number.isFinite(value) && value > 0 ? value : 0.18));
+function viewport(center: Coordinates, span: number) {
+  const limit = 90 - Math.min(180, span) / 2;
+  return {
+    center: { latitude: Math.max(-limit, Math.min(limit, center.latitude)), longitude: wrapLongitude(center.longitude) },
+    span,
+  };
+}
 
 /** Linear latitude/longitude plotting only; this never evaluates personal alert applicability. */
 export function projectCoordinate(point: Coordinates, region: MapRegion): { x: number; y: number } {
@@ -72,14 +79,19 @@ function CoordinatePlot({
   zoneBoundaries = [],
   onSelectAlert, onSelectEarthquake, onSelectRiver,
 }: MapCanvasProps) {
-  const [span, setSpan] = useState(() => clampSpan(initialSpan));
+  const [{ center, span }, setViewport] = useState(() => viewport(point, clampSpan(initialSpan)));
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const clip = `coordinate-window-${id}`;
   const latitudeDelta = Math.min(180, span);
   const region: MapRegion = {
-    latitude: Math.max(-90 + latitudeDelta / 2, Math.min(90 - latitudeDelta / 2, point.latitude)),
-    longitude: point.longitude, latitudeDelta, longitudeDelta: span,
+    ...center, latitudeDelta, longitudeDelta: span,
   };
+  const latitudeLimit = 90 - latitudeDelta / 2;
+  const pan = (north: number, east: number) => setViewport((current) => viewport({
+    latitude: current.center.latitude + north * Math.min(180, current.span) / 2,
+    longitude: current.center.longitude + east * current.span / 2,
+  }, current.span));
+  const zoom = (scale: number) => setViewport((current) => viewport(current.center, clampSpan(current.span * scale)));
   const mapped = showWarnings ? alerts.filter((alert) => alert.geometry !== null) : [];
   const drawings = mapped.flatMap((alert) => {
     const geometry = alert.geometry!;
@@ -101,6 +113,8 @@ function CoordinatePlot({
   const realRivers = source !== "demo" && showGauges ? rivers.filter((gauge) => pointInRegion(gauge.coordinates, region)) : [];
   const showDemoGauge = source === "demo" && showGauges && pointInRegion(DEMO_GAUGE.coordinate, region);
   const selection = projectCoordinate(point, region);
+  const selectionOutside = selection.x < PLOT.x - 1e-6 || selection.x > PLOT.x + PLOT.width + 1e-6 ||
+    selection.y < PLOT.y - 1e-6 || selection.y > PLOT.y + PLOT.height + 1e-6;
   const decimals = span < 1 ? 4 : 1;
   const axisText = { fill: colors.secondary, fontSize: 17, fontFamily: typography.body };
   return <View testID="coordinate-map" style={s.container}>
@@ -177,13 +191,23 @@ function CoordinatePlot({
     {outsideZones > 0 && <Text style={s.note}>{outsideZones} NWS zone {outsideZones === 1 ? "boundary is" : "boundaries are"} outside this view.{compact ? " Open the full map to inspect." : " Zoom out to inspect."}</Text>}
     {showWarnings && mapped.length === 0 && <Text style={s.note}>{source === "unavailable" ? "Warning data unavailable." : source === "demo" ? "SIMULATED: No supplied warning areas in this exercise." : "No warning areas were supplied in this copy. Read the warning list."}</Text>}
     {!compact && <>
+      <Text testID="coordinate-view-center" style={s.note}>VIEW CENTER / {center.latitude.toFixed(4)}, {center.longitude.toFixed(4)} / VIEWPORT ONLY</Text>
       <Text style={s.note}>VIEW SPAN / {latitudeDelta.toFixed(4)}° latitude × {span.toFixed(4)}° longitude</Text>
+      {pointIsSelection && selectionOutside && <Text style={s.note}>Selected point is outside this view.</Text>}
       <Text style={s.note}>Linear coordinate plot. Areas may extend outside the window. Shading is supplied warning geometry, not measured flood extent. An empty view does not establish safety.</Text>
       <View style={s.controls}>
-        <View style={s.control}><ActionButton title="Zoom in" secondary disabled={span <= MIN_SPAN} onPress={() => setSpan((value) => clampSpan(value / 2))} /></View>
-        <View style={s.control}><ActionButton title="Zoom out" secondary disabled={span >= MAX_SPAN} onPress={() => setSpan((value) => clampSpan(value * 2))} /></View>
+        <View style={s.control}><ActionButton title="Pan north" secondary disabled={latitudeDelta >= 180 || center.latitude >= latitudeLimit} onPress={() => pan(1, 0)} /></View>
+        <View style={s.control}><ActionButton title="Pan south" secondary disabled={latitudeDelta >= 180 || center.latitude <= -latitudeLimit} onPress={() => pan(-1, 0)} /></View>
       </View>
-      <ActionButton title="Recenter coordinate view" secondary onPress={() => setSpan(clampSpan(initialSpan))} />
+      <View style={s.controls}>
+        <View style={s.control}><ActionButton title="Pan west" secondary disabled={span >= MAX_SPAN} onPress={() => pan(0, -1)} /></View>
+        <View style={s.control}><ActionButton title="Pan east" secondary disabled={span >= MAX_SPAN} onPress={() => pan(0, 1)} /></View>
+      </View>
+      <View style={s.controls}>
+        <View style={s.control}><ActionButton title="Zoom in" secondary disabled={span <= MIN_SPAN} onPress={() => zoom(0.5)} /></View>
+        <View style={s.control}><ActionButton title="Zoom out" secondary disabled={span >= MAX_SPAN} onPress={() => zoom(2)} /></View>
+      </View>
+      <ActionButton title="Recenter coordinate view" secondary onPress={() => setViewport(viewport(point, clampSpan(initialSpan)))} />
     </>}
   </View>;
 }

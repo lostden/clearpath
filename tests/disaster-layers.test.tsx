@@ -26,9 +26,9 @@ function Probe({ selected = point, enabled = true, options }: { selected?: Coord
   useEffect(() => { state = layers; }, [layers]);
   return <Text>{layers.earthquakes.source}</Text>;
 }
-async function mount(enabled = true) {
+async function mount(enabled = true, options?: DisasterLayerOptions) {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  return render(<QueryClientProvider client={client}><Probe enabled={enabled} /></QueryClientProvider>);
+  return render(<QueryClientProvider client={client}><Probe enabled={enabled} options={options} /></QueryClientProvider>);
 }
 async function advance(milliseconds: number) {
   await act(async () => { await jest.advanceTimersByTimeAsync(milliseconds); });
@@ -51,6 +51,140 @@ afterEach(async () => {
   client?.clear();
   jest.restoreAllMocks();
   jest.useRealTimers();
+});
+
+test("manual USGS mode allows explicit independent refreshes while mount, polling, resume and reconnect stay silent", async () => {
+  const view = await mount(true, { automatic: false });
+  expect(state.earthquakes.canRefresh).toBe(true);
+  expect(state.rivers.canRefresh).toBe(true);
+  expect(state.earthquakes.loading).toBe(false);
+  await advance(600_000);
+  await act(() => notifyState("background"));
+  await act(() => notifyState("active"));
+  mockNetwork.isConnected = false;
+  await view.rerender(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+  expect(state.earthquakes.canRefresh).toBe(false);
+  mockNetwork.isConnected = true;
+  await view.rerender(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+  expect(earthquakes).not.toHaveBeenCalled();
+  expect(rivers).not.toHaveBeenCalled();
+  await act(() => state.earthquakes.refresh());
+  await waitFor(() => expect(state.earthquakes.source).toBe("live"));
+  expect(rivers).not.toHaveBeenCalled();
+  await act(() => state.rivers.refresh());
+  await waitFor(() => expect(state.rivers.source).toBe("live"));
+  await act(() => state.rivers.refresh());
+  expect(rivers).toHaveBeenCalledTimes(1);
+  const earthTime = state.earthquakes.fetchedAt;
+  const riverTime = state.rivers.fetchedAt;
+  await advance(90_000);
+  expect(state.earthquakes.source).toBe("cached");
+  expect(state.earthquakes.fetchedAt).toBe(earthTime);
+  await advance(510_000);
+  expect(state.rivers.source).toBe("cached");
+  expect(state.rivers.fetchedAt).toBe(riverTime);
+  expect(earthquakes).toHaveBeenCalledTimes(1);
+  expect(rivers).toHaveBeenCalledTimes(1);
+});
+
+test("switching USGS to manual cancels pending automatic work and ignores its late response", async () => {
+  let signal: AbortSignal | undefined;
+  let finish!: (value: ReturnType<typeof snapshot>) => void;
+  earthquakes.mockImplementationOnce((received) => { signal = received; return new Promise((resolve) => { finish = resolve; }); });
+  const view = await mount();
+  await waitFor(() => expect(earthquakes).toHaveBeenCalledTimes(1));
+  await view.rerender(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+  expect(signal?.aborted).toBe(true);
+  await act(() => finish(snapshot()));
+  await advance(60_000);
+  expect(state.earthquakes.source).toBe("unavailable");
+  expect(earthquakes).toHaveBeenCalledTimes(1);
+  await act(() => state.earthquakes.refresh());
+  await waitFor(() => expect(state.earthquakes.source).toBe("live"));
+  expect(earthquakes).toHaveBeenCalledTimes(2);
+});
+
+test("manual river point changes do not reuse prior observations or fetch until pressed", async () => {
+  const view = await mount(true, { automatic: false });
+  await act(() => state.rivers.refresh());
+  await waitFor(() => expect(state.rivers.source).toBe("live"));
+  const next = { latitude: 30.2, longitude: -99.2 };
+  await view.rerender(<QueryClientProvider client={client}><Probe selected={next} options={{ automatic: false }} /></QueryClientProvider>);
+  expect(state.rivers.source).toBe("unavailable");
+  expect(state.rivers.items).toEqual([]);
+  await advance(300_000);
+  expect(rivers).toHaveBeenCalledTimes(1);
+  await act(() => state.rivers.refresh());
+  await waitFor(() => expect(state.rivers.source).toBe("live"));
+  expect(rivers.mock.calls[1][0]).toEqual(next);
+});
+
+test("manual USGS snapshots catch up their age clock immediately when Map regains focus", async () => {
+  const view = await mount(true, { automatic: false });
+  await act(() => state.earthquakes.refresh());
+  await waitFor(() => expect(state.earthquakes.source).toBe("live"));
+  await view.rerender(<QueryClientProvider client={client}><Probe enabled={false} options={{ automatic: false }} /></QueryClientProvider>);
+  await advance(120_000);
+  await view.rerender(<QueryClientProvider client={client}><Probe enabled options={{ automatic: false }} /></QueryClientProvider>);
+  await advance(1);
+  expect(state.earthquakes.source).toBe("cached");
+  expect(earthquakes).toHaveBeenCalledTimes(1);
+});
+
+test("manual USGS requests abort on backgrounding even though automatic queries were disabled already", async () => {
+  let signal: AbortSignal | undefined;
+  let finish!: (value: ReturnType<typeof snapshot>) => void;
+  earthquakes.mockImplementationOnce((received) => { signal = received; return new Promise((resolve) => { finish = resolve; }); });
+  await mount(true, { automatic: false });
+  await act(() => { void state.earthquakes.refresh(); });
+  await waitFor(() => expect(earthquakes).toHaveBeenCalledTimes(1));
+  await act(() => notifyState("background"));
+  expect(signal?.aborted).toBe(true);
+  await act(() => finish(snapshot()));
+  await act(() => notifyState("active"));
+  await advance(60_000);
+  expect(state.earthquakes.source).toBe("unavailable");
+  expect(earthquakes).toHaveBeenCalledTimes(1);
+});
+
+test.each(["earthquakes", "rivers"] as const)("two immediate %s refreshes join one manual request without restarting its cooldown", async (layer) => {
+  await mount(true, { automatic: false });
+  await act(() => state[layer].refresh());
+  await waitFor(() => expect(state[layer].source).toBe("live"));
+  const interval = layer === "earthquakes" ? 60_000 : 300_000;
+  await advance(interval);
+  const request = layer === "earthquakes" ? earthquakes : rivers;
+  let signal: AbortSignal | undefined;
+  let finish!: (value: ReturnType<typeof snapshot>) => void;
+  if (layer === "earthquakes") {
+    earthquakes.mockImplementationOnce((received) => { signal = received; return new Promise((resolve) => { finish = resolve; }); });
+  } else {
+    rivers.mockImplementationOnce((_point, received) => { signal = received; return new Promise((resolve) => { finish = resolve; }); });
+  }
+  // Use the same render's callback to model a second press before isFetching
+  // has disabled the button. No clock time elapses between these calls.
+  const refresh = state[layer].refresh;
+  const startedAt = Date.now();
+  let first!: Promise<void>;
+  let second!: Promise<void>;
+  await act(async () => {
+    first = refresh();
+    await Promise.resolve();
+    second = refresh();
+    await Promise.resolve();
+  });
+  expect(request).toHaveBeenCalledTimes(2); // Initial copy plus one manual update.
+  expect(signal?.aborted).toBe(false);
+  const fetchedAt = new Date(Date.now()).toISOString();
+  await act(async () => { finish(snapshot()); await Promise.all([first, second]); });
+  await waitFor(() => expect(state[layer].fetchedAt).toBe(fetchedAt));
+  expect(state[layer].canRefresh).toBe(false);
+  await advance(startedAt + interval - Date.now() - 1);
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(state[layer].canRefresh).toBe(false);
+  await advance(1);
+  expect(state[layer].canRefresh).toBe(true);
+  expect(request).toHaveBeenCalledTimes(2);
 });
 
 test("demo-disabled layers never fetch or expose previous real query data", async () => {

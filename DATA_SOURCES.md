@@ -2,6 +2,12 @@
 
 Sources reviewed October 9–10, 2026. The October 10 regional weather, earthquake, and river integrations were explicitly requested by the user. A documentation review is not evidence that a mobile integration succeeded. Executed requests and tests belong in TESTING.md; successful native tiles/overlays remain unverified.
 
+## Feed update control
+
+Automatic updates are enabled by default after local preference hydration. Switching **Auto updates** off stops initial/coverage/point-change requests, periodic polling, automatic retries, and resume/reconnect feed requests. It cancels pending work when the policy changes. Foreground, connectivity, selected-point, enabled-layer, cadence, and Retry-After rules still govern explicit refresh buttons. Warning expiry, retained-data aging, past-day earthquake filtering, and source timestamps continue independently of this policy. Map tiles, manually requested NWS boundaries, and external links are outside the feed setting. A single manual river refresh can involve bounded discovery and observation pagination; it is not a promise of one HTTP request or a fixed traffic budget.
+
+The boolean preference is stored locally. Its read completes before feed requests are permitted, preventing a restored manual preference from briefly downloading automatically. Invalid/unreadable saved preferences fall back to manual mode with visible status. Failed preference writes preserve the session choice and report that reopening may not retain it.
+
 ## NWS: official weather alerts
 
 Use `https://api.weather.gov/alerts/active?point={latitude},{longitude}` with a unique User-Agent and `Accept: application/geo+json`. The API is free, cache-oriented, and subject to limits. [API service](https://www.weather.gov/documentation/services-web-api).
@@ -57,7 +63,7 @@ Until approved terms have been reviewed, link to [official DriveTexas](https://d
 
 [Google Maps URLs](https://developers.google.com/maps/documentation/urls/get-started) can open a standard map/directions experience without a Maps API key. These external links do not establish road passability, an evacuation route, or flood safety. Native map tiles require separate platform setup as described in README.md.
 
-When basemap tiles are unavailable, the optional coordinate view draws the same supplied polygon geometry and enabled event/station points against labeled latitude/longitude axes. It uses structured local SVG primitives, not a downloaded map, terrain image, flood extent, road network, or navigation service. Its schematic label and independent source states remain visible; an empty plot does not establish safety.
+When basemap tiles are unavailable, the optional coordinate view draws the same supplied polygon geometry and enabled event/station points against labeled latitude/longitude axes. It uses structured local SVG primitives, not a downloaded map, terrain image, flood extent, road network, or navigation service. Its schematic label and independent source states remain visible; an empty plot does not establish safety. Directional panning changes only the viewport, wraps across the dateline, and clamps latitude to keep its window within the poles. It cannot change a selected-point query or move an event/station. Compact Home previews remain static. Magnitude labels round to at most two decimals for readability; the original numeric values remain in the model and official source.
 
 ## Offline preparation and numbers
 

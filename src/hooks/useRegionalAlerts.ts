@@ -35,9 +35,11 @@ export type RegionalAlertsState = {
 export function useRegionalAlerts({
   enabled: requested,
   coverage,
+  automatic = true,
 }: {
   enabled: boolean;
   coverage: WeatherCoverage;
+  automatic?: boolean;
 }): RegionalAlertsState {
   const client = useQueryClient();
   const network = useNetInfo();
@@ -45,7 +47,8 @@ export function useRegionalAlerts({
     network.isConnected === false || network.isInternetReachable === false;
   const [foreground, setForeground] = useState(AppState.currentState === "active");
   const [now, setNow] = useState(Date.now);
-  const enabled = requested && foreground && !offline;
+  const requestAllowed = requested && foreground && !offline;
+  const enabled = requestAllowed && automatic;
   const availability = useRef({ enabled, coverage });
   // One regional observer's coverage switches share a gate, preventing rapid
   // TX/US changes from bypassing the request interval or provider Retry-After.
@@ -71,7 +74,7 @@ export function useRegionalAlerts({
     refetchOnReconnect: false,
     refetchInterval: enabled ? 60_000 : false,
     refetchIntervalInBackground: false,
-    retry: shouldRetryAlerts,
+    retry: automatic ? shouldRetryAlerts : false,
     retryDelay: alertRetryDelay,
     queryFn: async ({ signal }) => {
       await waitForRequestSlot(
@@ -115,12 +118,12 @@ export function useRegionalAlerts({
     [client, coverage],
   );
   useEffect(() => {
-    if (!enabled)
+    if (!requestAllowed || !automatic)
       void client.cancelQueries({
         queryKey: ["nws-regional-alerts", coverage],
         exact: true,
       });
-  }, [client, coverage, enabled]);
+  }, [automatic, client, coverage, requestAllowed]);
   useEffect(() => {
     const previous = availability.current;
     availability.current = { enabled, coverage };
@@ -135,7 +138,7 @@ export function useRegionalAlerts({
   const error = query.failureReason ?? query.error;
   const verified =
     snapshot !== null &&
-    enabled &&
+    requestAllowed &&
     !error &&
     now - Date.parse(snapshot.fetchedAt) < VERIFIED_AGE;
   const source = snapshot ? (verified ? "live" : "cached") : "unavailable";
@@ -164,7 +167,7 @@ export function useRegionalAlerts({
     return () => clearTimeout(timer);
   }, [nextAllowed, now, snapshot]);
 
-  const canRefresh = enabled && !query.isFetching && now >= nextAllowed;
+  const canRefresh = requestAllowed && !query.isFetching && now >= nextAllowed;
   const refetch = query.refetch;
   const refresh = useCallback(async () => {
     if (canRefresh) await refetch({ cancelRefetch: false });
@@ -174,7 +177,7 @@ export function useRegionalAlerts({
     alerts,
     source,
     fetchedAt: snapshot?.fetchedAt ?? null,
-    isLoading: enabled && query.isPending,
+    isLoading: requestAllowed && query.isPending && query.isFetching,
     isRefreshing: query.isFetching,
     canRefresh,
     error,

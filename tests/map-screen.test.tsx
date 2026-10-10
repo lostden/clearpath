@@ -8,6 +8,7 @@ import type { AlertSelection } from "../src/components/AlertDetail";
 import type { OfficialEarthquake, RiverGauge } from "../src/services/usgsTypes";
 import { DEMO_LOCATION, getDemoSnapshot } from "../src/data/demo";
 import { officialAlert, TEST_NOW } from "./fixtures/alerts";
+import { useFeedPreferences } from "../src/state/FeedPreferences";
 
 let mockBlurMap: (() => void) | undefined;
 jest.mock("expo-router", () => {
@@ -21,6 +22,7 @@ jest.mock("expo-router", () => {
 jest.mock("../src/hooks/useAlerts", () => ({ useAlerts: jest.fn() }));
 jest.mock("../src/hooks/useRegionalAlerts", () => ({ useRegionalAlerts: jest.fn() }));
 jest.mock("../src/hooks/useDisasterLayers", () => ({ useDisasterLayers: jest.fn() }));
+jest.mock("../src/state/FeedPreferences", () => ({ useFeedPreferences: jest.fn() }));
 jest.mock("../src/components/MapCanvas", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const { View } = jest.requireActual<typeof import("react-native")>("react-native");
@@ -59,6 +61,7 @@ jest.mock("../src/components/ZoneAreaDetail", () => {
 const pointFeed = jest.mocked(useAlerts);
 const regionalFeed = jest.mocked(useRegionalAlerts);
 const disasterFeed = jest.mocked(useDisasterLayers);
+const feedPreferences = jest.mocked(useFeedPreferences);
 const location = { coordinates: { latitude: 30, longitude: -99 }, label: "Selected test point", kind: "manual" as const };
 const pointWarning = officialAlert({ id: "point-warning", event: "Tornado Warning", headline: "Applies to point query" });
 const regionalWarning = officialAlert({
@@ -108,6 +111,7 @@ async function openVerifiedZoneAreas() {
 }
 
 beforeEach(() => {
+  feedPreferences.mockReturnValue({ automatic: true, ready: true, storageError: null, setAutomatic: jest.fn() });
   jest.useFakeTimers({ now: TEST_NOW });
   mockBlurMap = undefined;
   feed = {
@@ -147,7 +151,7 @@ afterEach(async () => {
 
 test("regional records remain separate from selected-point alerts and each official layer keeps its own source and retrieval time", async () => {
   const screen = await render(<MapScreen />);
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX" });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX", automatic: true });
   expect(mapProps(screen).alerts).toEqual(regional.alerts);
   expect(mapProps(screen).alerts).not.toContain(pointWarning);
   expect(mapProps(screen).source).toBe("cached");
@@ -166,18 +170,37 @@ test("regional records remain separate from selected-point alerts and each offic
   }
 });
 
+test("manual mode stays visible and is passed independently from enabled map layers", async () => {
+  feedPreferences.mockReturnValue({ automatic: false, ready: true, storageError: null, setAutomatic: jest.fn() });
+  const screen = await render(<MapScreen />);
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX", automatic: false });
+  expect(disasterFeed).toHaveBeenLastCalledWith(location.coordinates, true, { earthquakes: true, rivers: true, automatic: false });
+  expect(screen.getByText("MANUAL MODE / Tap Refresh for each feed. New updates are not checked automatically.")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Refresh weather" }));
+  expect(regional.refresh).toHaveBeenCalledTimes(1);
+  expect(mapProps(screen).alerts).toEqual(regional.alerts);
+});
+
+test("saved preference hydration blocks requests for every map feed", async () => {
+  feedPreferences.mockReturnValue({ automatic: true, ready: false, storageError: null, setAutomatic: jest.fn() });
+  const screen = await render(<MapScreen />);
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: false, coverage: "TX", automatic: true });
+  expect(disasterFeed).toHaveBeenLastCalledWith(location.coordinates, false, { earthquakes: true, rivers: true, automatic: true });
+  expect(screen.getByRole("switch", { name: "Automatic feed updates", disabled: true })).toBeTruthy();
+});
+
 test("Texas/U.S. coverage changes the regional query and map records without changing the point feed", async () => {
   const usWarning = officialAlert({ id: "us-warning", event: "Winter Storm Warning" });
   regionalFeed.mockImplementation(({ coverage }) => coverage === "US" ? { ...regional, alerts: [usWarning] } : regional);
   const screen = await render(<MapScreen />);
   await fireEvent.press(screen.getByRole("button", { name: "U.S. weather coverage" }));
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "US" });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "US", automatic: true });
   expect(mapProps(screen).alerts).toEqual([usWarning]);
   expect(mapProps(screen).point).toEqual(location.coordinates);
   expect(feed.alerts).toEqual([pointWarning]);
   expect(screen.getByRole("button", { name: "U.S. weather coverage", selected: true })).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Texas weather coverage" }));
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX" });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX", automatic: true });
   expect(mapProps(screen).alerts).toEqual(regional.alerts);
 });
 
@@ -204,14 +227,14 @@ test("layer switches independently disable queries and visible overlays; refresh
   expect(feed.refresh).not.toHaveBeenCalled();
 
   await fireEvent.press(screen.getByRole("switch", { name: "Show warning areas" }));
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: false, coverage: "TX" });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: false, coverage: "TX", automatic: true });
   expect(mapProps(screen).showWarnings).toBe(false);
   expect(screen.queryByRole("button", { name: "Read Flood Watch" })).toBeNull();
   await fireEvent.press(screen.getByRole("switch", { name: "Show river observations" }));
-  expect(disasterFeed).toHaveBeenLastCalledWith(location.coordinates, true, { earthquakes: true, rivers: false });
+  expect(disasterFeed).toHaveBeenLastCalledWith(location.coordinates, true, { earthquakes: true, rivers: false, automatic: true });
   expect(mapProps(screen).showGauges).toBe(false);
   await fireEvent.press(screen.getByRole("switch", { name: "Show earthquakes" }));
-  expect(disasterFeed).toHaveBeenLastCalledWith(location.coordinates, true, { earthquakes: false, rivers: false });
+  expect(disasterFeed).toHaveBeenLastCalledWith(location.coordinates, true, { earthquakes: false, rivers: false, automatic: true });
   expect(mapProps(screen).showEarthquakes).toBe(false);
   expect(screen.queryByRole("button", { name: "Read earthquake USGS test epicenter" })).toBeNull();
 });
@@ -220,8 +243,8 @@ test("demo uses the frozen fictional warning snapshot and disables real regional
   const snapshot = getDemoSnapshot("flood");
   feed = { ...feed, source: "demo", alerts: snapshot.alerts, snapshot, selectedLocation: DEMO_LOCATION };
   const screen = await render(<MapScreen />);
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: false, coverage: "TX" });
-  expect(disasterFeed).toHaveBeenLastCalledWith(DEMO_LOCATION.coordinates, false, { earthquakes: true, rivers: true });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: false, coverage: "TX", automatic: true });
+  expect(disasterFeed).toHaveBeenLastCalledWith(DEMO_LOCATION.coordinates, false, { earthquakes: true, rivers: true, automatic: true });
   expect(mapProps(screen).source).toBe("demo");
   expect(mapProps(screen).alerts).toEqual(snapshot.alerts);
   expect(mapProps(screen).earthquakes).toEqual([]);
@@ -237,12 +260,12 @@ test("demo uses the frozen fictional warning snapshot and disables real regional
 test("regional coverage stays usable without a selected point and does not fabricate a personal location", async () => {
   feed = { ...feed, source: "unavailable", alerts: [], snapshot: null, selectedLocation: null };
   const screen = await render(<MapScreen />);
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX" });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX", automatic: true });
   expect(mapProps(screen).pointIsSelection).toBe(false);
   expect(mapProps(screen).point).toEqual({ latitude: 31.1, longitude: -100 });
   expect(mapProps(screen).initialSpan).toBe(14);
   expect(mapProps(screen).alerts).toEqual(regional.alerts);
-  expect(disasterFeed).toHaveBeenLastCalledWith(null, true, { earthquakes: true, rivers: true });
+  expect(disasterFeed).toHaveBeenLastCalledWith(null, true, { earthquakes: true, rivers: true, automatic: true });
   expect(screen.getByText("SET LOCATION / needed for nearby river stations.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Open point in Google Maps" })).toBeNull();
 });
@@ -286,7 +309,7 @@ test("leaving the map or disabling warnings prevents further zone downloads", as
   const screen = await openVerifiedZoneAreas();
   await act(() => mockBlurMap?.());
   expect(zoneProps(screen).enabled).toBe(false);
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: false, coverage: "TX" });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: false, coverage: "TX", automatic: true });
   await act(() => zoneProps(screen).onClose());
   expect(zoneProps(screen).selection).toBeNull();
 
@@ -301,7 +324,7 @@ test("leaving the map or disabling warnings prevents further zone downloads", as
 test("coverage changes clear zone selection before using another regional query", async () => {
   const screen = await openVerifiedZoneAreas();
   await fireEvent.press(screen.getByRole("button", { name: "U.S. weather coverage" }));
-  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "US" });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "US", automatic: true });
   expect(zoneProps(screen)).toMatchObject({ selection: null, enabled: false });
 });
 

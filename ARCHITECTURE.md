@@ -1,60 +1,77 @@
 # Architecture
 
-ClearPath uses Expo Router for native navigation, strict TypeScript for data boundaries, TanStack Query for asynchronous requests, and AsyncStorage for local state. Weather information stays independent from optional map, river, and road services so an optional failure cannot block the warning display.
+ClearPath uses Expo Router for navigation, TypeScript for data boundaries, TanStack Query for independent feed requests, and AsyncStorage for selected local state. Fresh installs open in live mode with no selected point and an unverified local result. Demo scenarios require an explicit choice. Implemented map layers are supporting work; the original student relevance/prioritization engine remains blank.
 
 ## Responsibilities
 
 | Area | Responsibility |
 | --- | --- |
-| `src/app/` | Home, Map, Prepare routes and warning details; navigation only |
-| `src/components/` | Shared accessible controls, warning presentation, map view/fallback |
+| `src/app/` | Home, Map, Prepare routes and screen orchestration |
+| `src/components/` | Warning/source details, native map, SVG coordinate fallback, manual zone viewer and sharing review |
 | `src/ui/` | Design tokens and accessible shared presentation |
 | `src/domain/types.ts` | App domain models; distinguish provenance and freshness |
-| `src/data/` | NWS network boundary, snapshots, bundled references/fixtures |
+| `src/data/` | Point/regional NWS adapters, exact-point disk snapshot, bundled guidance/fixtures |
 | `src/domain/` | Validation, identity, update, and expiration helpers |
-| `src/services/location.ts` | City points, coordinate validation, foreground GPS |
-| `src/state/` and `src/hooks/` | Shared mode, selected point, query observer, connectivity, local preparation |
+| `src/services/` | Foreground GPS/manual points, official USGS adapters and bounded linked NWS zone loader |
+| `src/state/` and `src/hooks/` | Mode/point, feed preferences, independent query observers, freshness/cancellation and local preparation saves |
 | `src/student/` | Reserved original student relevance/prioritization work |
 | Tests | Unit/component coverage; see TESTING.md for actual locations and results |
 
-`src/student/` is a reserved contribution boundary; the original engine is pending. USGS discovery/observation and approved road adapters will be added in milestone 6, after student milestone 5.
+`src/student/` is a reserved contribution boundary. The user authorized regional NWS, USGS, and zone-view support without completing milestone 5 or all later milestones. Approved road-data integration remains pending.
 
 ## Information flow
 
 ```mermaid
 flowchart TD
-  L[Foreground GPS or manual location] --> Q[NWS point query]
-  Q --> V[Validate and normalize official response]
-  V --> C[Successful response snapshot for that location]
-  V --> B[Retain provider order at this checkpoint]
-  B --> H[Home and complete alert list]
-  H --> D[Full official warning and source]
-  V --> M[Map: supplied geometry only]
-  F[Local simulated fixtures] --> S[Simulated presentation with persistent label]
-  C --> O[Cached view with retrieval time and expiry filtering]
-  P[Bundled guidance and local checklist/contacts] --> R[Prepare]
-  X[Student engine: pending] -. replaces fallback after review .-> B
+  L[Selected GPS or manual point] --> Q[NWS selected-point query]
+  Q --> H[Home warnings and compact preview]
+  Q --> C[Disk: latest exact-point snapshot]
+  C --> H
+  T[Texas or U.S. coverage] --> W[Independent regional NWS query]
+  W --> M[Map and per-source record lists]
+  E[USGS global past-day earthquakes] --> M
+  L --> U[USGS nearby Texas stations and observations]
+  U --> M
+  M --> D[Regional warning details]
+  D --> P[Zone preflight: no boundary request]
+  P -->|Explicit download| Z[Linked NWS zones and bounded RAM cache]
+  Z --> O[Separate unfilled zone outlines]
+  F[Opt-in local fixtures] --> S[Simulated Home and Map with persistent label]
+  B[Bundled guidance and local checklist/plan/contacts] --> R[Prepare]
 ```
 
-The wire response is untrusted data. The adapter retains official text and enum values, validates coordinates/timestamps/geometry, and produces an app model. UI components receive the app model rather than traversing a raw API response.
+Wire responses are untrusted. Adapters retain source text, validate identity/timestamps/coordinates/geometry, and produce typed models. Each path owns its errors and retrieval time; observations also retain actual source/event times and units. UI receives these models rather than traversing raw responses.
 
 ## Decisions and boundaries
 
 - Location permission is requested in the foreground following a deliberate action. Manual selection keeps the app useful when permission is denied. A selected city's coordinates represent its selected point, not every resident in that city.
-- Query keys must include location, and a canceled/obsolete request must not overwrite a newer selection. The polling controller must operate only while relevant app activity is in the foreground.
-- Each snapshot records its selected point and successful retrieval time. It cannot stand in for another location. Rehydrating a snapshot cannot update its retrieval time or establish current verification.
+- Home's point observer is shared across tabs. Map independently queries Texas/U.S. regional NWS warnings, worldwide past-24-hour earthquakes, and up to 12 nearest Texas stream stations within 50 km of the selected point. The regional/earthquake overview needs no selected point; rivers do. Regional membership cannot replace Home's point result or establish personal applicability.
+- Query identity includes the point, coverage, or feed window as appropriate. Obsolete/disabled/background/offline work is canceled, and late results cannot replace the current selection. Map polling additionally requires focus and an enabled layer.
+- A snapshot's original retrieval time never advances through restoration or a failed refresh. Independent live/cached/unavailable labels, expiration and observation-age checks remain active even when automatic requests are off.
 - Simulated scenarios use an independent source path and never enter the real-data cache. Their coordinates, timestamps, warnings, and geometry are fictional presentation fixtures.
-- A fresh installation defaults to the labeled Flood scenario; returning to live mode requires a selected point before NWS retrieval. Selecting a GPS/manual point also exits demo. The single last selected point is stored locally and restored in live mode on later launches; restored GPS is explicitly a saved selection, not a current reading. One shared alert observer serves the tabs.
+- The last selected point restores in live mode; saved GPS is explicitly a previous selection, not a new reading. A newer deliberate location/demo choice wins over delayed hydration. Selecting a GPS/manual point exits demo without refreshing GPS in the background.
 - Provider order is retained at this checkpoint; no combined priority score is generated. The first result must not be claimed to be a personalized highest-priority result. Keep every applicable warning accessible.
-- An alert lacking a polygon can still apply through the NWS point endpoint. Map geometry is optional and cannot independently invalidate such a warning.
-- Preparedness content is compiled into the app; completing a checklist changes only local state. AsyncStorage is not encrypted secret storage. Contacts should be limited to user-entered name/number data and deletable locally.
+- Warnings lacking supplied polygons remain listed. Native maps and the schematic SVG coordinate view draw only supplied warning geometry plus independently sourced event/station symbols; they do not derive flood extent, road passability or a safe route.
+- Linked zone viewing begins with a no-fetch preflight. An explicit download accepts up to four exact official endpoints under size/geometry limits. Its separate unfilled administrative outlines and cached timestamps never replace warning geometry or its mapped-warning count. Warning identity/issuance/zones, verified source, focus, connectivity and expiry gate the viewer; close/background/context changes abort it. Zone definitions also have independent effective/expiration checks. See DATA_SOURCES.md for limits.
 
-The current foreground NWS schedule is 60 seconds. A selected point cannot start another request within 30 seconds of its previous request; Retry-After can extend that gate. Network/timeout/429/5xx failures have at most two retries with a 30/60-second minimum delay. A previously successful response is presented as cached after a failed verification, lost connection, or 90 seconds without a new successful retrieval. Expiration has its own clock boundary. These intervals are display/network policies, not a promise of continuous emergency monitoring.
+## Update policy and storage
+
+The automatic/manual feed preference is persisted separately and hydrated before feeds can start. Automatic is the fresh default; an unreadable preference fails to manual for that session. Manual mode stops automatic initial/resume requests, polling and NWS retry loops. Each explicit refresh remains a single logical attempt, gated by foreground/connectivity, selection/layer availability, cadence and provider Retry-After. It does not start background monitoring. Zone downloads remain explicit in either mode.
+
+With automatic updates enabled, point/regional weather and earthquakes poll at 60 seconds; rivers at five minutes. NWS requests have a 30-second minimum gate; regional coverage switches share their gate. Automatic NWS transient failures have at most two retries with 30/60-second minimum backoff. USGS has no automatic retry loop. Weather/earthquake verification ages at 90 seconds and river snapshots at ten minutes, with separate event/observation clocks. These are request/display policies, not emergency-delivery guarantees.
+
+| Storage boundary | Contents |
+| --- | --- |
+| Bundled app assets | General safety guidance, kit references, demo fixtures and local fonts |
+| AsyncStorage | Last selected point, one latest exact-point Home NWS snapshot, preparation/checklist/plan/contacts, automatic/manual preference |
+| RAM only | Regional NWS/USGS query snapshots, river discovery metadata, bounded linked-zone cache with original timestamps and less-than-24-hour validity |
+
+Regional/USGS/zone copies do not promise availability after a killed/reopened app. Restored Home copies remain cached and exact-point isolated. AsyncStorage is not encrypted, and no movement history is saved. Preparation has `loading`, `saving`, `saved` and `session` states. Successful hydration does not rewrite unchanged data; edited writes serialize, and only the latest revision can change save status/error. Unreadable preparation is protected from overwrite while session-only edits remain usable. A later edit/retry can recover a normal write failure.
 
 ## Milestone 5 design boundary
 
 The student owns how to express relevance, resolve updated messages, and organize multiple valid warnings with explanations. Accept official severity/urgency as facts; keep confidence about geography explicit. No numerical personal-risk probability or route safety is derived. The proposed test contract is in STUDENT_CONTRIBUTIONS.md, and it must be implemented and reviewed before replacing the fallback.
 
-## Later integrations
+## Remaining boundaries
 
-USGS discovery and observations will be separate query paths with their own timestamps, errors, and units. Observations cannot alter official NWS classifications. DriveTexas remains an official external-resource link unless approval and terms authorize an adapter. Map/provider configuration must degrade gracefully when credentials or native capabilities are unavailable.
+USGS observations cannot alter official NWS classifications; gage height is not flood depth or an inferred flood-stage threshold. DriveTexas remains an external link, and wildfire perimeters, shelter occupancy and evacuation orders are not integrated. Map includes labeled tile failures and a coordinate fallback. Successful native tiles, current physical rendering and complete later milestones are not claimed; executed checks remain in TESTING.md.

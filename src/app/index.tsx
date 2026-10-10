@@ -30,6 +30,7 @@ import { colors, typography } from "@/ui/tokens";
 import { LocationPicker } from "@/components/LocationPicker";
 import { useAppState } from "@/state/AppState";
 import { ShareLocation } from "@/components/ShareLocation";
+import { FeedUpdateControl } from "@/components/FeedUpdateControl";
 export default function HomeScreen() {
   const feed = useAlerts();
   const { locationError } = useAppState();
@@ -170,6 +171,7 @@ export default function HomeScreen() {
           </Body>
         )}
         <View style={s.divider} />
+        {feed.source !== "demo" && <FeedUpdateControl />}
         <SectionTitle>02 / HAZARD MAP</SectionTitle>
         {feed.selectedLocation && (
           <Pressable

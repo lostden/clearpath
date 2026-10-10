@@ -122,6 +122,7 @@ test("compact mode contains no nested buttons or interactive shapes", async () =
   expect(screen.queryAllByRole("button")).toHaveLength(0);
   expect(screen.getByTestId(`coordinate-area-${warning.id}-0-0`).props.onPress).toBeUndefined();
   expect(screen.getByTestId(`coordinate-river-hit-${river.id}`).props.onPress).toBeUndefined();
+  expect(screen.queryByTestId("coordinate-view-center")).toBeNull();
 });
 
 test("overview coordinates are not rendered as a selected point and unavailable data is explicit", async () => {
@@ -231,4 +232,122 @@ test("demo excludes accidentally supplied real zone boundaries even with weather
   expect(screen.queryByText(/NWS zone boundary/)).toBeNull();
   expect(screen.getByText("WEATHER / OFF")).toBeTruthy();
   expect(screen.getByText("SIMULATED SCENE / JUL 04 2025 / 05:15 CDT")).toBeTruthy();
+});
+
+test("panning reveals supplied overlays while the selected cross remains at its original point", async () => {
+  const distantWarning: OfficialAlert = { ...warning, geometry: { type: "Polygon", coordinates: [
+    [[-98.87, 29.99], [-98.83, 29.99], [-98.83, 30.01], [-98.87, 30.01], [-98.87, 29.99]],
+  ] } };
+  const distantZone = { ...zone, geometry: distantWarning.geometry! };
+  const distantQuake = { ...quake, coordinates: { latitude: 30, longitude: -98.85 } };
+  const distantRiver = { ...river, coordinates: { latitude: 30.01, longitude: -98.85 } };
+  const selectAlert = jest.fn();
+  const selectQuake = jest.fn();
+  const selectRiver = jest.fn();
+  const screen = await render(<CoordinateMap point={point} initialSpan={0.2} alerts={[distantWarning]} source="cached"
+    zoneBoundaries={[distantZone]} showEarthquakes earthquakes={[distantQuake]} earthquakeSource="live"
+    showGauges rivers={[distantRiver]} riverSource="cached" onSelectAlert={selectAlert} onSelectEarthquake={selectQuake} onSelectRiver={selectRiver} />);
+  expect(screen.queryByTestId(`coordinate-area-${warning.id}-0-0`)).toBeNull();
+  expect(screen.queryByTestId("coordinate-zone-forecast-TXZ173-0-0")).toBeNull();
+  expect(screen.queryByTestId(`coordinate-earthquake-${quake.id}`)).toBeNull();
+  expect(screen.queryByTestId(`coordinate-river-${river.id}`)).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Pan east" }));
+  expect(screen.getByText("VIEW CENTER / 30.0000, -98.9000 / VIEWPORT ONLY")).toBeTruthy();
+  const cross = screen.getByTestId("coordinate-selected-point").props.d.match(/^M([^ ]+) ([^ ]+)/);
+  expect(Number(cross[1])).toBeCloseTo(89); // Cross extends 7 plot units from the real point at x=96.
+  expect(Number(cross[2])).toBeCloseTo(108);
+  expect(screen.queryByText("Selected point is outside this view.")).toBeNull();
+  expect(screen.getByTestId("coordinate-zone-forecast-TXZ173-0-0").props.fill).toBe("none");
+  await fireEvent.press(screen.getByTestId(`coordinate-area-${warning.id}-0-0`));
+  await fireEvent.press(screen.getByTestId(`coordinate-earthquake-hit-${quake.id}`));
+  await fireEvent.press(screen.getByTestId(`coordinate-river-hit-${river.id}`));
+  expect(selectAlert).toHaveBeenCalledWith(distantWarning);
+  expect(selectQuake).toHaveBeenCalledWith(distantQuake);
+  expect(selectRiver).toHaveBeenCalledWith(distantRiver);
+  expect(point).toEqual({ latitude: 30, longitude: -99 });
+  expect(distantWarning.geometry).toBe(distantZone.geometry);
+  expect(screen.getByText("WEATHER / NWS / CACHED / UNVERIFIED")).toBeTruthy();
+  expect(screen.getByText("EARTHQUAKES / USGS / VERIFIED COPY")).toBeTruthy();
+  expect(screen.getByText("RIVERS / USGS / CACHED / UNVERIFIED")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Pan east" }));
+  expect(screen.getByText("Selected point is outside this view.")).toBeTruthy();
+});
+
+test("pan steps follow the current zoom and recenter restores both original center and span", async () => {
+  const screen = await render(<CoordinateMap point={point} initialSpan={0.2} alerts={[warning]} source="live" />);
+  const originalPath = screen.getByTestId(`coordinate-area-${warning.id}-0-0`).props.d;
+  await fireEvent.press(screen.getByRole("button", { name: "Pan north" }));
+  expect(screen.getByText("VIEW CENTER / 30.1000, -99.0000 / VIEWPORT ONLY")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Zoom in" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Pan west" }));
+  expect(screen.getByText("VIEW CENTER / 30.1000, -99.0500 / VIEWPORT ONLY")).toBeTruthy();
+  expect(screen.getByText("VIEW SPAN / 0.1000° latitude × 0.1000° longitude")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Recenter coordinate view" }));
+  expect(screen.getByText("VIEW CENTER / 30.0000, -99.0000 / VIEWPORT ONLY")).toBeTruthy();
+  expect(screen.getByText("VIEW SPAN / 0.2000° latitude × 0.2000° longitude")).toBeTruthy();
+  expect(screen.getByTestId(`coordinate-area-${warning.id}-0-0`).props.d).toBe(originalPath);
+});
+
+test("east and west panning wrap the dateline while zone holes and epicenters stay continuous", async () => {
+  const datelinePoint = { latitude: 0, longitude: 179 };
+  const crossingZone: OfficialZoneBoundary = { ...zone, geometry: { type: "Polygon", coordinates: [
+    [[179.2, -0.5], [-178.2, -0.5], [-178.2, 0.5], [179.2, 0.5], [179.2, -0.5]],
+    [[179.5, -0.2], [179.5, 0.2], [-179.5, 0.2], [-179.5, -0.2], [179.5, -0.2]],
+  ] } };
+  const datelineQuake = { ...quake, coordinates: { latitude: 0, longitude: -178.5 } };
+  const screen = await render(<CoordinateMap point={datelinePoint} initialSpan={4} alerts={[]} source="live"
+    zoneBoundaries={[crossingZone]} showEarthquakes earthquakes={[datelineQuake]} earthquakeSource="live" />);
+  expect(screen.queryByTestId(`coordinate-earthquake-${quake.id}`)).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Pan east" }));
+  expect(screen.getByText("VIEW CENTER / 0.0000, -179.0000 / VIEWPORT ONLY")).toBeTruthy();
+  expect(screen.getByTestId(`coordinate-earthquake-${quake.id}`)).toBeTruthy();
+  const outline = screen.getByTestId("coordinate-zone-forecast-TXZ173-0-0");
+  expect(outline.props.d).toBe("M106.40 128.50 L241.60 128.50 L241.60 87.50 L106.40 87.50 L106.40 128.50 Z M122.00 116.20 L122.00 99.80 L174.00 99.80 L174.00 116.20 L122.00 116.20 Z");
+  await fireEvent.press(screen.getByRole("button", { name: "Pan west" }));
+  expect(screen.getByText("VIEW CENTER / 0.0000, 179.0000 / VIEWPORT ONLY")).toBeTruthy();
+  expect(screen.queryByTestId(`coordinate-earthquake-${quake.id}`)).toBeNull();
+  expect(datelinePoint).toEqual({ latitude: 0, longitude: 179 });
+});
+
+test.each([
+  ["north", 89, 1, "south"],
+  ["south", -89, -1, "north"],
+] as const)("%s pole limits use the actual clamped center for subsequent zoom and pan", async (toward, latitude, sign, away) => {
+  const screen = await render(<CoordinateMap point={{ latitude, longitude: 0 }} initialSpan={4} alerts={[]} source="live" />);
+  expect(screen.getByText(`VIEW CENTER / ${(88 * sign).toFixed(4)}, 0.0000 / VIEWPORT ONLY`)).toBeTruthy();
+  expect(screen.getByRole("button", { name: `Pan ${toward}` }).props.accessibilityState.disabled).toBe(true);
+  await fireEvent.press(screen.getByRole("button", { name: `Pan ${toward}` }));
+  expect(screen.getByText(`VIEW CENTER / ${(88 * sign).toFixed(4)}, 0.0000 / VIEWPORT ONLY`)).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Zoom out" }));
+  expect(screen.getByText(`VIEW CENTER / ${(86 * sign).toFixed(4)}, 0.0000 / VIEWPORT ONLY`)).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: `Pan ${away}` }));
+  expect(screen.getByText(`VIEW CENTER / ${(82 * sign).toFixed(4)}, 0.0000 / VIEWPORT ONLY`)).toBeTruthy();
+  expect(screen.getByRole("button", { name: `Pan ${toward}` }).props.accessibilityState.disabled).toBe(false);
+  await fireEvent.press(screen.getByRole("button", { name: "Recenter coordinate view" }));
+  await fireEvent.press(screen.getByRole("button", { name: `Pan ${away}` }));
+  expect(screen.getByText(`VIEW CENTER / ${(86 * sign).toFixed(4)}, 0.0000 / VIEWPORT ONLY`)).toBeTruthy();
+});
+
+test("full-globe latitude and longitude axes disable independently and zooming in restores navigation", async () => {
+  const screen = await render(<CoordinateMap point={point} initialSpan={180} alerts={[]} source="live" />);
+  for (const direction of ["north", "south"]) expect(screen.getByRole("button", { name: `Pan ${direction}` }).props.accessibilityState.disabled).toBe(true);
+  for (const direction of ["east", "west"]) expect(screen.getByRole("button", { name: `Pan ${direction}` }).props.accessibilityState.disabled).toBe(false);
+  await fireEvent.press(screen.getByRole("button", { name: "Zoom out" }));
+  for (const direction of ["north", "south", "east", "west"]) expect(screen.getByRole("button", { name: `Pan ${direction}` }).props.accessibilityState.disabled).toBe(true);
+  expect(screen.getByText("VIEW SPAN / 180.0000° latitude × 360.0000° longitude")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Zoom in" }));
+  expect(screen.getByRole("button", { name: "Pan east" }).props.accessibilityState.disabled).toBe(false);
+  await fireEvent.press(screen.getByRole("button", { name: "Zoom in" }));
+  for (const direction of ["north", "south", "east", "west"]) expect(screen.getByRole("button", { name: `Pan ${direction}` }).props.accessibilityState.disabled).toBe(false);
+});
+
+test("changing the supplied point or initial span resets a panned viewport without carrying its center", async () => {
+  const screen = await render(<CoordinateMap point={point} initialSpan={0.2} alerts={[]} source="live" />);
+  await fireEvent.press(screen.getByRole("button", { name: "Pan east" }));
+  await screen.rerender(<CoordinateMap point={{ latitude: 31, longitude: -100 }} initialSpan={0.2} alerts={[]} source="live" />);
+  expect(screen.getByText("VIEW CENTER / 31.0000, -100.0000 / VIEWPORT ONLY")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Pan north" }));
+  await screen.rerender(<CoordinateMap point={{ latitude: 31, longitude: -100 }} initialSpan={2} alerts={[]} source="live" />);
+  expect(screen.getByText("VIEW CENTER / 31.0000, -100.0000 / VIEWPORT ONLY")).toBeTruthy();
+  expect(screen.getByText("VIEW SPAN / 2.0000° latitude × 2.0000° longitude")).toBeTruthy();
 });

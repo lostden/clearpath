@@ -11,6 +11,7 @@ import type { Coordinates, OfficialAlert } from "@/domain/types";
 import { ActionButton, Body, Panel, SectionTitle } from "@/ui/components";
 import { colors } from "@/ui/tokens";
 import { DEMO_GAUGE } from "@/data/demo";
+import { magnitudeLabel } from "@/ui/format";
 import type { OfficialEarthquake, RiverGauge } from "@/services/usgsTypes";
 import { isRiverObservationDelayed } from "@/services/usgsTypes";
 import { fieldMapStyle } from "@/data/mapStyle";
@@ -201,7 +202,7 @@ function NativeMapCanvas({
         {source !== "demo" && showEarthquakes && earthquakes.filter((event) => pointInRegion(event.coordinates, viewport)).map((event) => (
           <Marker key={`earth-${event.id}`} coordinate={event.coordinates}
             pinColor={earthquakeSource === "cached" ? "#B0B0B0" : colors.ink}
-            title={`${earthquakeSource === "cached" ? "CACHED / " : "USGS / "}M ${event.magnitude ?? "?"} · ${event.name}`}
+            title={`${earthquakeSource === "cached" ? "CACHED / " : "USGS / "}M ${magnitudeLabel(event.magnitude)} · ${event.name}`}
             description={`Observed ${new Date(event.observedAt).toLocaleString()}. Epicenter; not an impact area.`}
             onPress={() => onSelectEarthquake?.(event)} />
         ))}
