@@ -1,10 +1,22 @@
-import { act, fireEvent, render } from "@testing-library/react-native";
+import { act, cleanup, fireEvent, render } from "@testing-library/react-native";
 import {
   AlertDetail,
   detailSource,
   type AlertSelection,
 } from "../src/components/AlertDetail";
 import { officialAlert } from "./fixtures/officialAlert";
+import { TEST_NOW } from "./fixtures/alerts";
+
+beforeEach(() => {
+  // Keep the fixed warning fixture current, and run expiration callbacks only
+  // through explicit timer advancement inside act.
+  jest.useFakeTimers({ now: TEST_NOW });
+});
+
+afterEach(async () => {
+  await cleanup();
+  jest.useRealTimers();
+});
 
 test("warning detail preserves the full description and original agency instructions", async () => {
   const onClose = jest.fn();
@@ -72,32 +84,28 @@ test("an open simulated warning remains simulated when the user returns to live 
 
 test("an open warning is marked expired when its expiration passes", async () => {
   const now = Date.parse("2026-10-09T18:00:00Z");
-  jest.useFakeTimers({ now });
-  try {
-    const alert = {
-      ...officialAlert,
-      expires: new Date(now + 1000).toISOString(),
-    };
-    const screen = await render(
-      <AlertDetail
-        alert={alert}
-        source="cached"
-        fetchedAt="2026-10-09T17:59:00Z"
-        onClose={jest.fn()}
-      />,
-    );
-    expect(screen.queryByText("This warning has expired.")).toBeNull();
-    await act(async () => {
-      await jest.advanceTimersByTimeAsync(1001);
-    });
-    expect(screen.getByText("This warning has expired.")).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Read this as a historical snapshot. Follow current official instructions.",
-      ),
-    ).toBeTruthy();
-    expect(screen.getByText(officialAlert.instruction!)).toBeTruthy();
-  } finally {
-    jest.useRealTimers();
-  }
+  jest.setSystemTime(now);
+  const alert = {
+    ...officialAlert,
+    expires: new Date(now + 1000).toISOString(),
+  };
+  const screen = await render(
+    <AlertDetail
+      alert={alert}
+      source="cached"
+      fetchedAt="2026-10-09T17:59:00Z"
+      onClose={jest.fn()}
+    />,
+  );
+  expect(screen.queryByText("This warning has expired.")).toBeNull();
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(1001);
+  });
+  expect(screen.getByText("This warning has expired.")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "Read this as a historical snapshot. Follow current official instructions.",
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText(officialAlert.instruction!)).toBeTruthy();
 });

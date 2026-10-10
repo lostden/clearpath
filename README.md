@@ -87,6 +87,14 @@ Google Maps Platform setup requires an appropriate Google Cloud project, enabled
 
 With missing map configuration, use the app's fallback information and official-source links. Apple Maps is acceptable for iOS development. Never draw a substitute polygon for a live warning lacking geometry.
 
+### Black Google map inside Android Expo Go
+
+The physical Android test on October 10 found a black map in Expo Go 57.0.9. An [open Expo issue](https://github.com/expo/expo/issues/49323) reports the same client version and an expired Google Maps credential embedded in Expo Go. This is a likely explanation, but this phone's captured logs did not contain an authorization failure, so its exact cause remains unconfirmed. Adding this project's key cannot replace the key embedded in Expo Go.
+
+The Google map now shows a loading state and, if its tile-completion event does not arrive within 15 seconds, a clear explanation and **Retry map** action. A late successful load still restores the map. The compact Home preview has a status without nested buttons. Apple Maps retains its native presentation because it does not expose the same completion event. Simulation fixtures are local; real basemap tiles still require internet.
+
+For a ClearPath Android build, create a Google Cloud project with the required billing setup, enable **Maps SDK for Android**, and configure a key restricted to that SDK and to `org.clearpath.student` with the actual build-signing SHA-1. Save `GOOGLE_MAPS_ANDROID_API_KEY` in the local/build environment rather than chat or source control. Cloud builds must also receive this variable in their EAS environment; a Git-ignored `.env.local` is not automatically uploaded. The existing `app.config.ts` map plugin consumes it. Build the existing `preview` APK profile for use without Metro, or use `development` for an installed development client. Rebuild whenever native map configuration changes, then verify tiles on the phone. [Google setup](https://developers.google.com/maps/documentation/android-sdk/get-api-key), [Expo map setup](https://docs.expo.dev/versions/v57.0.0/sdk/map-view/).
+
 ## Development builds
 
 For local Android builds, install Android Studio, an Android SDK, and a compatible Java toolchain, then use:

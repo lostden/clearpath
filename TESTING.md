@@ -18,7 +18,7 @@ npx expo-doctor
 
 The `jest-expo` preset supplies SDK 57 native test mocks. React Native Testing Library 14 uses React 19-compatible async rendering and events. Storage, connectivity, and safe-area mocks are isolated test substitutes; these checks do not prove that platform permissions, maps, or the device dialer work.
 
-| Check | Most recent observed result, October 9, 2026 |
+| Check | Baseline result, October 9, 2026; later checks below |
 | --- | --- |
 | TypeScript | Passed: `npm run typecheck` |
 | Expo lint | Passed: `npm run lint`; test/config files also passed explicit ESLint |
@@ -57,6 +57,16 @@ This verifies USB transport and physical Android home-screen startup in Expo Go.
 
 TypeScript, Expo lint, and USB launcher PowerShell syntax checks passed after the IPv4 launcher correction.
 
+### Android map tile failure — October 10, 2026
+
+The user reported a black rectangle inside ClearPath's map area while the surrounding page remained visible. The phone's installed Expo Go version was verified as **57.0.9**. Expo's public version-discovery API still listed that same Android client for SDK 57 on October 10; no newer matching client was found through that API. This was not a Play Store eligibility check. Demo coordinates and polygon conversion were valid; no black map style or incorrect map type was configured. Bounded Expo Go process logs showed Google Play services/Maps renderer initialization. No Maps authorization failure was present in the captured records. The matching [Expo Go issue](https://github.com/expo/expo/issues/49323) makes its embedded Maps credential a likely cause, not a verified diagnosis for this device.
+
+Google maps now wait for `onMapLoaded`, rather than treating `onMapReady` as proof that tiles rendered. After 15 seconds without completion, a loading explanation and retry action replace the silent black area. Retry remounts the map; a late tile-completion callback can recover the existing map, and changing the point resets completion state. The full failure panel can grow for larger text. The compact Home preview has no nested retry button. Apple MapKit does not expose `onMapLoaded`, so it retains its prior native presentation without this Google-only loading gate.
+
+The user reopened the physical Android Map tab and confirmed **Map did not finish loading** with **Retry map**. This verifies the failure UI on the phone; successful basemap tiles, polygons, and map interactions remain unverified. The user has an Expo account but no Google Cloud Maps project/key. No Cloud project, billing, API key, signing credentials, or native build was created. The installed-build configuration already accepts `GOOGLE_MAPS_ANDROID_API_KEY` through the native map plugin; a Google Cloud setup and rebuilt APK remain required for that route.
+
+The final verification passed TypeScript, Expo lint, scoped ESLint for the changed test files, and **16 Jest suites / 123 tests** without console warnings. Nine new map tests cover completion versus readiness, the timeout, retry, late recovery, point changes, missing-key handling, compact controls, and Apple Maps behavior. An initial full run revealed that the older warning-detail fixture had expired against the real clock; those tests now use a fixed fake clock and unmount before restoring real timers, preserving all expiration assertions. The clean combined rerun exercised both changes. Mocked map callbacks do not prove successful native tiles.
+
 Record phone model, OS version, build identifier, date, steps, and result for each run. Test an Android phone and an iPhone where available; include a smaller screen and the largest accessibility font size.
 
 1. Start the app using the instructions in `README.md`. Verify that Home, Map, and Prepare are reachable and usable with large text and a screen reader. Verify tab labels and selected-tab announcements, readable timestamps, contrast, scroll behavior, and reachable 48-point controls.
@@ -84,6 +94,7 @@ Run each flow and adjust platform-specific dialogs if needed. The emergency flow
 ## Known limits and issues
 
 - Physical Android home-screen startup through USB is confirmed. Complete native acceptance checks and iOS/simulator verification remain pending. JavaScript export does not compile native projects or validate map keys and runtime permissions.
+- Google basemap tiles did not render in the observed Android Expo Go 57.0.9 run. The failure UI is confirmed on the phone; an installed build with its own restricted Maps key remains unverified.
 - NWS availability, incomplete warning geometry, and cached data freshness limit what can be verified. The app must retain explicit provenance and verification states.
 - Nearby USGS observations and student relevance/priority logic await their recorded milestone; their tests are pending.
 - Dependency audit on October 9 reported **65 findings: 49 high and 16 moderate**. Most entries are propagated through Expo/Metro/Jest tooling from five underlying advisories. Compatible nonbreaking remediation was not available for all of them. The audit's suggested forced upgrades/downgrades conflict with SDK 57 compatibility. These findings remain unresolved and require upstream review before a production release; they are not a clean security result.
