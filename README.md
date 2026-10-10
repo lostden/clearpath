@@ -41,6 +41,28 @@ If prompted to install Expo's `@expo/ngrok` tunnel helper, accept the installati
 
 If the same error persists, record the PowerShell output after scanning and the installed Expo Go version. This message alone cannot distinguish a network failure from another startup/download problem. The project requires an Expo Go version compatible with SDK 57.
 
+### Run an Android phone through USB
+
+If Expo Go remains stuck before opening ClearPath, use a USB data cable to bypass LAN and ngrok. This connection needs Google [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools), the existing Expo Go app, and foreground USB debugging authorization. Android Studio, Java, an emulator, a cloud build, and an Expo account are unnecessary for this route. On this machine Platform Tools 37.0.1 are installed in the parent `.tools/android-sdk` directory; the launcher finds that copy automatically. On another machine use an installed `adb.exe` or pass `-AdbPath` with its full path.
+
+On the phone, enable Developer options (usually by tapping Build number seven times in About phone), enable **USB debugging**, connect the data cable, unlock the phone, and approve **Allow USB debugging** for this computer. Some phones need File transfer USB mode or the manufacturer USB driver. [Android device authorization](https://developer.android.com/tools/adb#Enabling).
+
+Run from the project directory:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\android-usb.ps1
+```
+
+The helper selects one authorized USB phone, checks that Expo Go is installed, maps device port 8082 to the computer, starts a localhost-only Metro server, waits for readiness, and opens `exp://127.0.0.1:8082` in Expo Go. It does not install/update Expo Go, erase phone app data, or change the firewall. Keep the terminal and cable connected. Ctrl+C stops the owned server and attempts to remove only the helper's port mapping. An occupied port or multiple phones produce a clear error; use `-Port` or `-DeviceSerial` when needed. [React Native USB connection](https://reactnative.dev/docs/running-on-device#method-1-using-adb-reverse-recommended).
+
+If the phone still fails, leave that terminal running and collect bounded logs in a second terminal:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\android-usb.ps1 -Logs
+```
+
+This captures only the running Expo Go process, at most 300 relevant records from Android's main/crash buffers, into the ignored local `.expo/android-usb-device.log`. It refuses whole-phone logging if the process is missing. Review and redact any app/session/personal information before sharing logs. Metro output/errors are also local under `.expo/usb-metro-*.log`. The helper's phone behavior still needs an actual connected-device run; preparing it is not evidence that ClearPath has launched on a phone.
+
 ## Checkpoint scope
 
 The working increment targets Home, Map, and Prepare navigation; distinct simulated scenarios; foreground/manual location; and an NWS point-alert adapter. Check [MILESTONES.md](MILESTONES.md) for scope and [TESTING.md](TESTING.md) for executed checks and remaining phone verification. Offline safety text is bundled in the app. Live, cached, simulated, and unavailable information must retain distinct labels.

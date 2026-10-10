@@ -41,6 +41,14 @@ Geographic applicability and student-defined priority ordering remain a Mileston
 
 ## Native device checklist
 
+### Android startup troubleshooting — October 10, 2026
+
+The user reported that Expo Go never finished opening the app after LAN, ngrok, cache reset, and an HTTPS launch attempt. Earlier diagnostics retrieved the Android manifest and complete development bundle through ngrok; those fetches were computer checks, not successful phone startup. Phone request headers identified Expo Go 57.0.9 / runtime SDK 57. Its recorded packager status response was valid, but no phone bundle request was captured. No specific client-side cause has been established.
+
+Google Platform Tools 37.0.1 was downloaded from the official Android repository and `adb version` ran successfully. The initial device inventory found no connected phone. `scripts/android-usb.ps1` prepares a localhost-only USB connection and narrowly scoped Expo Go process logs. The USB phone launch, permission dialog, reverse connection, native screen rendering, and log collection remain pending until the phone is connected and authorized. It must not be recorded as a passing integration test yet.
+
+PowerShell syntax and the missing-device error path passed under Windows PowerShell 5.1. Its read-only HTTP readiness check passed against the existing Metro server. TypeScript and lint passed after the helper was added. An independent review corrected Android launch-timeout reporting and ensured port cleanup still runs if the owned server has already exited. Automatic approval review blocked an optional background-server verification command; that command did not run. After the user reported approving phone USB debugging, ADB still returned zero devices, so a USB cable/mode/driver check is required before native evidence can be collected.
+
 Record phone model, OS version, build identifier, date, steps, and result for each run. Test an Android phone and an iPhone where available; include a smaller screen and the largest accessibility font size.
 
 1. Start the app using the instructions in `README.md`. Verify that Home, Map, and Prepare are reachable and usable with large text and a screen reader. Verify tab labels and selected-tab announcements, readable timestamps, contrast, scroll behavior, and reachable 48-point controls.
