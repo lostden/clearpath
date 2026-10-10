@@ -74,7 +74,8 @@ try {
   & $AdbPath @taskAdbArgs reverse --no-rebind "tcp:$Port" "tcp:$Port"
   if ($LASTEXITCODE -ne 0) { throw "ADB could not create a USB connection on port $Port. Choose another -Port if that phone port is already mapped." }
   $taskReverseCreated = $true
-  $taskArguments = @(('"{0}"' -f $taskExpoCli), 'start', '--go', '--localhost', '--port', "$Port")
+  # Expo binds localhost but advertises 127.0.0.1. Prefer IPv4 for both USB and readiness.
+  $taskArguments = @('--dns-result-order=ipv4first', ('"{0}"' -f $taskExpoCli), 'start', '--go', '--localhost', '--port', "$Port")
   $taskMetro = Start-Process -FilePath $taskNode -ArgumentList $taskArguments -WorkingDirectory $taskProject -WindowStyle Hidden -RedirectStandardOutput $taskMetroOut -RedirectStandardError $taskMetroError -PassThru
   Write-Output 'Starting the local USB development server...'
   Add-Type -AssemblyName System.Net.Http

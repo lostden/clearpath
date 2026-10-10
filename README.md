@@ -61,7 +61,9 @@ If the phone still fails, leave that terminal running and collect bounded logs i
 powershell -ExecutionPolicy Bypass -File .\scripts\android-usb.ps1 -Logs
 ```
 
-This captures only the running Expo Go process, at most 300 relevant records from Android's main/crash buffers, into the ignored local `.expo/android-usb-device.log`. It refuses whole-phone logging if the process is missing. Review and redact any app/session/personal information before sharing logs. Metro output/errors are also local under `.expo/usb-metro-*.log`. The helper's phone behavior still needs an actual connected-device run; preparing it is not evidence that ClearPath has launched on a phone.
+This captures only the running Expo Go process, at most 300 relevant records from Android's main/crash buffers, into the ignored local `.expo/android-usb-device.log`. It refuses whole-phone logging if the process is missing. Review and redact any app/session/personal information before sharing logs. Metro output/errors are also local under `.expo/usb-metro-*.log`.
+
+USB startup was confirmed on a moto g stylus - 2025 running Android 16 on October 10, 2026, using foreground Metro and the same reverse connection/launch URL. The launcher prefers IPv4 so Metro's localhost binding matches `127.0.0.1` on Windows. Its complete background-process lifecycle and native feature checklist remain pending; see [TESTING.md](TESTING.md).
 
 ## Checkpoint scope
 

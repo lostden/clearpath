@@ -1,6 +1,6 @@
 # ClearPath verification record
 
-This record distinguishes executed checks from tests that still require a native build and a phone. No physical Android/iOS run or native Maestro run has been performed in this workspace.
+This record distinguishes executed checks from pending native verification. Android Expo Go startup was confirmed on a physical phone on October 10, 2026. Complete native feature checks, iOS startup, and native Maestro execution remain pending.
 
 ## Automated checks
 
@@ -45,9 +45,17 @@ Geographic applicability and student-defined priority ordering remain a Mileston
 
 The user reported that Expo Go never finished opening the app after LAN, ngrok, cache reset, and an HTTPS launch attempt. Earlier diagnostics retrieved the Android manifest and complete development bundle through ngrok; those fetches were computer checks, not successful phone startup. Phone request headers identified Expo Go 57.0.9 / runtime SDK 57. Its recorded packager status response was valid, but no phone bundle request was captured. No specific client-side cause has been established.
 
-Google Platform Tools 37.0.1 was downloaded from the official Android repository and `adb version` ran successfully. The initial device inventory found no connected phone. `scripts/android-usb.ps1` prepares a localhost-only USB connection and narrowly scoped Expo Go process logs. The USB phone launch, permission dialog, reverse connection, native screen rendering, and log collection remain pending until the phone is connected and authorized. It must not be recorded as a passing integration test yet.
+Google Platform Tools 37.0.1 was downloaded from the official Android repository and `adb version` ran successfully. The initial device inventory found no connected phone. `scripts/android-usb.ps1` prepares a localhost-only USB connection and narrowly scoped Expo Go process logs. At that stage the USB launch and native screen verification were pending.
 
-PowerShell syntax and the missing-device error path passed under Windows PowerShell 5.1. Its read-only HTTP readiness check passed against the existing Metro server. TypeScript and lint passed after the helper was added. An independent review corrected Android launch-timeout reporting and ensured port cleanup still runs if the owned server has already exited. Automatic approval review blocked an optional background-server verification command; that command did not run. After the user reported approving phone USB debugging, ADB still returned zero devices, so a USB cable/mode/driver check is required before native evidence can be collected.
+PowerShell syntax and the missing-device error path passed under Windows PowerShell 5.1. Its read-only HTTP readiness check passed against the existing Metro server. TypeScript and lint passed after the helper was added. An independent review corrected Android launch-timeout reporting and ensured port cleanup still runs if the owned server has already exited. Automatic approval review blocked an optional background-server verification command; that command did not run. During the initial authorization attempts, ADB still returned zero devices.
+
+After the user connected the cable, toggled USB debugging, and approved the computer prompt, ADB detected one authorized **moto g stylus - 2025 running Android 16**. Windows also reported a working ADB interface. Expo Go was installed. The first foreground Metro server bound only to `::1`; a readiness request to `127.0.0.1` failed. Restarting that owned server with Node's `--dns-result-order=ipv4first` bound it to `127.0.0.1`, and `/status` returned `packager-status:running`. The USB helper now includes the same flag.
+
+A targeted `adb reverse --no-rebind tcp:8082 tcp:8082` succeeded. Android accepted the `exp://127.0.0.1:8082` VIEW intent in Expo Go with `Status: ok`. Metro then recorded an Android bundle request (1,536 modules), and the user confirmed **ClearPath home screen** on the phone. No computer bundle probe was issued during this run. Automatic approval review had blocked an earlier combined USB setup/restart command; the successful launch used separate setup and VIEW commands without force-stopping Expo Go.
+
+This verifies USB transport and physical Android home-screen startup in Expo Go. The helper's hidden background-process lifecycle has not been exercised end to end, and maps, GPS permission behavior, dialer confirmation, offline binary startup, accessibility, and the remaining checklist below still need device verification. No native ClearPath binary was compiled or installed in this run.
+
+TypeScript, Expo lint, and USB launcher PowerShell syntax checks passed after the IPv4 launcher correction.
 
 Record phone model, OS version, build identifier, date, steps, and result for each run. Test an Android phone and an iPhone where available; include a smaller screen and the largest accessibility font size.
 
@@ -75,7 +83,7 @@ Run each flow and adjust platform-specific dialogs if needed. The emergency flow
 
 ## Known limits and issues
 
-- No device/simulator evidence yet. JavaScript export checks module bundling; it does not compile native projects or validate map keys and runtime permissions.
+- Physical Android home-screen startup through USB is confirmed. Complete native acceptance checks and iOS/simulator verification remain pending. JavaScript export does not compile native projects or validate map keys and runtime permissions.
 - NWS availability, incomplete warning geometry, and cached data freshness limit what can be verified. The app must retain explicit provenance and verification states.
 - Nearby USGS observations and student relevance/priority logic await their recorded milestone; their tests are pending.
 - Dependency audit on October 9 reported **65 findings: 49 high and 16 moderate**. Most entries are propagated through Expo/Metro/Jest tooling from five underlying advisories. Compatible nonbreaking remediation was not available for all of them. The audit's suggested forced upgrades/downgrades conflict with SDK 57 compatibility. These findings remain unresolved and require upstream review before a production release; they are not a clean security result.
