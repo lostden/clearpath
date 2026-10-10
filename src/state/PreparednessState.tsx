@@ -56,6 +56,8 @@ type PreparationState = {
   ready: boolean;
   saveStatus: "loading" | "saving" | "saved" | "session";
   storageError: string | null;
+  canRetrySave: boolean;
+  retrySave: () => void;
   update: (change: Partial<SavedPreparation>) => void;
   toggle: (id: string) => void;
 };
@@ -65,10 +67,13 @@ export function PreparednessProvider({ children }: PropsWithChildren) {
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState<PreparationState["saveStatus"]>("loading");
   const [storageError, setStorageError] = useState<string | null>(null);
+  const [canRetrySave, setCanRetrySave] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const writeQueue = useRef(Promise.resolve());
   const readFailed = useRef(false);
   const revision = useRef(0);
   const latestWrite = useRef(0);
+  const failedWrite = useRef<{ version: number; write: number } | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
     let cancelled = false;
@@ -101,10 +106,15 @@ export function PreparednessProvider({ children }: PropsWithChildren) {
     if (!ready || readFailed.current || revision.current === 0) return;
     const version = revision.current;
     const write = ++latestWrite.current;
+    failedWrite.current = null;
+    setCanRetrySave(false);
     setSaveStatus("saving");
     const task = writeQueue.current
       .catch(() => {})
-      .then(() => AsyncStorage.setItem(key, JSON.stringify(saved)));
+      .then(() => {
+        if (!mounted.current) return;
+        return AsyncStorage.setItem(key, JSON.stringify(saved));
+      });
     // Keep writes ordered while allowing a later edit to retry a failed write.
     writeQueue.current = task.catch(() => {});
     const isLatest = () => mounted.current && version === revision.current && write === latestWrite.current;
@@ -112,18 +122,34 @@ export function PreparednessProvider({ children }: PropsWithChildren) {
       if (!isLatest()) return;
       setStorageError(null);
       setSaveStatus("saved");
+      setCanRetrySave(false);
     }, () => {
       if (!isLatest()) return;
+      failedWrite.current = { version, write };
       setSaveStatus("session");
+      setCanRetrySave(true);
       setStorageError(
         "Changes are available this session, but could not be saved on this device.",
       );
     });
-  }, [saved, ready]);
+  }, [saved, ready, retryAttempt]);
+  const retrySave = useCallback(() => {
+    const failed = failedWrite.current;
+    if (!mounted.current || !ready || readFailed.current || !failed ||
+        failed.version !== revision.current || failed.write !== latestWrite.current) return;
+    // Claim the failed revision synchronously: repeated presses, including a
+    // retained callback from an earlier render, cannot enqueue duplicate retries.
+    failedWrite.current = null;
+    setCanRetrySave(false);
+    setSaveStatus("saving");
+    setRetryAttempt((attempt) => attempt + 1);
+  }, [ready]);
   const edited = useCallback(() => {
     // Advance immediately, before React commits the new value, so an older
     // completion cannot claim that the newly edited preparation was saved.
     revision.current += 1;
+    failedWrite.current = null;
+    setCanRetrySave(false);
     setSaveStatus(readFailed.current ? "session" : ready ? "saving" : "loading");
   }, [ready]);
   const value = useMemo(
@@ -132,6 +158,8 @@ export function PreparednessProvider({ children }: PropsWithChildren) {
       ready,
       saveStatus,
       storageError,
+      canRetrySave,
+      retrySave,
       update: (change: Partial<SavedPreparation>) => {
         edited();
         setSaved((old) => ({ ...old, ...change }));
@@ -144,7 +172,7 @@ export function PreparednessProvider({ children }: PropsWithChildren) {
         }));
       },
     }),
-    [edited, saved, ready, saveStatus, storageError],
+    [canRetrySave, edited, retrySave, saved, ready, saveStatus, storageError],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

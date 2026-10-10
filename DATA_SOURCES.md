@@ -50,7 +50,7 @@ Metadata describes five-minute service refresh and possible publication delay, n
 
 The implemented adapter reads `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson`, the official worldwide past-day earthquake feed, which USGS updates every minute. ClearPath polls at most once per minute when the live earthquake layer is enabled, Map is focused, and the app is foregrounded and connected. It displays earthquake points without treating them as a prediction or a local impact assessment. [Official GeoJSON feed documentation](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php).
 
-Preserve event identity, actual event/update times, reported magnitude (including unknown), depth, source page, and review status. The feed's generation time is separate from app retrieval time. Invalid or partially unverifiable collections must not become a verified empty result; non-earthquake event types are excluded. Cached events that age beyond 24 hours leave the displayed past-day window.
+Preserve event identity, actual event/update times, reported magnitude (including unknown), depth, source page, and review status. The feed's generation time is separate from app retrieval time; both appear with explicit labels in Map and earthquake details. Retrieval requires provider metadata status 200 and a nonnegative safe-integer count matching the raw feature array before event-type, time-window or duplicate filtering. Invalid or partially unverifiable collections must not become a verified empty result; non-earthquake event types are excluded. Cached events that age beyond 24 hours leave the displayed past-day window.
 
 ## USGS: nearby Texas river observations
 
@@ -67,7 +67,7 @@ USGS continuous sensors often sample at 15-minute intervals, but collection/tran
 
 A gauge measures a station, not conditions at the user's precise point. Gage height is relative to the station's reference, not floodwater depth at a road/home. Flood-stage labels require verified station-specific official thresholds and datum interpretation; no flood-stage or trend inference is implemented. Streamflow does not establish passable roads or evacuation-route safety.
 
-Both USGS layers distinguish source observation/event time, source feed-generation time where supplied, and successful app retrieval time. Retained data becomes cached after errors, lost connectivity, or the app freshness boundary; retrieval time is never advanced by a failed request. Earthquakes use a 90-second snapshot/feed-generation boundary and rivers a ten-minute snapshot boundary. Those source states describe verification freshness, not personalized hazard severity. The original milestone 5 student engine remains unimplemented.
+Both USGS layers distinguish source observation/event time, source feed-generation time where supplied, and successful app retrieval time. Retained data becomes cached after errors, lost connectivity, or the app freshness boundary; retrieval time is never advanced by a failed request. A detail opened from cached/unavailable data cannot gain a verified label solely from reconnecting. A retained live selection becomes cached if its source, copy times or selected record no longer match the current layer. Earthquakes use a 90-second snapshot/feed-generation boundary and rivers a ten-minute snapshot boundary. Those source states describe verification freshness, not personalized hazard severity. The original milestone 5 student engine remains unimplemented.
 
 ## Roads and navigation
 

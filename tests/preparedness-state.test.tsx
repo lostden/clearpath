@@ -102,9 +102,11 @@ test("does not overwrite unreadable saved data and explains the storage failure"
     "Saved preparation could not be loaded. Existing storage will not be overwritten.",
   );
   expect(hook.result.current.saveStatus).toBe("session");
+  expect(hook.result.current.canRetrySave).toBe(false);
   await act(() => {
     hook.result.current.toggle("water");
     hook.result.current.update({ meetingPlace: "Session-only meeting point" });
+    hook.result.current.retrySave();
   });
   expect(hook.result.current.saved.checked.water).toBe(true);
   expect(hook.result.current.saved.meetingPlace).toBe("Session-only meeting point");
@@ -141,6 +143,9 @@ test("loading saved preparation is distinct from a completed local save", async 
   const hook = await renderHook(() => usePreparation(), { wrapper: PreparednessProvider });
   expect(hook.result.current.ready).toBe(false);
   expect(hook.result.current.saveStatus).toBe("loading");
+  expect(hook.result.current.canRetrySave).toBe(false);
+  await act(() => hook.result.current.retrySave());
+  expect(AsyncStorage.setItem).not.toHaveBeenCalled();
   await act(() => finishRead(JSON.stringify(saved)));
   await waitFor(() => expect(hook.result.current.saveStatus).toBe("saved"));
   expect(hook.result.current.ready).toBe(true);
@@ -161,6 +166,115 @@ test("a delayed write stays saving until that latest revision is actually writte
   await act(() => pending.resolve());
   expect(hook.result.current.saveStatus).toBe("saved");
   expect(hook.result.current.storageError).toBeNull();
+});
+
+test("explicit retry saves unchanged latest kit, plan and contact contents once despite duplicate taps", async () => {
+  const hook = await renderHook(() => usePreparation(), { wrapper: PreparednessProvider });
+  await waitFor(() => expect(hook.result.current.ready).toBe(true));
+  const retry = deferred();
+  const writes = jest.spyOn(AsyncStorage, "setItem")
+    .mockRejectedValueOnce(new Error("Storage full"))
+    .mockReturnValueOnce(retry.promise);
+  await act(() => hook.result.current.update(saved));
+  expect(hook.result.current.canRetrySave).toBe(true);
+  const retrySave = hook.result.current.retrySave;
+  await act(() => { retrySave(); retrySave(); });
+  expect(hook.result.current.canRetrySave).toBe(false);
+  expect(hook.result.current.saveStatus).toBe("saving");
+  expect(writes).toHaveBeenCalledTimes(2);
+  expect(writes.mock.calls[1]).toEqual(writes.mock.calls[0]);
+  expect(JSON.parse(writes.mock.calls[1][1])).toEqual(saved);
+  expect(hook.result.current.saved).toEqual(saved);
+  await act(() => retry.resolve());
+  expect(hook.result.current.saveStatus).toBe("saved");
+  expect(hook.result.current.storageError).toBeNull();
+  expect(hook.result.current.canRetrySave).toBe(false);
+  await act(() => retrySave());
+  expect(writes).toHaveBeenCalledTimes(2);
+});
+
+test("retry failure remains session-only and permits another deliberate attempt without auto retries", async () => {
+  const hook = await renderHook(() => usePreparation(), { wrapper: PreparednessProvider });
+  await waitFor(() => expect(hook.result.current.ready).toBe(true));
+  const writes = jest.spyOn(AsyncStorage, "setItem").mockRejectedValue(new Error("Storage full"));
+  await act(() => hook.result.current.update({ meetingPlace: "Keep this unchanged" }));
+  await act(() => hook.result.current.retrySave());
+  expect(writes).toHaveBeenCalledTimes(2);
+  expect(hook.result.current.saveStatus).toBe("session");
+  expect(hook.result.current.canRetrySave).toBe(true);
+  expect(hook.result.current.saved.meetingPlace).toBe("Keep this unchanged");
+  writes.mockImplementation(defaultWrite);
+  await act(() => hook.result.current.retrySave());
+  expect(writes).toHaveBeenCalledTimes(3);
+  expect(hook.result.current.saveStatus).toBe("saved");
+  expect(JSON.parse((await AsyncStorage.getItem(storageKey))!).meetingPlace).toBe("Keep this unchanged");
+});
+
+test.each(["resolve", "reject"] as const)("a newer edit during a retry wins when the older retry %ss", async (completion) => {
+  const hook = await renderHook(() => usePreparation(), { wrapper: PreparednessProvider });
+  await waitFor(() => expect(hook.result.current.ready).toBe(true));
+  const retry = deferred(); const latest = deferred();
+  const writes = jest.spyOn(AsyncStorage, "setItem")
+    .mockRejectedValueOnce(new Error("First save failed"))
+    .mockReturnValueOnce(retry.promise)
+    .mockReturnValueOnce(latest.promise);
+  await act(() => hook.result.current.update(saved));
+  const oldRetry = hook.result.current.retrySave;
+  await act(() => oldRetry());
+  await act(() => hook.result.current.update({ meetingPlace: "Newer point" }));
+  await act(() => oldRetry());
+  expect(writes).toHaveBeenCalledTimes(2);
+  await act(() => { if (completion === "resolve") retry.resolve(); else retry.reject(new Error("Old retry failed")); });
+  expect(writes).toHaveBeenCalledTimes(3);
+  expect(hook.result.current.saveStatus).toBe("saving");
+  expect(hook.result.current.canRetrySave).toBe(false);
+  expect(JSON.parse(writes.mock.calls[2][1])).toEqual({ ...saved, meetingPlace: "Newer point" });
+  await act(() => latest.resolve());
+  expect(hook.result.current.saveStatus).toBe("saved");
+  expect(hook.result.current.storageError).toBeNull();
+  expect(hook.result.current.saved.meetingPlace).toBe("Newer point");
+});
+
+test("a retained retry callback cannot act after a newer edit invalidates its failed revision", async () => {
+  const hook = await renderHook(() => usePreparation(), { wrapper: PreparednessProvider });
+  await waitFor(() => expect(hook.result.current.ready).toBe(true));
+  const latest = deferred();
+  const writes = jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("Failed"))
+    .mockReturnValueOnce(latest.promise);
+  await act(() => hook.result.current.toggle("water"));
+  const retrySave = hook.result.current.retrySave;
+  await act(() => { hook.result.current.toggle("radio"); retrySave(); });
+  expect(writes).toHaveBeenCalledTimes(2);
+  expect(hook.result.current.canRetrySave).toBe(false);
+  expect(JSON.parse(writes.mock.calls[1][1]).checked).toEqual({ water: true, radio: true });
+  await act(() => latest.resolve());
+});
+
+test("a failed storage read never enables retries or permits overwrite after session edits", async () => {
+  jest.spyOn(AsyncStorage, "getItem").mockRejectedValueOnce(new Error("Device read failed"));
+  const writes = jest.spyOn(AsyncStorage, "setItem");
+  const hook = await renderHook(() => usePreparation(), { wrapper: PreparednessProvider });
+  await waitFor(() => expect(hook.result.current.ready).toBe(true));
+  expect(hook.result.current.canRetrySave).toBe(false);
+  await act(() => { hook.result.current.update(saved); hook.result.current.retrySave(); });
+  expect(hook.result.current.saveStatus).toBe("session");
+  expect(hook.result.current.canRetrySave).toBe(false);
+  expect(writes).not.toHaveBeenCalled();
+});
+
+test("unmount guards retained retry callbacks and queued writes behind an in-flight retry", async () => {
+  const hook = await renderHook(() => usePreparation(), { wrapper: PreparednessProvider });
+  await waitFor(() => expect(hook.result.current.ready).toBe(true));
+  const retry = deferred();
+  const writes = jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("Failed"))
+    .mockReturnValueOnce(retry.promise);
+  await act(() => hook.result.current.update(saved));
+  const retrySave = hook.result.current.retrySave;
+  await act(() => retrySave());
+  await act(() => hook.result.current.update({ meetingPlace: "Queued change" }));
+  await hook.unmount();
+  await act(() => { retry.resolve(); retrySave(); });
+  expect(writes).toHaveBeenCalledTimes(2);
 });
 
 test("multiple edits serialize writes and older completions cannot finish the newest save", async () => {

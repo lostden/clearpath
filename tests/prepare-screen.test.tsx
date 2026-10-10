@@ -143,3 +143,52 @@ test("saved contact and resource dialers require deliberate section and confirma
   expect(Linking.openURL).toHaveBeenCalledTimes(1);
   expect(Linking.openURL).toHaveBeenCalledWith("tel:211");
 });
+
+test("local write failure offers a deliberate retry and saving/saved feedback without changing the plan", async () => {
+  const screen = await preparation();
+  await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
+  expect(screen.queryByRole("button", { name: "Retry local save" })).toBeNull();
+  let finishRetry!: () => void;
+  const retry = new Promise<void>((resolve) => { finishRetry = resolve; });
+  const writes = jest.spyOn(AsyncStorage, "setItem").mockRejectedValueOnce(new Error("Storage full"))
+    .mockReturnValueOnce(retry);
+  await fireEvent.press(screen.getByRole("button", { name: "Show family plan" }));
+  await fireEvent.changeText(screen.getByLabelText("Family meeting place"), "Keep this meeting point");
+  await waitFor(() => expect(screen.getByText("SESSION ONLY / CHANGES NOT SAVED")).toBeTruthy());
+  await fireEvent.press(screen.getByRole("button", { name: "Retry local save" }));
+  expect(screen.getByText("LOCAL COPY / SAVING")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Retry local save" })).toBeNull();
+  expect(writes).toHaveBeenCalledTimes(2);
+  expect(writes.mock.calls[1]).toEqual(writes.mock.calls[0]);
+  expect(screen.getByLabelText("Family meeting place").props.value).toBe("Keep this meeting point");
+  await act(() => finishRetry());
+  expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy();
+  expect(screen.queryByText(/could not be saved on this device/)).toBeNull();
+  expect(screen.queryByRole("button", { name: "Retry local save" })).toBeNull();
+  expect(Linking.openURL).not.toHaveBeenCalled();
+});
+
+test("retry remains available after a repeated write failure", async () => {
+  const screen = await preparation();
+  await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
+  const writes = jest.spyOn(AsyncStorage, "setItem").mockRejectedValue(new Error("Storage full"));
+  await fireEvent.press(screen.getByRole("button", { name: "Show emergency kit" }));
+  await fireEvent.press(screen.getByRole("checkbox", { name: "Drinking water" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Retry local save" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Retry local save" })).toBeTruthy());
+  expect(screen.getByText("SESSION ONLY / CHANGES NOT SAVED")).toBeTruthy();
+  expect(screen.getByRole("checkbox", { name: "Drinking water" }).props.accessibilityState.checked).toBe(true);
+  expect(writes).toHaveBeenCalledTimes(2);
+});
+
+test("protected unreadable storage shows its read failure without a retry/overwrite action", async () => {
+  await AsyncStorage.setItem(storageKey, "Unreadable saved preparation");
+  const writes = jest.spyOn(AsyncStorage, "setItem"); writes.mockClear();
+  const screen = await preparation();
+  await waitFor(() => expect(screen.getByText(/Existing storage will not be overwritten/)).toBeTruthy());
+  await fireEvent.press(screen.getByRole("button", { name: "Show emergency kit" }));
+  await fireEvent.press(screen.getByRole("checkbox", { name: "Drinking water" }));
+  expect(screen.queryByRole("button", { name: "Retry local save" })).toBeNull();
+  expect(writes).not.toHaveBeenCalled();
+  expect(await AsyncStorage.getItem(storageKey)).toBe("Unreadable saved preparation");
+});

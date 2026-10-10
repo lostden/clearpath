@@ -1,4 +1,4 @@
-import { normalizeEarthquakes, EARTHQUAKE_WINDOW_MS } from "../src/services/usgsEarthquakes";
+import { getEarthquakes, normalizeEarthquakes, EARTHQUAKE_FEED_URL, EARTHQUAKE_WINDOW_MS } from "../src/services/usgsEarthquakes";
 import { distanceKm, getNearbyRiverGauges, joinRiverObservations, normalizeStations, riverBoundingBox } from "../src/services/usgsRivers";
 import { isRiverObservationDelayed, validObservationTime } from "../src/services/usgsTypes";
 import { fetchJson } from "../src/data/http";
@@ -122,4 +122,67 @@ test("an unexpected pagination origin cannot send requests to third parties", as
   fetchData.mockResolvedValueOnce({ ...collection(), links: [{ rel: "next", href: "https://example.com/private" }] });
   await expect(getNearbyRiverGauges({ latitude: 30.1, longitude: -99.1 })).rejects.toThrow(/unverified pagination/);
   expect(fetchData).toHaveBeenCalledTimes(1);
+});
+
+describe("earthquake summary feed metadata", () => {
+  const feed = (features: unknown[] = [], metadata: Record<string, unknown> = {}) => ({
+    ...collection(...features), metadata: { generated: NOW - 30_000, status: 200, count: features.length, ...metadata },
+  });
+  beforeEach(() => {
+    fetchData.mockReset();
+    jest.spyOn(Date, "now").mockReturnValue(NOW);
+  });
+
+  test("a valid zero count/status produces a verified empty copy with separate generation/retrieval times", async () => {
+    fetchData.mockResolvedValue(feed());
+    const controller = new AbortController();
+    expect(await getEarthquakes(controller.signal)).toMatchObject({
+      items: [], fetchedAt: new Date(NOW).toISOString(), generatedAt: new Date(NOW - 30_000).toISOString(),
+    });
+    expect(fetchData).toHaveBeenCalledWith(EARTHQUAKE_FEED_URL, { signal: controller.signal, headers: { Accept: "application/geo+json" } });
+  });
+
+  test("an HTTP-success payload with failed metadata and missing records cannot publish a false empty", async () => {
+    fetchData.mockResolvedValue(feed([], { status: 500, count: 50 }));
+    await expect(getEarthquakes()).rejects.toMatchObject({ kind: "invalid-response" });
+  });
+
+  test.each([500, 204, "200", null, undefined])("rejects non-success or unverified metadata.status %s", async (status) => {
+    fetchData.mockResolvedValue(feed([], { status }));
+    await expect(getEarthquakes()).rejects.toThrow(/status or record count could not be verified/);
+  });
+
+  test.each([undefined, null, "0", -1, 0.5, Number.MAX_SAFE_INTEGER + 1])("rejects unsafe or non-integer metadata.count %s", async (count) => {
+    fetchData.mockResolvedValue(feed([], { count }));
+    await expect(getEarthquakes()).rejects.toMatchObject({ kind: "invalid-response" });
+  });
+
+  test.each([
+    { features: [], count: 1 },
+    { features: [earthquake()], count: 0 },
+    { features: [earthquake()], count: 2 },
+  ])("rejects count/raw-feature mismatch %j", async ({ features, count }) => {
+    fetchData.mockResolvedValue(feed(features, { count }));
+    await expect(getEarthquakes()).rejects.toMatchObject({ kind: "invalid-response" });
+  });
+
+  test("valid non-earthquake features count toward feed completeness before being excluded", async () => {
+    fetchData.mockResolvedValue(feed([earthquake(), earthquake({ type: "quarry blast" })]));
+    const snapshot = await getEarthquakes();
+    expect(snapshot.items).toHaveLength(1);
+    expect(snapshot.items[0].id).toBe("us-test");
+    fetchData.mockResolvedValue(feed([earthquake({ type: "quarry blast" })]));
+    expect((await getEarthquakes()).items).toEqual([]);
+  });
+
+  test("provider count is checked before window filtering and stable-identity deduplication", async () => {
+    fetchData.mockResolvedValue(feed([
+      earthquake({ time: NOW - EARTHQUAKE_WINDOW_MS - 1 }),
+      earthquake({ mag: 2, updated: NOW - 10_000 }),
+      earthquake({ mag: 2.5 }),
+    ]));
+    const snapshot = await getEarthquakes();
+    expect(snapshot.items).toHaveLength(1);
+    expect(snapshot.items[0].magnitude).toBe(2.5);
+  });
 });

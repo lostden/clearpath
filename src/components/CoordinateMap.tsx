@@ -7,7 +7,7 @@ import { geometryIntersectsRegion, pointInRegion, type MapRegion } from "@/domai
 import { DEMO_DATE_LABEL, DEMO_GAUGE } from "@/data/demo";
 import { ActionButton } from "@/ui/components";
 import { colors, typography } from "@/ui/tokens";
-import { CoordinateArea, CoordinateHitRect } from "./CoordinateTargets";
+import { CoordinateArea, CoordinateAreaGroup, CoordinateHitRect } from "./CoordinateTargets";
 
 const PLOT = { x: 96, y: 26, width: 208, height: 164 };
 const MIN_SPAN = 0.002;
@@ -148,17 +148,20 @@ function CoordinatePlot({
           <Line x1={PLOT.x} x2={PLOT.x + PLOT.width} y1={PLOT.y + PLOT.height * fraction} y2={PLOT.y + PLOT.height * fraction} stroke="#444444" strokeWidth={1} />
         </G>)}
         <G clipPath={`url(#${clip})`}>
-          {drawings.flatMap(({ alert, paths }) => {
+          {drawings.map(({ alert, paths }) => {
             const severe = alert.severity === "Severe" || alert.severity === "Extreme";
             const gray = source === "cached" || source === "unavailable";
-            return paths.map(({ d, polygonIndex, copyIndex }) => <CoordinateArea
-              key={`${alert.id}-${polygonIndex}-${copyIndex}`} testID={`coordinate-area-${alert.id}-${polygonIndex}-${copyIndex}`}
-              d={d}
-              fill={gray ? "rgba(176,176,176,0.20)" : severe ? "rgba(255,90,0,0.24)" : "rgba(255,212,0,0.18)"}
-              stroke={gray ? GRAY : severe ? colors.orange : colors.yellow} strokeWidth={2}
+            return <CoordinateAreaGroup key={alert.id} testID={`coordinate-area-${alert.id}`}
               onActivate={!compact && onSelectAlert ? () => onSelectAlert(alert) : undefined}
-              label={`${sourceLabel(source)} warning area: ${alert.event}`}
-            />);
+              label={`${sourceLabel(source)} warning area: ${alert.event}`}>
+              {paths.map(({ d, polygonIndex, copyIndex }) => <Path
+                key={`${polygonIndex}-${copyIndex}`} testID={`coordinate-area-${alert.id}-${polygonIndex}-${copyIndex}`}
+                d={d}
+                fill={gray ? "rgba(176,176,176,0.20)" : severe ? "rgba(255,90,0,0.24)" : "rgba(255,212,0,0.18)"}
+                stroke={gray ? GRAY : severe ? colors.orange : colors.yellow} strokeWidth={2}
+                fillRule="evenodd" clipRule="evenodd"
+              />)}
+            </CoordinateAreaGroup>;
           })}
           {zoneDrawings.flatMap(({ boundary, paths }) => paths.map(({ d, polygonIndex, copyIndex }) => <Path
             key={`zone-${boundary.url}-${polygonIndex}-${copyIndex}`} testID={`coordinate-zone-${boundary.zoneType}-${boundary.id}-${polygonIndex}-${copyIndex}`}

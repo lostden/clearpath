@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from "react";
 import type { CoordinateAreaProps, CoordinateHitRectProps } from "./CoordinateTargets.types";
+import type { CoordinateAreaGroupProps } from "./CoordinateTargets";
 
 function activationProps(onActivate?: () => void) {
   if (!onActivate) return {};
@@ -17,6 +18,12 @@ function activationProps(onActivate?: () => void) {
 
 // Only DOM SVG attributes reach these elements. The library's web onPress
 // adapter emits native responder props and can replace DOM click handlers.
+export function CoordinateAreaGroup({ testID, label, onActivate, children }: CoordinateAreaGroupProps) {
+  return <g data-testid={testID} aria-label={label} {...activationProps(onActivate)}>
+    {children}
+  </g>;
+}
+
 export function CoordinateArea({
   testID, label, onActivate, d, fill, stroke, strokeWidth,
 }: CoordinateAreaProps) {

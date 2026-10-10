@@ -1,5 +1,17 @@
-import { Path, Rect } from "react-native-svg";
+import type { ReactNode } from "react";
+import { G, Path, Rect } from "react-native-svg";
 import type { CoordinateAreaProps, CoordinateHitRectProps } from "./CoordinateTargets.types";
+
+export type CoordinateAreaGroupProps = Pick<CoordinateAreaProps, "testID" | "label" | "onActivate"> & {
+  children: ReactNode;
+};
+
+/** One warning action; children retain independent fills and holes. */
+export function CoordinateAreaGroup({ testID, label, onActivate, children }: CoordinateAreaGroupProps) {
+  return <G testID={testID} onPress={onActivate} accessible={!!onActivate} accessibilityLabel={label}>
+    {children}
+  </G>;
+}
 
 /** Native SVG touch targets retain the original warning or observation callback. */
 export function CoordinateArea({

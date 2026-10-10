@@ -49,12 +49,18 @@ test("plots outer rings and holes with evenodd and forwards the original warning
   const onSelectAlert = jest.fn();
   const screen = await render(<CoordinateMap point={point} alerts={[warning]} source="live" onSelectAlert={onSelectAlert} />);
   const path = screen.getByTestId(`coordinate-area-${warning.id}-0-0`);
+  const group = screen.getByTestId(`coordinate-area-${warning.id}`);
   expect(path.props.fillRule).toBe("evenodd");
   expect(path.props.clipRule).toBe("evenodd");
   expect(path.props.d.match(/M/g)).toHaveLength(2);
   expect(path.props.d.match(/Z/g)).toHaveLength(2);
-  await fireEvent.press(path);
+  expect(group.props.accessibilityLabel).toBe(`VERIFIED COPY warning area: ${warning.event}`);
+  expect(group.props.accessible).toBe(true);
+  expect(path.props.onPress).toBeUndefined();
+  expect(path.props.accessibilityLabel).toBeUndefined();
+  await fireEvent.press(group);
   expect(onSelectAlert).toHaveBeenCalledWith(warning);
+  expect(onSelectAlert.mock.calls[0][0]).toBe(warning);
   expect(warning.instruction).toBe(officialAlert.instruction);
   expect(screen.getByText("NO BASEMAP / COORDINATE VIEW")).toBeTruthy();
   expect(screen.getByText("SCHEMATIC / NOT NAVIGATION")).toBeTruthy();
@@ -65,6 +71,129 @@ test("MultiPolygon parts retain independent holes and supplied coordinates", asy
   const screen = await render(<CoordinateMap point={point} alerts={[multi]} source="live" />);
   expect(screen.getByTestId(`coordinate-area-${warning.id}-0-0`).props.d.match(/M/g)).toHaveLength(2);
   expect(screen.getByTestId(`coordinate-area-${warning.id}-1-0`).props.d.match(/M/g)).toHaveLength(1);
+});
+
+const overlappingWarning: OfficialAlert = {
+  ...warning,
+  geometry: { type: "MultiPolygon", coordinates: [
+    warning.geometry!.type === "Polygon" ? warning.geometry!.coordinates : [],
+    [
+      [[-99.025, 29.975], [-98.925, 29.975], [-98.925, 30.075], [-99.025, 30.075], [-99.025, 29.975]],
+      [[-98.985, 30.015], [-98.985, 30.035], [-98.965, 30.035], [-98.965, 30.015], [-98.985, 30.015]],
+    ],
+  ] },
+};
+
+test("overlapping filled parts keep independent holes and painting under one warning action", async () => {
+  const onSelectAlert = jest.fn();
+  const screen = await render(<CoordinateMap point={point} initialSpan={0.2} alerts={[overlappingWarning]} source="live" onSelectAlert={onSelectAlert} />);
+  const group = screen.getByTestId(`coordinate-area-${warning.id}`);
+  const first = screen.getByTestId(`coordinate-area-${warning.id}-0-0`);
+  const second = screen.getByTestId(`coordinate-area-${warning.id}-1-0`);
+  // Each part overlaps the other part's hole. Combining the two filled paths
+  // under evenodd would cancel their overlap and change the supplied display.
+  expect(first.props.d).toBe("M148.00 149.00 L252.00 149.00 L252.00 67.00 L148.00 67.00 L148.00 149.00 Z M189.60 116.20 L189.60 99.80 L210.40 99.80 L210.40 116.20 L189.60 116.20 Z");
+  expect(second.props.d).toBe("M174.00 128.50 L278.00 128.50 L278.00 46.50 L174.00 46.50 L174.00 128.50 Z M215.60 95.70 L215.60 79.30 L236.40 79.30 L236.40 95.70 L215.60 95.70 Z");
+  expect(screen.getAllByLabelText(`VERIFIED COPY warning area: ${warning.event}`)).toHaveLength(1);
+  expect(group.props.accessible).toBe(true);
+  expect(group.props.d).toBeUndefined();
+  for (const path of [first, second]) {
+    expect(path.props.fill).toBe("rgba(255,90,0,0.24)");
+    expect(path.props.fillRule).toBe("evenodd");
+    expect(path.props.clipRule).toBe("evenodd");
+    expect(path.props.onPress).toBeUndefined();
+    expect(path.props.accessibilityLabel).toBeUndefined();
+    expect(path.props.accessible).toBeUndefined();
+    await fireEvent.press(path);
+  }
+  expect(onSelectAlert).toHaveBeenCalledTimes(2);
+  expect(onSelectAlert.mock.calls[0][0]).toBe(overlappingWarning);
+  expect(onSelectAlert.mock.calls[1][0]).toBe(overlappingWarning);
+  expect(screen.queryByText(/mapped warning record.*outside/)).toBeNull();
+});
+
+test.each([
+  ["live", "VERIFIED COPY"],
+  ["cached", "CACHED / UNVERIFIED"],
+  ["demo", "SIMULATED"],
+  ["unavailable", "DATA UNAVAILABLE"],
+] as const)("%s multipart warnings expose one named group with original selection", async (source, label) => {
+  const onSelectAlert = jest.fn();
+  const record = source === "demo" ? { ...overlappingWarning, sourceUrl: null } : overlappingWarning;
+  const screen = await render(<CoordinateMap point={point} initialSpan={0.2} alerts={[record]} source={source} onSelectAlert={onSelectAlert} />);
+  const group = screen.getByLabelText(`${label} warning area: ${warning.event}`);
+  expect(screen.getAllByLabelText(`${label} warning area: ${warning.event}`)).toHaveLength(1);
+  expect(group.props.testID).toBe(`coordinate-area-${record.id}`);
+  await fireEvent.press(group);
+  expect(onSelectAlert).toHaveBeenCalledTimes(1);
+  expect(onSelectAlert.mock.calls[0][0]).toBe(record);
+  const fill = source === "cached" || source === "unavailable" ? "rgba(176,176,176,0.20)" : "rgba(255,90,0,0.24)";
+  for (const part of [0, 1]) expect(screen.getByTestId(`coordinate-area-${record.id}-${part}-0`).props.fill).toBe(fill);
+});
+
+test("distinct warning groups preserve per-record culling and never draw missing geometry", async () => {
+  const second = { ...warning, id: "second-warning", event: "Second warning" };
+  const outside: OfficialAlert = { ...warning, id: "outside-warning", geometry: { type: "Polygon", coordinates: [
+    [[-98, 30], [-97.9, 30], [-97.9, 30.1], [-98, 30]],
+  ] } };
+  const unmapped = { ...warning, id: "unmapped-warning", geometry: null };
+  const onSelectAlert = jest.fn();
+  const screen = await render(<CoordinateMap point={point} initialSpan={0.2} alerts={[overlappingWarning, second, outside, unmapped]} source="cached" zoneBoundaries={[zone]} onSelectAlert={onSelectAlert} />);
+  expect(screen.getByTestId(`coordinate-area-${warning.id}`)).toBeTruthy();
+  const secondGroup = screen.getByTestId(`coordinate-area-${second.id}`);
+  expect(screen.queryByTestId(`coordinate-area-${outside.id}`)).toBeNull();
+  expect(screen.queryByTestId(`coordinate-area-${unmapped.id}`)).toBeNull();
+  expect(screen.getByText("1 mapped warning record is outside this view. Zoom out to inspect.")).toBeTruthy();
+  await fireEvent.press(secondGroup);
+  expect(onSelectAlert).toHaveBeenCalledTimes(1);
+  expect(onSelectAlert.mock.calls[0][0]).toBe(second);
+  const zonePath = screen.getByTestId("coordinate-zone-forecast-TXZ173-0-0");
+  expect(zonePath.props.fill).toBe("none");
+  expect(zonePath.props.stroke).toBe("#FFFFFF");
+  expect(zonePath.props.onPress).toBeUndefined();
+});
+
+test("dateline edge copies keep separate filled paths and holes under one warning group", async () => {
+  const crossing: OfficialAlert = { ...warning, geometry: { type: "Polygon", coordinates: [
+    [[179, -1], [-179, -1], [-179, 1], [179, 1], [179, -1]],
+    [[179.5, -0.5], [179.5, 0.5], [-179.5, 0.5], [-179.5, -0.5], [179.5, -0.5]],
+  ] } };
+  const onSelectAlert = jest.fn();
+  const screen = await render(<CoordinateMap point={{ latitude: 0, longitude: 0 }} initialSpan={360} alerts={[crossing]} source="live" onSelectAlert={onSelectAlert} />);
+  const group = screen.getByTestId(`coordinate-area-${warning.id}`);
+  const left = screen.getByTestId(`coordinate-area-${warning.id}-0-0`);
+  const right = screen.getByTestId(`coordinate-area-${warning.id}-0-1`);
+  expect(left.props.d).toBe("M95.42 108.91 L96.58 108.91 L96.58 107.09 L95.42 107.09 L95.42 108.91 Z M95.71 108.46 L95.71 107.54 L96.29 107.54 L96.29 108.46 L95.71 108.46 Z");
+  expect(right.props.d).toBe("M303.42 108.91 L304.58 108.91 L304.58 107.09 L303.42 107.09 L303.42 108.91 Z M303.71 108.46 L303.71 107.54 L304.29 107.54 L304.29 108.46 L303.71 108.46 Z");
+  expect(screen.getAllByLabelText(`VERIFIED COPY warning area: ${warning.event}`)).toHaveLength(1);
+  for (const path of [left, right]) {
+    expect(path.props.onPress).toBeUndefined();
+    expect(path.props.fillRule).toBe("evenodd");
+    expect(path.props.d.match(/M/g)).toHaveLength(2);
+    expect(path.props.d.match(/Z/g)).toHaveLength(2);
+  }
+  await fireEvent.press(group);
+  expect(onSelectAlert.mock.calls[0][0]).toBe(crossing);
+  expect(screen.queryByText(/mapped warning record.*outside/)).toBeNull();
+  await screen.rerender(<CoordinateMap point={{ latitude: 0, longitude: 90 }} initialSpan={4} alerts={[crossing]} source="live" onSelectAlert={onSelectAlert} />);
+  expect(screen.queryByTestId(`coordinate-area-${warning.id}`)).toBeNull();
+  expect(screen.getByText("1 mapped warning record is outside this view. Zoom out to inspect.")).toBeTruthy();
+});
+
+test("compact multipart warning groups and all filled children remain static", async () => {
+  const onSelectAlert = jest.fn();
+  const screen = await render(<CoordinateMap point={point} initialSpan={0.2} alerts={[overlappingWarning]} source="live" compact onSelectAlert={onSelectAlert} />);
+  const group = screen.getByTestId(`coordinate-area-${warning.id}`);
+  expect(group.props.onPress).toBeUndefined();
+  expect(group.props.accessible).toBe(false);
+  for (const part of [0, 1]) {
+    const path = screen.getByTestId(`coordinate-area-${warning.id}-${part}-0`);
+    expect(path.props.fillRule).toBe("evenodd");
+    expect(path.props.onPress).toBeUndefined();
+    await fireEvent.press(path);
+  }
+  expect(onSelectAlert).not.toHaveBeenCalled();
+  expect(screen.queryAllByRole("button")).toHaveLength(0);
 });
 
 test("cached fills and outlines are gray and USGS provenance stays separate from NWS", async () => {
@@ -120,6 +249,8 @@ test("compact mode contains no nested buttons or interactive shapes", async () =
   const callback = jest.fn();
   const screen = await render(<CoordinateMap point={point} alerts={[warning]} source="live" compact showGauges rivers={[river]} riverSource="live" onSelectAlert={callback} onSelectRiver={callback} />);
   expect(screen.queryAllByRole("button")).toHaveLength(0);
+  expect(screen.getByTestId(`coordinate-area-${warning.id}`).props.onPress).toBeUndefined();
+  expect(screen.getByTestId(`coordinate-area-${warning.id}`).props.accessible).toBe(false);
   expect(screen.getByTestId(`coordinate-area-${warning.id}-0-0`).props.onPress).toBeUndefined();
   expect(screen.getByTestId(`coordinate-river-hit-${river.id}`).props.onPress).toBeUndefined();
   expect(screen.queryByTestId("coordinate-view-center")).toBeNull();

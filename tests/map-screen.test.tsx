@@ -48,6 +48,7 @@ jest.mock("../src/components/HazardDetail", () => {
   const React = jest.requireActual<typeof import("react")>("react");
   const { View } = jest.requireActual<typeof import("react-native")>("react-native");
   return {
+    ...jest.requireActual("../src/components/HazardDetail"),
     HazardDetail: (props: import("react").ComponentProps<typeof import("../src/components/HazardDetail").HazardDetail>) =>
       React.createElement(View, { ...props, testID: "hazard-detail" }),
   };
@@ -197,8 +198,19 @@ test("regional records remain separate from selected-point alerts and each offic
     ["RIVERS / CACHED · UNVERIFIED", riverTime],
   ]) {
     const container = screen.getByText(stamp).parent!;
-    expect(within(container).getByText(new Date(timestamp).toLocaleString())).toBeTruthy();
+    expect(within(container).getByText(`Retrieved: ${new Date(timestamp).toLocaleString()}`)).toBeTruthy();
   }
+});
+
+test("a newly retrieved old earthquake copy shows the original feed-generation time beside its cached status", async () => {
+  const oldGeneration = new Date(TEST_NOW - 60 * 60_000).toISOString();
+  const recentRetrieval = new Date(TEST_NOW - 10_000).toISOString();
+  layers.earthquakes = { ...layers.earthquakes, source: "cached", generatedAt: oldGeneration, fetchedAt: recentRetrieval };
+  const screen = await render(<MapScreen />);
+  const stamp = within(screen.getByText("EARTHQUAKES / CACHED · UNVERIFIED").parent!);
+  expect(stamp.getByText(`Retrieved: ${new Date(recentRetrieval).toLocaleString()}`)).toBeTruthy();
+  expect(stamp.getByText(`Feed generated: ${new Date(oldGeneration).toLocaleString()}`)).toBeTruthy();
+  expect(stamp.queryByText(`Feed generated: ${new Date(recentRetrieval).toLocaleString()}`)).toBeNull();
 });
 
 test("manual mode stays visible and is passed independently from enabled map layers", async () => {
@@ -245,6 +257,86 @@ test("a warning selection captures regional provenance and becomes cached when a
   await screen.rerender(<MapScreen />);
   expect(screen.getByTestId("alert-detail").props).toMatchObject({ alert: regionalWarning, source: "cached", fetchedAt: regionalTime });
   expect(mapProps(screen).alerts).toEqual([]);
+});
+
+test.each(["earthquake", "river"] as const)(
+  "a %s detail opened from a cached copy stays cached after a manual-mode reconnect without retrieval",
+  async (kind) => {
+    feedPreferences.mockReturnValue({ automatic: false, ready: true, storageError: null, setAutomatic: jest.fn() });
+    feed = { ...feed, offline: true };
+    layers = {
+      earthquakes: { ...layers.earthquakes, source: "cached" },
+      rivers: { ...layers.rivers, source: "cached" },
+    };
+    const screen = await render(<MapScreen />);
+    if (kind === "earthquake") await act(() => mapProps(screen).onSelectEarthquake?.(quake));
+    else await act(() => mapProps(screen).onSelectRiver?.(river));
+    const original = screen.getByTestId("hazard-detail").props.selection;
+    expect(original).toMatchObject({
+      kind, source: "cached", fetchedAt: kind === "earthquake" ? earthquakeTime : riverTime,
+      generatedAt: kind === "earthquake" ? earthquakeTime : null,
+    });
+    expect(screen.getByTestId("hazard-detail").props.source).toBe("cached");
+
+    feed = { ...feed, offline: false };
+    layers = {
+      earthquakes: { ...layers.earthquakes, source: "live" },
+      rivers: { ...layers.rivers, source: "live" },
+    };
+    await screen.rerender(<MapScreen />);
+    expect(screen.getByTestId("hazard-detail").props).toMatchObject({ source: "cached", selection: original });
+    expect(layers.earthquakes.refresh).not.toHaveBeenCalled();
+    expect(layers.rivers.refresh).not.toHaveBeenCalled();
+  },
+);
+
+test.each(["earthquake", "river"] as const)(
+  "an opened live %s copy keeps its original values and becomes cached after aging, removal or replacement",
+  async (kind) => {
+    layers.rivers = { ...layers.rivers, source: "live" };
+    const screen = await render(<MapScreen />);
+    await fireEvent.press(screen.getByRole("button", { name: kind === "earthquake" ? "Read earthquake USGS test epicenter" : "Read river station USGS test station" }));
+    const original = screen.getByTestId("hazard-detail").props.selection;
+    expect(original).toMatchObject({
+      kind, source: "live", fetchedAt: kind === "earthquake" ? earthquakeTime : riverTime,
+      generatedAt: kind === "earthquake" ? earthquakeTime : null,
+    });
+    expect(screen.getByTestId("hazard-detail").props.source).toBe("live");
+    const key = kind === "earthquake" ? "earthquakes" : "rivers";
+
+    layers = { ...layers, [key]: { ...layers[key], source: "cached" } };
+    await screen.rerender(<MapScreen />);
+    expect(screen.getByTestId("hazard-detail").props).toMatchObject({ source: "cached", selection: original });
+
+    layers = { ...layers, [key]: { ...layers[key], source: "live", items: [] } };
+    await screen.rerender(<MapScreen />);
+    expect(screen.getByTestId("hazard-detail").props).toMatchObject({ source: "cached", selection: original });
+
+    layers = { ...layers, [key]: { ...layers[key], fetchedAt: new Date(TEST_NOW).toISOString(), items: kind === "earthquake" ? [quake] : [river] } };
+    await screen.rerender(<MapScreen />);
+    expect(screen.getByTestId("hazard-detail").props).toMatchObject({ source: "cached", selection: original });
+  },
+);
+
+test("a selected observation only follows its own river or earthquake copy", async () => {
+  layers.rivers = { ...layers.rivers, source: "live", fetchedAt: earthquakeTime };
+  const screen = await render(<MapScreen />);
+  await act(() => mapProps(screen).onSelectEarthquake?.(quake));
+  layers.rivers = { ...layers.rivers, source: "cached", items: [] };
+  await screen.rerender(<MapScreen />);
+  expect(screen.getByTestId("hazard-detail").props.source).toBe("live");
+  layers.earthquakes = { ...layers.earthquakes, source: "cached", items: [] };
+  await screen.rerender(<MapScreen />);
+  expect(screen.getByTestId("hazard-detail").props.source).toBe("cached");
+
+  layers.rivers = { ...layers.rivers, source: "live", items: [river] };
+  await screen.rerender(<MapScreen />);
+  await act(() => mapProps(screen).onSelectRiver?.(river));
+  expect(screen.getByTestId("hazard-detail").props.source).toBe("live");
+  layers.earthquakes = { ...layers.earthquakes, source: "live", items: [quake] };
+  layers.rivers = { ...layers.rivers, source: "cached" };
+  await screen.rerender(<MapScreen />);
+  expect(screen.getByTestId("hazard-detail").props.source).toBe("cached");
 });
 
 test("layer switches independently disable queries and visible overlays; refresh actions target their own layer", async () => {

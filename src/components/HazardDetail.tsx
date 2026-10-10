@@ -6,15 +6,56 @@ import type { OfficialEarthquake, RiverGauge, RiverMeasurement } from "@/service
 import { isRiverObservationDelayed } from "@/services/usgsTypes";
 import { magnitudeLabel } from "@/ui/format";
 
+type HazardSource = "live" | "cached" | "unavailable";
+type HazardCopy<T> = {
+  items: readonly T[];
+  source: HazardSource;
+  fetchedAt: string | null;
+  generatedAt: string | null;
+};
 export type HazardSelection = {
+  source: HazardSource;
+  fetchedAt: string | null;
+  generatedAt: string | null;
+} & ({
   kind: "earthquake";
   item: OfficialEarthquake;
-  fetchedAt: string | null;
 } | {
   kind: "river";
   item: RiverGauge;
-  fetchedAt: string | null;
-};
+});
+
+function sameReading(a: RiverMeasurement | null, b: RiverMeasurement | null): boolean {
+  return a === null || b === null ? a === b : a.observedAt === b.observedAt &&
+    a.value === b.value && a.displayValue === b.displayValue && a.units === b.units &&
+    a.approvalStatus === b.approvalStatus && a.qualifier === b.qualifier;
+}
+function sameStation(a: RiverGauge, b: RiverGauge): boolean {
+  return a.id === b.id && a.name === b.name && a.sourceUrl === b.sourceUrl &&
+    a.coordinates.latitude === b.coordinates.latitude && a.coordinates.longitude === b.coordinates.longitude &&
+    a.distanceKm === b.distanceKm && sameReading(a.gageHeight, b.gageHeight) && sameReading(a.streamflow, b.streamflow);
+}
+function sameEarthquake(a: OfficialEarthquake, b: OfficialEarthquake): boolean {
+  return a.id === b.id && a.name === b.name && a.sourceUrl === b.sourceUrl &&
+    a.coordinates.latitude === b.coordinates.latitude && a.coordinates.longitude === b.coordinates.longitude &&
+    a.observedAt === b.observedAt && a.updatedAt === b.updatedAt && a.magnitude === b.magnitude &&
+    a.depthKm === b.depthKm && a.reviewStatus === b.reviewStatus;
+}
+
+/** Reconnection cannot upgrade a detail opened from an unverified copy. */
+export function hazardDetailSource(selection: HazardSelection | null, layers: {
+  earthquakes: HazardCopy<OfficialEarthquake>;
+  rivers: HazardCopy<RiverGauge>;
+}): "live" | "cached" {
+  if (!selection || selection.source !== "live" || !selection.fetchedAt) return "cached";
+  const current = selection.kind === "earthquake" ? layers.earthquakes : layers.rivers;
+  if (current.source !== "live" || current.fetchedAt !== selection.fetchedAt || current.generatedAt !== selection.generatedAt)
+    return "cached";
+  const included = selection.kind === "earthquake"
+    ? layers.earthquakes.items.some((item) => sameEarthquake(item, selection.item))
+    : layers.rivers.items.some((item) => sameStation(item, selection.item));
+  return included ? "live" : "cached";
+}
 
 export function RiverReading({ label, reading }: { label: string; reading: RiverMeasurement | null }) {
   return <Panel>
@@ -42,6 +83,7 @@ export function HazardDetail({ selection, source, onClose }: {
         <Heading>{selection.kind === "earthquake" ? "Earthquake" : "River station"}</Heading>
         <Body>{item.name}</Body>
         {selection.fetchedAt && <Body>Retrieved: {new Date(selection.fetchedAt).toLocaleString()}</Body>}
+        {selection.kind === "earthquake" && selection.generatedAt && <Body>Feed generated: {new Date(selection.generatedAt).toLocaleString()}</Body>}
         {selection.kind === "earthquake" ? <Panel>
           <Heading>M {selection.item.magnitude === null ? "UNAVAILABLE" : magnitudeLabel(selection.item.magnitude)}</Heading>
           <Body>Observed: {new Date(selection.item.observedAt).toLocaleString()}</Body>

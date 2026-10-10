@@ -46,9 +46,16 @@ export function normalizeEarthquakes(data: unknown, now = Date.now()): OfficialE
 export async function getEarthquakes(signal?: AbortSignal): Promise<UsgsSnapshot<OfficialEarthquake>> {
   const data = await fetchJson(EARTHQUAKE_FEED_URL, { signal, headers: { Accept: "application/geo+json" } });
   const now = Date.now();
+  const collection = featureCollection(data);
   if (!isRecord(data) || !isRecord(data.metadata) || !isFiniteNumber(data.metadata.generated) ||
       !Number.isFinite(new Date(data.metadata.generated).getTime()))
     throw new ClearPathDataError("invalid-response", "USGS earthquake feed timestamp could not be verified.");
+  // The provider count describes raw feed features, including non-earthquake
+  // event types and events that may have aged outside our display window.
+  // Validate before filtering so a failed/incomplete feed cannot become zero.
+  if (data.metadata.status !== 200 || !Number.isSafeInteger(data.metadata.count) ||
+      Number(data.metadata.count) < 0 || data.metadata.count !== (collection.features as unknown[]).length)
+    throw new ClearPathDataError("invalid-response", "USGS earthquake feed status or record count could not be verified.");
   return {
     items: normalizeEarthquakes(data, now),
     fetchedAt: new Date(now).toISOString(),

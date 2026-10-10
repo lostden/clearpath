@@ -14,6 +14,8 @@ ClearPath helps people read official information and prepare. It does not replac
 
 An empty response is not proof that an area is safe. A timeout is not an empty response. A cached unexpired warning is still cached information. Do not change its freshness based on a relaunch, mode switch, or local clock rendering.
 
+An observation detail opened from an unverified copy retains that provenance after reconnecting. Download time, source feed-generation time and observation time describe different events; a recent download cannot make an old observation current. Provider error/count metadata must be validated before presenting a verified empty earthquake feed.
+
 Show agency classifications and original instructions without rewriting them into unverified personalized advice. Display ordering organizes text; it is not a danger probability. Offer every applicable warning, not only the first card. If normalization rejects malformed records, that limitation must not silently become an assurance of complete coverage.
 
 ## Geography, rivers, and routes

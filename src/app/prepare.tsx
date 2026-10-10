@@ -33,7 +33,7 @@ const sections = [
 ] as const;
 type PreparationSection = (typeof sections)[number]["id"];
 export default function PrepareScreen() {
-  const { saved, ready, saveStatus, storageError, update, toggle } = usePreparation();
+  const { saved, ready, saveStatus, storageError, canRetrySave, retrySave, update, toggle } = usePreparation();
   const [section, setSection] = useState<PreparationSection>("guides");
   const [guide, setGuide] = useState<string | null>(null);
   const [showContact, setShowContact] = useState(false);
@@ -94,6 +94,7 @@ export default function PrepareScreen() {
       {storageError && (
         <Panel>
           <Body>{storageError}</Body>
+          {canRetrySave && <ActionButton title="Retry local save" secondary onPress={retrySave} />}
         </Panel>
       )}
       <View style={s.sectionIndex}>
@@ -353,15 +354,16 @@ export default function PrepareScreen() {
         Home warning requests send your selected coordinates directly to the
         National Weather Service. Nearby river searches send them directly to
         USGS. Regional weather requests send the selected Texas or U.S.
-        coverage; earthquake requests use a global feed. Explicit zone
+        coverage; earthquake requests use a global feed. Optional NIFC
+        wildfire requests send Texas or U.S. incident coverage. Explicit zone
         downloads send the linked public NWS zone IDs. Google Maps, or
         Apple Maps on iOS, receives the map area you view.
       </Body>
       <Body>
         Preparedness, contacts, the last selected point, and one latest Home
         NWS snapshot are saved in local app storage. The app does not encrypt
-        this storage. Regional weather, earthquake, and river copies stay in
-        memory and are not saved for reopening offline. Requested NWS zone
+        this storage. Regional weather, earthquake, river and wildfire copies
+        stay in memory and are not saved for reopening offline. Requested NWS zone
         boundaries remain in memory for up to 24 hours. The automatic/manual
         feed update preference is saved locally. There is no stored
         location history. Demo data never enters the live cache.

@@ -8,10 +8,10 @@ import { useDisasterLayers } from "@/hooks/useDisasterLayers";
 import { useWildfireLayer } from "@/hooks/useWildfireLayer";
 import MapCanvas from "@/components/MapCanvas";
 import { AlertDetail, detailSource, type AlertSelection } from "@/components/AlertDetail";
-import { HazardDetail, type HazardSelection } from "@/components/HazardDetail";
+import { HazardDetail, hazardDetailSource, type HazardSelection } from "@/components/HazardDetail";
 import { DEMO_DATE_LABEL, DEMO_GAUGE } from "@/data/demo";
 import { colors, typography } from "@/ui/tokens";
-import { isRiverObservationDelayed } from "@/services/usgsTypes";
+import { isRiverObservationDelayed, type OfficialEarthquake, type RiverGauge } from "@/services/usgsTypes";
 import { ZoneAreaDetail } from "@/components/ZoneAreaDetail";
 import { FeedUpdateControl } from "@/components/FeedUpdateControl";
 import { useFeedPreferences } from "@/state/FeedPreferences";
@@ -22,10 +22,11 @@ import type { OfficialWildfirePerimeter } from "@/services/wildfireTypes";
 function LayerToggle({ title, value, onChange }: { title: string; value: boolean; onChange: (value: boolean) => void }) {
   return <View style={s.toggle}><Text style={s.label}>{title}</Text><Pressable accessibilityRole="switch" accessibilityLabel={`Show ${title.toLowerCase()}`} accessibilityState={{ checked: value }} aria-checked={value} onPress={() => onChange(!value)} style={[s.switch, value && s.active]}><Text style={[s.switchText, value && s.darkText]}>{value ? "ON" : "OFF"}</Text></Pressable></View>;
 }
-function FeedStamp({ label, source, fetchedAt, loading }: { label: string; source: string; fetchedAt: string | null; loading?: boolean }) {
+function FeedStamp({ label, source, fetchedAt, generatedAt, loading }: { label: string; source: string; fetchedAt: string | null; generatedAt?: string | null; loading?: boolean }) {
   return <View style={s.feedStamp}>
     <Text style={s.stampTitle}>{label} / {loading ? "CHECKING" : source === "live" ? "VERIFIED COPY" : source === "cached" ? "CACHED · UNVERIFIED" : "UNAVAILABLE"}</Text>
-    {fetchedAt && <Text style={s.metadata}>{new Date(fetchedAt).toLocaleString()}</Text>}
+    {fetchedAt && <Text style={s.metadata}>Retrieved: {new Date(fetchedAt).toLocaleString()}</Text>}
+    {generatedAt && <Text style={s.metadata}>Feed generated: {new Date(generatedAt).toLocaleString()}</Text>}
   </View>;
 }
 export default function MapScreen() {
@@ -59,8 +60,14 @@ export default function MapScreen() {
   const warningTime = demo ? feed.snapshot?.fetchedAt ?? null : regional.fetchedAt;
   const unmapped = alerts.filter((alert) => !alert.geometry).length;
   const selectAlert = (alert: typeof alerts[number]) => setSelected({ alert, source: warningSource, fetchedAt: warningTime });
-  const currentHazardLayer = hazard?.kind === "river" ? layers.rivers : layers.earthquakes;
-  const hazardSource = hazard?.fetchedAt === currentHazardLayer.fetchedAt ? currentHazardLayer.source : "cached";
+  const selectEarthquake = (item: OfficialEarthquake) => setHazard({
+    kind: "earthquake", item, source: layers.earthquakes.source,
+    fetchedAt: layers.earthquakes.fetchedAt, generatedAt: layers.earthquakes.generatedAt,
+  });
+  const selectRiver = (item: RiverGauge) => setHazard({
+    kind: "river", item, source: layers.rivers.source,
+    fetchedAt: layers.rivers.fetchedAt, generatedAt: layers.rivers.generatedAt,
+  });
   const selectWildfire = (item: OfficialWildfirePerimeter) => setWildfireSelection({
     item, source: wildfireLayer.source, fetchedAt: wildfireLayer.fetchedAt, coverage: wildfireLayer.coverage,
     available: wildfireLayer.available, omitted: wildfireLayer.omitted,
@@ -78,7 +85,7 @@ export default function MapScreen() {
         {(["TX", "US"] as const).map((value) => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: coverage === value }} accessibilityLabel={value === "TX" ? "Texas weather coverage" : "U.S. weather coverage"} onPress={() => { setCoverage(value); setWarningLimit(8); setZoneSelection(null); }} style={[s.coverageButton, coverage === value && s.active]}><Text style={[s.label, coverage === value && s.darkText]}>{value === "TX" ? "TEXAS" : "U.S."}</Text></Pressable>)}
       </View>}
       {feed.offline && <Body>{demo ? "SIMULATED OUTAGE / map tiles require a connection." : "OFFLINE / retained layers are unverified. Map tiles may be unavailable."}</Body>}
-      <MapCanvas key={`${demo}-${coverage}`} point={point ?? (coverage === "TX" ? { latitude: 31.1, longitude: -100 } : { latitude: 39, longitude: -98 })} pointIsSelection={!!point} initialSpan={point ? 0.18 : coverage === "TX" ? 14 : 55} alerts={alerts} source={warningSource} showWarnings={warnings} showGauges={gauges} showEarthquakes={earthquakes} earthquakes={layers.earthquakes.items} rivers={layers.rivers.items} earthquakeSource={layers.earthquakes.source} riverSource={layers.rivers.source} wildfirePerimeters={demo || !wildfires ? [] : wildfireLayer.items} wildfireSource={wildfireLayer.source} showWildfires={!demo && wildfires} onSelectWildfire={selectWildfire} onSelectAlert={selectAlert} onSelectEarthquake={(item) => setHazard({ kind: "earthquake", item, fetchedAt: layers.earthquakes.fetchedAt })} onSelectRiver={(item) => setHazard({ kind: "river", item, fetchedAt: layers.rivers.fetchedAt })} />
+      <MapCanvas key={`${demo}-${coverage}`} point={point ?? (coverage === "TX" ? { latitude: 31.1, longitude: -100 } : { latitude: 39, longitude: -98 })} pointIsSelection={!!point} initialSpan={point ? 0.18 : coverage === "TX" ? 14 : 55} alerts={alerts} source={warningSource} showWarnings={warnings} showGauges={gauges} showEarthquakes={earthquakes} earthquakes={layers.earthquakes.items} rivers={layers.rivers.items} earthquakeSource={layers.earthquakes.source} riverSource={layers.rivers.source} wildfirePerimeters={demo || !wildfires ? [] : wildfireLayer.items} wildfireSource={wildfireLayer.source} showWildfires={!demo && wildfires} onSelectWildfire={selectWildfire} onSelectAlert={selectAlert} onSelectEarthquake={selectEarthquake} onSelectRiver={selectRiver} />
       <View style={s.legend}>
         {warnings && <><Text style={[s.legendText, { color: colors.orange }]}>▰ SEVERE AREA</Text><Text style={[s.legendText, { color: colors.yellow }]}>▰ OTHER AREA</Text></>}
         {gauges && <Text style={[s.legendText, { color: colors.yellow }]}>R / RIVER STATION</Text>}
@@ -109,19 +116,19 @@ export default function MapScreen() {
       </>}
       {gauges && (demo ? <Panel><SectionTitle>SIMULATED / RIVER</SectionTitle><Heading>{DEMO_GAUGE.gageHeight} ft</Heading><Body>Gage height · {DEMO_GAUGE.streamflow.toLocaleString()} ft³/s streamflow</Body><Body>Simulated observation: {new Date(DEMO_GAUGE.observedAt).toLocaleString()}</Body><Body>{DEMO_GAUGE.description}</Body></Panel> : <>
         <SectionTitle>USGS / Nearby rivers</SectionTitle><FeedStamp label="RIVERS" source={layers.rivers.source} fetchedAt={layers.rivers.fetchedAt} loading={layers.rivers.loading} /><Body>{layers.rivers.coverage}</Body>
+        <ActionButton title={layers.rivers.refreshing ? "Updating rivers" : "Refresh river observations"} disabled={!layers.rivers.canRefresh} secondary onPress={() => void layers.rivers.refresh()} />
         {!point && <Body>SET LOCATION / needed for nearby river stations.</Body>}
         {layers.rivers.error && <Body>River readings could not be verified. Retained readings may have changed.</Body>}
         {point && !layers.rivers.loading && !layers.rivers.items.length && <Body>{layers.rivers.source === "live" ? "No reporting stations returned in this search. Flood conditions remain unverified." : "River observations unavailable."}</Body>}
-        {layers.rivers.items.map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Read river station ${item.name}`} onPress={() => setHazard({ kind: "river", item, fetchedAt: layers.rivers.fetchedAt })} style={s.record}><Text style={s.recordTitle}>{item.name}</Text><Text style={s.metadata}>{item.distanceKm.toFixed(1)} KM / {item.gageHeight ? `${item.gageHeight.displayValue} ${item.gageHeight.units} GAGE HEIGHT` : "GAGE HEIGHT UNAVAILABLE"}</Text><Text style={s.metadata}>{item.gageHeight ? `${isRiverObservationDelayed(item.gageHeight) ? "DELAYED / " : ""}Observed ${new Date(item.gageHeight.observedAt).toLocaleString()}` : "OPEN STATION FOR AVAILABLE READINGS"}</Text></Pressable>)}
+        {layers.rivers.items.map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Read river station ${item.name}`} onPress={() => selectRiver(item)} style={s.record}><Text style={s.recordTitle}>{item.name}</Text><Text style={s.metadata}>{item.distanceKm.toFixed(1)} KM / {item.gageHeight ? `${item.gageHeight.displayValue} ${item.gageHeight.units} GAGE HEIGHT` : "GAGE HEIGHT UNAVAILABLE"}</Text><Text style={s.metadata}>{item.gageHeight ? `${isRiverObservationDelayed(item.gageHeight) ? "DELAYED / " : ""}Observed ${new Date(item.gageHeight.observedAt).toLocaleString()}` : "OPEN STATION FOR AVAILABLE READINGS"}</Text></Pressable>)}
         <Body>Gage height is not flood depth. Observations can be delayed and provisional.</Body>
-        <ActionButton title={layers.rivers.refreshing ? "Updating rivers" : "Refresh river observations"} disabled={!layers.rivers.canRefresh} secondary onPress={() => void layers.rivers.refresh()} />
       </>)}
       {!demo && earthquakes && <>
-        <SectionTitle>USGS / Earthquakes</SectionTitle><FeedStamp label="EARTHQUAKES" source={layers.earthquakes.source} fetchedAt={layers.earthquakes.fetchedAt} loading={layers.earthquakes.loading} /><Body>{layers.earthquakes.coverage}</Body>
-        {layers.earthquakes.error && <Body>Earthquake reports could not be verified.</Body>}
-        {layers.earthquakes.items.slice(0, 6).map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Read earthquake ${item.name}`} onPress={() => setHazard({ kind: "earthquake", item, fetchedAt: layers.earthquakes.fetchedAt })} style={s.record}><Text style={s.recordTitle}>M {magnitudeLabel(item.magnitude)} / {item.name}</Text><Text style={s.metadata}>{new Date(item.observedAt).toLocaleString()}</Text></Pressable>)}
-        <Text style={s.metadata}>{layers.earthquakes.items.length} GLOBAL EVENTS / LATEST 6 LISTED</Text><Body>Pan to see epicenters. Markers do not show impact areas.</Body>
+        <SectionTitle>USGS / Earthquakes</SectionTitle><FeedStamp label="EARTHQUAKES" source={layers.earthquakes.source} fetchedAt={layers.earthquakes.fetchedAt} generatedAt={layers.earthquakes.generatedAt} loading={layers.earthquakes.loading} /><Body>{layers.earthquakes.coverage}</Body>
         <ActionButton title={layers.earthquakes.refreshing ? "Updating earthquakes" : "Refresh earthquakes"} disabled={!layers.earthquakes.canRefresh} secondary onPress={() => void layers.earthquakes.refresh()} />
+        {layers.earthquakes.error && <Body>Earthquake reports could not be verified.</Body>}
+        {layers.earthquakes.items.slice(0, 6).map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Read earthquake ${item.name}`} onPress={() => selectEarthquake(item)} style={s.record}><Text style={s.recordTitle}>M {magnitudeLabel(item.magnitude)} / {item.name}</Text><Text style={s.metadata}>{new Date(item.observedAt).toLocaleString()}</Text></Pressable>)}
+        <Text style={s.metadata}>{layers.earthquakes.items.length} GLOBAL EVENTS / LATEST 6 LISTED</Text><Body>Pan to see epicenters. Markers do not show impact areas.</Body>
       </>}
       {!demo && wildfires && <>
         <SectionTitle>NIFC / Mapped wildfire perimeters</SectionTitle>
@@ -148,7 +155,7 @@ export default function MapScreen() {
     </Screen>
     <AlertDetail alert={selected?.alert ?? null} source={detailSource(selected, warningSource, warningTime)} fetchedAt={selected?.fetchedAt} onClose={() => setSelected(null)} onViewZoneAreas={selected && selected.source !== "demo" ? () => { setZoneSelection(selected); setSelected(null); } : undefined} />
     <ZoneAreaDetail key={`${coverage}-${demo}`} selection={zoneSelection} enabled={zoneEnabled} onClose={closeZoneAreas} />
-    <HazardDetail selection={hazard} source={hazardSource} onClose={() => setHazard(null)} />
+    <HazardDetail selection={hazard} source={hazardDetailSource(hazard, layers)} onClose={() => setHazard(null)} />
     <WildfireDetail selection={demo || !wildfires ? null : wildfireSelection} source={wildfireDetailSource(wildfireSelection, wildfireLayer)} onClose={() => setWildfireSelection(null)} />
   </>;
 }
