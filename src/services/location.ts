@@ -94,7 +94,7 @@ export async function requestDeviceLocation(): Promise<SelectedLocation> {
       );
     const accuracy = position.coords.accuracy;
     return {
-      label: `Current GPS point${accuracy && Number.isFinite(accuracy) ? ` · ±${Math.ceil(accuracy)} m` : ""}`,
+      label: `GPS point · single reading${accuracy && Number.isFinite(accuracy) ? ` · ±${Math.ceil(accuracy)} m` : ""}`,
       coordinates,
       kind: "gps",
     };

@@ -10,7 +10,6 @@ import {
 import {
   ActionButton,
   Body,
-  EmergencyButton,
   Heading,
   Panel,
   Screen,
@@ -25,8 +24,17 @@ import {
 } from "@/data/preparedness";
 import { usePreparation } from "@/state/PreparednessState";
 import { colors, typography } from "@/ui/tokens";
+const sections = [
+  { id: "guides", label: "FIELD GUIDES", action: "Show field guides" },
+  { id: "kit", label: "KIT", action: "Show emergency kit" },
+  { id: "plan", label: "FAMILY PLAN", action: "Show family plan" },
+  { id: "contacts", label: "CONTACTS", action: "Show saved contacts" },
+  { id: "numbers", label: "CALL NUMBERS", action: "Show emergency numbers" },
+] as const;
+type PreparationSection = (typeof sections)[number]["id"];
 export default function PrepareScreen() {
   const { saved, ready, saveStatus, storageError, update, toggle } = usePreparation();
+  const [section, setSection] = useState<PreparationSection>("guides");
   const [guide, setGuide] = useState<string | null>(null);
   const [showContact, setShowContact] = useState(false);
   const [name, setName] = useState("");
@@ -62,20 +70,58 @@ export default function PrepareScreen() {
   }
   return (
     <Screen>
-      <Heading>PREPARE.</Heading>
-      <Body>Build a kit. Make a plan. Keep essentials offline.</Body>
+      <View style={s.headerRow}>
+        <View style={s.flex}><Heading>PREPARE.</Heading></View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="GET HELP · CALL 911"
+          onPress={() => confirmCall("911")}
+          style={({ pressed }) => [s.emergency, pressed && { borderColor: colors.yellow }]}
+        >
+          <Text style={s.emergencyLabel}>GET HELP</Text>
+          <Text style={s.emergencyNumber}>911</Text>
+        </Pressable>
+      </View>
+      <View style={s.localStatus}>
       <View style={s.offlinePill}>
         <Text style={s.offlineText}>AVAILABLE OFFLINE</Text>
       </View>
       <Text accessibilityLiveRegion="polite" aria-live="polite" style={[s.saveStatus, saveStatus === "session" && s.unsaved]}>
         {saveStatus === "loading" ? "LOCAL COPY / LOADING" : saveStatus === "saving" ? "LOCAL COPY / SAVING" : saveStatus === "saved" ? "LOCAL COPY / SAVED ON THIS PHONE" : "SESSION ONLY / CHANGES NOT SAVED"}
       </Text>
+      </View>
       {!ready && <Body>Loading saved preparation…</Body>}
       {storageError && (
         <Panel>
           <Body>{storageError}</Body>
         </Panel>
       )}
+      <View style={s.sectionIndex}>
+        {sections.map((item) => (
+          <Pressable
+            key={item.id}
+            accessibilityRole="button"
+            accessibilityLabel={item.action}
+            accessibilityState={{ selected: section === item.id }}
+            aria-pressed={section === item.id}
+            onPress={() => {
+              setFocusedField(null);
+              setSection(item.id);
+            }}
+            style={({ pressed }) => [
+              s.sectionChoice,
+              section === item.id && s.sectionSelected,
+              pressed && { borderColor: colors.yellow },
+            ]}
+          >
+            <Text style={[s.sectionChoiceText, section === item.id && s.sectionSelectedText]}>{item.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text accessibilityLiveRegion="polite" aria-live="polite" style={s.sectionStatus}>
+        SECTION / {sections.find((item) => item.id === section)?.label}
+      </Text>
+      {section === "kit" && <>
       <View style={s.sectionRow}>
         <View style={s.flex}>
         <SectionTitle>01 / EMERGENCY KIT</SectionTitle>
@@ -85,6 +131,7 @@ export default function PrepareScreen() {
         </Text>
       </View>
       <View
+        accessible
         accessibilityRole="progressbar"
         accessibilityLabel={`${completed} of ${checklistItems.length} emergency kit items completed`}
         accessibilityValue={{ min: 0, max: checklistItems.length, now: completed }}
@@ -124,6 +171,8 @@ export default function PrepareScreen() {
           </Pressable>
         ))}
       </View>
+      </>}
+      {section === "guides" && <>
       <SectionTitle>02 / FIELD GUIDANCE</SectionTitle>
       <View style={s.list}>
         {safetyGuides.map((item) => (
@@ -156,6 +205,8 @@ export default function PrepareScreen() {
           </View>
         ))}
       </View>
+      </>}
+      {section === "plan" && <>
       <SectionTitle>03 / FAMILY PLAN</SectionTitle>
       <Panel>
         <Body>
@@ -193,6 +244,8 @@ export default function PrepareScreen() {
           multiline
         />
       </Panel>
+      </>}
+      {section === "contacts" && <>
       <SectionTitle>04 / SAVED CONTACTS</SectionTitle>
       {saved.contacts.map((contact) => (
         <Panel key={contact.id}>
@@ -280,8 +333,9 @@ export default function PrepareScreen() {
           disabled={!ready}
         />
       )}
+      </>}
+      {section === "numbers" && <>
       <SectionTitle>05 / EMERGENCY NUMBERS</SectionTitle>
-      <EmergencyButton />
       {importantNumbers
         .filter((item) => item.number !== "911")
         .map((item) => (
@@ -292,6 +346,7 @@ export default function PrepareScreen() {
             onPress={() => confirmCall(item.number, item.label)}
           />
         ))}
+      </>}
       <SectionTitle>LOCAL STORAGE / PRIVACY</SectionTitle>
       <Body>
         ClearPath has no account or analytics. Foreground GPS is optional.
@@ -326,6 +381,27 @@ export default function PrepareScreen() {
   );
 }
 const s = StyleSheet.create({
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  emergency: { minHeight: 60, minWidth: 78, alignItems: "center", justifyContent: "center", padding: 8, backgroundColor: colors.orange, borderWidth: 2, borderColor: colors.orange },
+  emergencyLabel: { color: colors.background, fontFamily: typography.bodyStrong, fontSize: 11, lineHeight: 16 },
+  emergencyNumber: { color: colors.background, fontFamily: typography.heading, fontSize: 22, lineHeight: 26 },
+  localStatus: { gap: 8 },
+  sectionIndex: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  sectionChoice: {
+    flexGrow: 1,
+    flexBasis: "45%",
+    minHeight: 56,
+    padding: 12,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionSelected: { backgroundColor: colors.orange, borderColor: colors.orange },
+  sectionChoiceText: { color: colors.ink, fontFamily: typography.bodyStrong, fontSize: 14, lineHeight: 21, textAlign: "center" },
+  sectionSelectedText: { color: colors.background },
+  sectionStatus: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 14, lineHeight: 22 },
   saveStatus: { color: colors.ink, fontFamily: typography.bodyStrong, fontSize: 14, lineHeight: 22 },
   unsaved: { color: colors.yellow },
   offlinePill: {

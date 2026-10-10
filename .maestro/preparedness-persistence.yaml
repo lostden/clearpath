@@ -1,17 +1,72 @@
-# Authored, unrun flow. Verifies local persistence across app restart.
+# Authored, unexecuted. APP_ID must identify a disposable installed native test build.
+# Waits for local hydration and the completed write before restarting that test app.
 appId: ${APP_ID}
 name: Emergency kit persistence
 ---
 - launchApp:
     clearState: true
-- tapOn: "Prepare"
+    permissions:
+      all: deny
+- assertVisible: "CLEARPATH"
+- tapOn: "(?i)Prepare"
+- assertVisible: 'PREPARE\.'
 - assertVisible: "AVAILABLE OFFLINE"
-- assertVisible: "0/12"
-- tapOn:
-    id: "checklist-water"
-- assertVisible: "1/12"
-- launchApp
-- tapOn: "Prepare"
-- assertVisible: "1/12"
+- extendedWaitUntil:
+    visible: "LOCAL COPY / SAVED ON THIS PHONE"
+    timeout: 10000
+- scrollUntilVisible:
+    element: "02 / FIELD GUIDANCE"
+    direction: DOWN
+- assertNotVisible: "01 / EMERGENCY KIT"
+- scrollUntilVisible:
+    element: "Show emergency kit"
+    direction: UP
+- tapOn: "Show emergency kit"
+- assertVisible:
+    text: "Show emergency kit"
+    selected: true
+- scrollUntilVisible:
+    element:
+      id: "checklist-water"
+      enabled: true
+    direction: DOWN
 - assertVisible:
     id: "checklist-water"
+    checked: false
+- tapOn:
+    id: "checklist-water"
+- assertVisible:
+    id: "checklist-water"
+    checked: true
+- assertVisible: "1 of 12 emergency kit items completed"
+- scrollUntilVisible:
+    element: "LOCAL COPY / SAVED ON THIS PHONE"
+    direction: UP
+- extendedWaitUntil:
+    visible: "LOCAL COPY / SAVED ON THIS PHONE"
+    timeout: 10000
+- assertNotVisible: "SESSION ONLY / CHANGES NOT SAVED"
+- launchApp:
+    permissions:
+      all: deny
+- assertVisible: "CLEARPATH"
+- tapOn: "(?i)Prepare"
+- extendedWaitUntil:
+    visible: "LOCAL COPY / SAVED ON THIS PHONE"
+    timeout: 10000
+- scrollUntilVisible:
+    element: "02 / FIELD GUIDANCE"
+    direction: DOWN
+- scrollUntilVisible:
+    element: "Show emergency kit"
+    direction: UP
+- tapOn: "Show emergency kit"
+- scrollUntilVisible:
+    element:
+      id: "checklist-water"
+      enabled: true
+    direction: DOWN
+- assertVisible:
+    id: "checklist-water"
+    checked: true
+- assertVisible: "1 of 12 emergency kit items completed"

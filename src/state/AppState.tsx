@@ -18,35 +18,45 @@ type AppState = {
   scenario: DemoScenario;
   setScenario: (scenario: DemoScenario) => void;
   location: SelectedLocation | null;
+  /** Saved-point hydration has settled, or a point was explicitly selected. */
+  locationReady: boolean;
   setLocation: (location: SelectedLocation) => void;
   locationError: string | null;
   setLocationError: (error: string | null) => void;
 };
 const Context = createContext<AppState | null>(null);
 const locationStorageKey = "@clearpath/selected-location/v1";
+const restoreError = "The last selected point could not be restored. Select a location again.";
+const saveError = "This location is available this session but could not be saved for reopening offline.";
 export function AppProvider({ children }: PropsWithChildren) {
   const [mode, changeMode] = useState<"demo" | "live">("live");
   const [scenario, changeScenario] = useState<DemoScenario>("flood");
   const [location, changeLocation] = useState<SelectedLocation | null>(null);
+  const [locationReady, setLocationReady] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const changed = useRef(false);
+  const mounted = useRef(true);
+  const writeGeneration = useRef(0);
   const writes = useRef(Promise.resolve());
   useEffect(() => {
+    mounted.current = true;
     let cancelled = false;
     void AsyncStorage.getItem(locationStorageKey)
       .then((raw) => {
-        if (!raw || cancelled || changed.current) return;
+        if (cancelled || changed.current || raw === null) return;
         const parsed: unknown = JSON.parse(raw);
-        if (!parsed || typeof parsed !== "object") return;
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+          throw new Error("Invalid saved point");
         const saved = parsed as Partial<SelectedLocation>;
         if (
           !validCoordinates(saved.coordinates) ||
           typeof saved.label !== "string" ||
+          !saved.label.trim() ||
           (saved.kind !== "gps" && saved.kind !== "manual")
         )
-          return;
+          throw new Error("Invalid saved point");
         changeLocation({
-          coordinates: saved.coordinates,
+          coordinates: { latitude: saved.coordinates.latitude, longitude: saved.coordinates.longitude },
           kind: saved.kind,
           label:
             saved.kind === "gps"
@@ -56,13 +66,12 @@ export function AppProvider({ children }: PropsWithChildren) {
         changeMode("live");
       })
       .catch(() => {
-        if (!cancelled)
-          setLocationError(
-            "The last selected point could not be restored. Select a location again.",
-          );
-      });
+        if (!cancelled && !changed.current) setLocationError(restoreError);
+      })
+      .finally(() => { if (!cancelled) setLocationReady(true); });
     return () => {
       cancelled = true;
+      mounted.current = false;
     };
   }, []);
   const setMode = useCallback((next: "demo" | "live") => {
@@ -79,16 +88,29 @@ export function AppProvider({ children }: PropsWithChildren) {
       return;
     }
     changed.current = true;
-    changeLocation(next);
+    const selected: SelectedLocation = {
+      label: next.label,
+      kind: next.kind,
+      coordinates: { latitude: next.coordinates.latitude, longitude: next.coordinates.longitude },
+    };
+    const generation = ++writeGeneration.current;
+    const serialized = JSON.stringify(selected);
+    changeLocation(selected);
+    setLocationReady(true);
+    setLocationError(null);
     writes.current = writes.current
-      .then(() =>
-        AsyncStorage.setItem(locationStorageKey, JSON.stringify(next)),
-      )
-      .catch(() =>
-        setLocationError(
-          "This location is available this session but could not be saved for reopening offline.",
-        ),
-      );
+      .then(async () => {
+        // Skip obsolete writes that have not started; in-flight writes remain
+        // serialized so the newest selected point is always written last.
+        if (!mounted.current || generation !== writeGeneration.current) return;
+        await AsyncStorage.setItem(locationStorageKey, serialized);
+        if (mounted.current && generation === writeGeneration.current)
+          setLocationError((current) => current === saveError ? null : current);
+      })
+      .catch(() => {
+        if (mounted.current && generation === writeGeneration.current)
+          setLocationError(saveError);
+      });
   }, []);
   const value = useMemo(
     () => ({
@@ -97,6 +119,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       scenario,
       setScenario,
       location,
+      locationReady,
       setLocation,
       locationError,
       setLocationError,
@@ -107,6 +130,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       scenario,
       setScenario,
       location,
+      locationReady,
       setLocation,
       locationError,
     ],

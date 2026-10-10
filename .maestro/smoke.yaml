@@ -1,14 +1,32 @@
-# Authored flow; not executed in this workspace. Requires an installed native build.
+# Authored, unexecuted. APP_ID must identify a disposable installed native test build.
+# clearState resets that test build's local data; this is not an Expo Go launch flow.
 appId: ${APP_ID}
 name: Startup and primary navigation
 ---
 - launchApp:
     clearState: true
-- assertVisible: "ClearPath"
-- assertVisible: "SIMULATED DEMO"
-- tapOn: "Map"
-- assertVisible: "Around you"
-- tapOn: "Prepare"
-- assertVisible: "A little preparation."
-- tapOn: "Home"
-- assertVisible: "ClearPath"
+    permissions:
+      all: deny
+- assertVisible: "CLEARPATH"
+- assertVisible: "SET LOCATION"
+- assertVisible: "POINT ALERTS / UNVERIFIED"
+- assertNotVisible: "SIMULATED DEMO"
+- tapOn: "(?i)Map"
+- assertVisible: "(?i)Hazard map"
+- assertVisible: "Texas overview · set your location on Home"
+- assertVisible:
+    text: "Texas weather coverage"
+    selected: true
+- tapOn: "(?i)Prepare"
+- assertVisible: 'PREPARE\.'
+- assertVisible: "AVAILABLE OFFLINE"
+- extendedWaitUntil:
+    visible: "LOCAL COPY / SAVED ON THIS PHONE"
+    timeout: 10000
+- scrollUntilVisible:
+    element: "02 / FIELD GUIDANCE"
+    direction: DOWN
+- assertNotVisible: "01 / EMERGENCY KIT"
+- tapOn: "(?i)Home"
+- assertVisible: "CLEARPATH"
+- assertVisible: "SET LOCATION"

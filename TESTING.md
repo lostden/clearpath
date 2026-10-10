@@ -77,10 +77,10 @@ The new USGS adapter/hook files passed TypeScript and scoped ESLint. Their two f
 
 | Current October 10 combined check | Executed result |
 | --- | --- |
-| Full Jest run | **28 suites / 327 tests passed**, 19.917 seconds, no console warnings; includes manual-mode, persistence-status and pan refinements |
+| Full Jest run | **30 suites / 353 tests passed**, 23.599 seconds, no console warnings; includes startup, offline-section and GPS-cancel refinements |
 | SDK dependency compatibility | `expo install --check`: dependencies are up to date |
 | Final TypeScript / Expo lint | Full typecheck and ESLint across source/tests passed with no diagnostic output |
-| Final native JavaScript export | Android **3.3 MB**, iOS **3.0 MB**, Hermes, **37 assets**; export passed after manual-mode, local-save and coordinate-pan changes |
+| Final native JavaScript export | Android **3.3 MB**, iOS **3.1 MB**, Hermes, **37 assets**; export passed after startup, offline-section and GPS-cancel changes |
 | Expo Doctor | **21/21 passed** with the bundled Git executable available on PATH |
 | Current browser layout | Tactical screens inspected at **320 × 568** and **390 × 844**; details below |
 | Tactical text contrast | Eight foreground/background token pairs exceeded **4.5:1**; exact ratios below |
@@ -134,6 +134,18 @@ Coordinate **Pan east** moved the Texas viewport from `31.1000,-100.0000` to `31
 
 Saved and inspected local proof: [manual update mode](artifacts/manual-updates-preview.jpg), [preparation save status](artifacts/preparation-status-preview.jpg), and [coordinate pan controls](artifacts/coordinate-pan-preview.jpg). These share the ignored local artifact limitation above.
 
+### Saved-point startup, offline sections and GPS recovery — October 10, 2026
+
+The combined Jest run passed **30 suites / 353 tests** in **23.599 seconds**, without console warnings. Full TypeScript and source/test ESLint passed. Native Hermes exports passed at **3.3 MB Android / 3.1 MB iOS**, with **37 assets**. Metro recovered from a file-map cache deserialization warning by doing a full crawl; the export completed successfully. No dependency or native configuration changed.
+
+AppState's focused suite passed **22 tests**. Pending restoration is distinct from an absent point; malformed saved records report a restore failure. Explicit selections and demo choices suppress late reads/errors, and obsolete queued/in-flight write failures cannot overwrite current feedback. The Home screen suite passed **six tests** covering restoration feedback, enabled location choice, actual selected coordinates, unavailable provenance, and demo separation.
+
+Prepare's **four screen tests** use the real preparation provider. They cover bundled guides and 911 before hydration completes, kit progress/persistence across sections, retained family-plan edits and unfinished contact drafts, and explicit contact/211 confirmation before a mocked dialer opens. The kit progress View is accessible. GPS picker/service suites passed **nine / twelve tests**, including hide/reopen recovery, cancellation followed by a manual selection, ignored late success/failure, and nearby manual validation. Cancellation prevents the pending attempt from selecting a point; it does not claim to stop an already-started operating-system location call. New GPS labels identify a single reading rather than an indefinitely current position.
+
+The browser's compact Prepare header and all five section controls were inspected at **320 × 568**. At **390 × 844**, Enter expanded the bundled Flooding guide and selected the emergency-number section. The index retained pressed state and the 911 action; no call or external resource was opened. Submitting invalid latitude `300` kept the selector open with the error beside the coordinate fields and submit action; no point was selected. These checks do not measure five-second phone startup or establish native screen-reader/permission behavior.
+
+Saved and inspected local proof: [Prepare section index](artifacts/preparation-index-preview.jpg), [offline field guides](artifacts/offline-guides-preview.jpg) and [manual-coordinate validation](artifacts/manual-location-error-preview.jpg). No new browser warning/error logs appeared after **23:01 UTC**. The preview was restored to live Home, automatic updates on, no selected point and a reset viewport. These remain ignored local artifacts. README now distinguishes the USB-only recent entry, unverified Wi-Fi/tunnel transport, an unbuilt installed preview APK, and optional native Google Maps setup.
+
 Record phone model, OS version, build identifier, date, steps, and result for each run. Test an Android phone and an iPhone where available; include a smaller screen and the largest accessibility font size.
 
 1. Start the app using the instructions in `README.md`. Verify that Home, Map, and Prepare are reachable and usable with large text and a screen reader. Verify tab labels and selected-tab announcements, readable timestamps, contrast, scroll behavior, and reachable 48-point controls.
@@ -155,6 +167,8 @@ Record phone model, OS version, build identifier, date, steps, and result for ea
 ## Maestro scripts
 
 The `.maestro/` YAML flows are authoring-ready examples, **not executed results**. They require an installed native ClearPath build and a connected Android device/emulator or iOS simulator supported by Maestro. They do not run against Expo Go's shared application ID. Replace `APP_ID` with the installed package/bundle identifier:
+
+All five flows were aligned with the current live-first tactical UI and Prepare section index on October 10. Their **100 authored steps** parsed as five valid two-document YAML files with no parser diagnostics; command/selector shapes were inspected. Persistence selects the kit and waits for **LOCAL COPY / SAVED ON THIS PHONE** before restarting. Demo entry/exit is explicit, and the emergency flow stops at Cancel. Use a disposable test build for `clearState`. Parsing and source alignment do not verify native visibility, selected-state selectors, or successful device execution.
 
 ```sh
 maestro test -e APP_ID=org.clearpath.student .maestro/smoke.yaml

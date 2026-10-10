@@ -1,14 +1,15 @@
+# Authored, unexecuted. Requires an installed native test build identified by APP_ID.
 # This flow stops at Cancel. It never opens the phone dialer or places a call.
 appId: ${APP_ID}
 name: Deliberate emergency action cancellation
 ---
 - launchApp
-- tapOn: "Home"
+- tapOn: "(?i)Home"
 - scrollUntilVisible:
     element:
       text: "Emergency\\? Call 911"
-    direction: DOWN
+    direction: UP
 - tapOn: "Emergency\\? Call 911"
 - assertVisible: "Call 911\\?"
-- tapOn: "Cancel"
+- tapOn: "(?i)Cancel"
 - assertNotVisible: "Call 911\\?"

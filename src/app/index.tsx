@@ -33,7 +33,8 @@ import { ShareLocation } from "@/components/ShareLocation";
 import { FeedUpdateControl } from "@/components/FeedUpdateControl";
 export default function HomeScreen() {
   const feed = useAlerts();
-  const { locationError } = useAppState();
+  const { locationError, locationReady } = useAppState();
+  const restoringLocation = feed.source !== "demo" && !locationReady && !feed.selectedLocation;
   const [showLocation, setShowLocation] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<AlertSelection | null>(
     null,
@@ -75,12 +76,14 @@ export default function HomeScreen() {
           onPress={() => setShowLocation(true)}
         >
           <View style={s.locationRow}>
-            <Text style={s.locationTitle}>{feed.selectedLocation?.label || "SET LOCATION"}</Text>
+            <Text style={s.locationTitle}>{feed.selectedLocation?.label || (restoringLocation ? "RESTORING POINT" : "SET LOCATION")}</Text>
             <Text style={s.locationArrow}>→</Text>
           </View>
           <Text style={s.timestamp}>
             {feed.source === "demo"
               ? "Simulated location"
+              : restoringLocation
+                ? "SAVED POINT / CHECKING"
               : !feed.selectedLocation
                 ? "GPS OR MANUAL"
                 : feed.selectedLocation.kind === "gps"
@@ -138,10 +141,12 @@ export default function HomeScreen() {
         ) : (
           <Panel>
             <SectionTitle>
-              Set location
+              {restoringLocation ? "RESTORING SAVED POINT" : "Set location"}
             </SectionTitle>
             <Body>
-              Use GPS or enter a point. Current alerts are unverified.
+              {restoringLocation
+                ? "Reading the last selected point from this phone. Alerts are unverified."
+                : "Use GPS or enter a point. Current alerts are unverified."}
             </Body>
             <ActionButton
               title="Choose location"

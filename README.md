@@ -6,7 +6,23 @@ The original relevance and prioritization engine remains deliberately unimplemen
 
 ## Run on a phone
 
-Use Node.js 22.13 or newer. The scaffold uses Expo SDK 57, React 19.2.3, and React Native 0.86.3. SDK compatibility is documented by [Expo](https://docs.expo.dev/versions/latest/).
+The working phone session used USB. Its recent Expo Go entry, `exp://127.0.0.1:8082`, reaches this computer through the cable's port mapping. **That entry will not work after unplugging.**
+
+There are two no-cable routes:
+
+- **Expo Go over Wi-Fi:** the phone and computer must share a reachable network; the computer must stay awake with Metro running. Start a LAN server and scan its **new LAN QR code**. Wi-Fi and tunnel startup have not succeeded on this particular phone yet.
+- **Installed preview APK:** bundles ClearPath so it can open without this computer, Metro, or USB. Live feeds and map tiles still need internet. No ClearPath APK has been built yet. An Android preview can use the coordinate map without a Google key; native Google tiles additionally need the Maps setup below. An installed development client still uses Metro for development. [Expo internal distribution](https://docs.expo.dev/build/internal-distribution/).
+
+On this Windows machine, dependencies are already installed and the launcher adds the bundled Node/npm/Git tools to PATH. From PowerShell:
+
+```powershell
+Set-Location -LiteralPath 'C:\Users\twoma\Documents\New project\clearpath'
+powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
+```
+
+Keep that terminal open for Expo Go. Do not start another server on an occupied port; the already running localhost USB server is separate from a new LAN address. Use `-Check` with the helper for typecheck, lint, and tests. Installing a system Node runtime is optional for this checkout.
+
+On another machine, use Node.js 22.13 or newer. The scaffold uses Expo SDK 57, React 19.2.3, and React Native 0.86.3. SDK compatibility is documented by [Expo](https://docs.expo.dev/versions/v57.0.0/).
 
 Open a terminal in `clearpath`:
 
@@ -15,33 +31,27 @@ npm ci
 npm start
 ```
 
-Install a compatible Expo Go on the phone. Put the computer and phone on the same local network, then scan the terminal QR code with Expo Go on Android or the Camera app on iOS. Allow local-network access if prompted. The app is native; a browser preview does not verify phone behavior. If LAN access is blocked, use `npx expo start --tunnel` after checking the requested tunnel dependency and network setup.
+Install a compatible Expo Go on the phone. Put the computer and phone on the same local network, then scan the terminal's current LAN QR code with Expo Go on Android or the Camera app on iOS. Allow local-network access if prompted. The app is native; a browser preview does not verify phone behavior. A tunnel is another development transport to try, not a confirmed fix for this phone. [Expo development-server transports](https://docs.expo.dev/more/expo-cli/#tunneling).
 
-On first launch, ClearPath opens in **live mode** with no selected point and no verified local warning result. Use **Choose location** on Home to select a listed Texas city center, request foreground GPS, or enter latitude/longitude. A city-center selection checks that one point. Choosing a location starts the official NWS point request; refresh on Home when allowed. The Map tab can show a Texas regional overview before a point is selected. Regional records do not establish that a warning applies to you.
+On first launch, ClearPath opens in **live mode** with no selected point and no verified local warning result. Use **Choose location** on Home to select a listed Texas city center, request foreground GPS, or enter latitude/longitude. A city-center selection checks that one point. With automatic updates enabled, choosing a location starts the official NWS point request; manual mode requires **Refresh official alerts** when allowed. The Map tab can show a Texas regional overview before a point is selected. Regional records do not establish that a warning applies to you.
 
 The four presentation scenarios are opt-in, fictional local fixtures with a persistent **SIMULATED DEMO** label. Enter one from Home, then use **Exit demo** to return to live mode. Choosing a location while in demo also switches to live mode. Real feeds are disabled during demo; basemap tiles still need internet.
 
 To reduce repeated feed downloads, switch **Auto updates** off on Home or Map. The saved manual mode stops automatic feed requests, polling, and retries; use each feed's **Refresh** button when needed. The footer keeps **FEEDS / MANUAL REFRESH** visible. Successful copies still age into cached status, and expired warnings still disappear. Map tiles, explicit zone downloads, and external links can still use data. Update preferences load before any automatic request; an unreadable preference starts in manual mode with an explanation.
 
-After a location has been selected, the app stores only that last selected point locally. On a later launch it restores that point in live mode, allowing a matching saved snapshot to open offline. A restored GPS selection is labeled **Saved GPS point · last selection**; it is not a new GPS reading. Cached information keeps its old retrieval time until a new official request succeeds. Use the location selector for a current GPS reading or a different point.
+After a location has been selected, the app stores only that last selected point locally. On a later launch, **RESTORING POINT** identifies the pending read before it restores that point in live mode, allowing a matching saved snapshot to open offline. **Choose location** remains available during restoration; a newer choice wins over a delayed read or old write failure. A restored GPS selection is labeled **Saved GPS point · last selection**; a newly requested GPS point is labeled as a single reading. Neither label promises ongoing tracking. Cached information keeps its old retrieval time until a new official request succeeds. Use the location selector for another GPS reading or a different point.
 
-On this Windows machine, Node/npm/Git were absent from the initial PATH. A helper uses the bundled Node runtime and locally installed npm CLI:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1
-```
-
-Use `-Check` with that script for typecheck, lint, and tests. `pnpm` is also available through the runtime reported by `load_workspace_dependencies`; use its reported executable path if npm is unavailable. Do not mix lockfiles or dependency managers. This checkout's lockfile is authoritative. Installing a system Node runtime is optional, not a prerequisite for this session.
+Do not mix lockfiles or dependency managers. This checkout's lockfile is authoritative.
 
 ### Expo Go cannot download the app
 
-Android's `java.io.IOException: Failed to download remote update` can occur when the phone cannot reach the development server over LAN. Stop the running server with **Ctrl+C**, then use this checkout's launcher:
+Android's `java.io.IOException: Failed to download remote update` can occur when the phone cannot reach the development server. On this phone, LAN, ngrok/cache-reset attempts and the HTTPS download path did not produce a working startup; USB did. Clearing Metro or changing to a tunnel is not a verified repair here. If deliberately trying the tunnel transport, stop the LAN server you own with **Ctrl+C**, then use this checkout's launcher:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\dev.ps1 -Tunnel -Clear
 ```
 
-If prompted to install Expo's `@expo/ngrok` tunnel helper, accept the installation. Wait for **Tunnel ready**, close/reopen Expo Go, and scan the **new** QR code rather than opening the old recent-project entry. Both devices need internet. The tunnel forwards the development server through ngrok at a public temporary URL; keep the terminal open during testing and stop it with Ctrl+C afterward. It is slower than LAN. The launcher invokes Expo directly so the switches do not depend on npm argument forwarding. [Expo tunnel documentation](https://docs.expo.dev/more/expo-cli/#tunneling).
+The tunnel needs Expo's `@expo/ngrok` helper. If it is not installed, review Expo's installation prompt. Wait for **Tunnel ready**, close/reopen Expo Go, and scan the **new** QR code rather than opening the USB recent-project entry. Both devices need internet. The tunnel forwards the development server through ngrok at a public temporary URL; keep the terminal open during testing and stop it with Ctrl+C afterward. It is slower than LAN. The launcher invokes Expo directly so the switches do not depend on npm argument forwarding. [Expo tunnel documentation](https://docs.expo.dev/more/expo-cli/#tunneling).
 
 If the same error persists, record the PowerShell output after scanning and the installed Expo Go version. This message alone cannot distinguish a network failure from another startup/download problem. The project requires an Expo Go version compatible with SDK 57.
 
@@ -72,6 +82,8 @@ USB startup was confirmed on a moto g stylus - 2025 running Android 16 on Octobe
 ## Checkpoint scope
 
 The working increment includes Home, Map, and Prepare navigation; distinct simulated scenarios; foreground/manual location; selected-point NWS alerts; and separate regional weather, earthquake, and nearby river map layers. Check [MILESTONES.md](MILESTONES.md) for scope and [TESTING.md](TESTING.md) for executed checks and remaining phone verification. Offline safety text is bundled in the app. Live, cached, simulated, and unavailable information retain distinct labels.
+
+Prepare opens on **FIELD GUIDES**. Its square section controls reach the kit, family plan, saved contacts and call numbers without passing the twelve-item checklist; **911** stays at the top. Guide expansion, checklist values, plan edits and an unfinished contact form survive section changes. Calls still require an explicit dialer confirmation.
 
 Prepare shows **LOCAL COPY / SAVING**, **SAVED ON THIS PHONE**, or **SESSION ONLY / CHANGES NOT SAVED** for the latest kit, plan, and contacts. A completed form alone does not prove persistence. An unreadable stored plan is protected from replacement; new session edits remain usable with the session-only status. After a write failure, another edit retries saving the latest values.
 
@@ -111,9 +123,17 @@ The Google map shows a loading state and, if its tile-completion event does not 
 
 **View areas without basemap** opens a bundled SVG coordinate plot with longitude/latitude axes, supplied warning polygons, and enabled earthquake/gauge points. Browser previews and Android builds without a configured key also use this view. It is explicitly labeled **NO BASEMAP / COORDINATE VIEW** and **SCHEMATIC / NOT NAVIGATION**: it supplies no streets, terrain, flood extent, or safe route. Directional pan, zoom, recenter, and source details remain available. Pan moves the viewport by half its span, wraps longitude, and stops at the poles; it does not change the selected location or make a feed request. Recenter restores the original viewport and scale. This does not repair Expo Go's embedded Maps credential or verify successful Google tiles. Physical rendering of this newly added fallback still needs testing.
 
-For a ClearPath Android build, the remaining user setup is:
+For a ClearPath Android preview APK, the remaining user setup is below. **Steps 2–3 are optional:** skip them for a preview using the coordinate map. Complete them when you want native Google tiles. No preview APK exists yet.
 
-1. From the project terminal with Node/npm available, run `npx eas-cli@latest login`, then `npx eas-cli@latest build:configure` to link/configure the Expo project. Keep the existing `preview` APK profile. Run `npx eas-cli@latest credentials`, choose **Android** and **preview**, and create/select the signing keystore; use that certificate's SHA-1 for the Maps restriction. Keep the keystore private. These account/signing steps have not been run. [Expo app credentials](https://docs.expo.dev/app-signing/app-credentials/).
+On this PC, the startup helper's PATH changes apply only inside its process. To use `npx` for the following EAS commands in your own project terminal, first run:
+
+```powershell
+$clearpathRuntime = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies'
+$clearpathTools = (Resolve-Path -LiteralPath '..\.tools\node_modules\.bin').Path
+$env:PATH = "$clearpathTools;$clearpathRuntime\node\bin;$clearpathRuntime\native\git\cmd;$env:PATH"
+```
+
+1. From the project terminal with Node/npm available, run `npx eas-cli@latest login`, then `npx eas-cli@latest build:configure` to link/configure the Expo project. Keep the existing `preview` APK profile. Run `npx eas-cli@latest credentials`, choose **Android** and **preview**, and create/select the signing keystore. If adding Google tiles, use that certificate's SHA-1 for the Maps restriction. Keep the keystore private. These account/signing steps have not been run. [Expo app credentials](https://docs.expo.dev/app-signing/app-credentials/).
 2. In Google Cloud, choose/create the project, configure billing, enable **Maps SDK for Android**, and create an API key restricted to that SDK and to `org.clearpath.student` with the actual build-signing SHA-1 from step 1. These Cloud/billing steps remain pending. This is the native Android SDK key, not a Maps JavaScript API key for a website.
 3. In the Expo project's EAS environment-variable settings, set `GOOGLE_MAPS_ANDROID_API_KEY` for **preview**, preferably with sensitive visibility. The existing preview profile explicitly selects that EAS environment, but its cloud key has not been configured. A Git-ignored `.env.local` is not automatically uploaded to a cloud build. The local key is suitable only for local configuration/builds that actually load it.
 4. Run `npx eas-cli@latest build --profile preview --platform android`, open its completed build link on the phone, download/install the APK, and verify tiles, overlays, and offline restart. Android may ask you to allow installation from the downloading browser. This internal APK needs neither a Play Store publication nor a USB/Metro connection to run. Successful offline behavior still needs testing. Use the `development` profile instead only when you want an installed development client. [Expo internal distribution](https://docs.expo.dev/build/internal-distribution/).

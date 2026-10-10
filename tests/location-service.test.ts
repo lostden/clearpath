@@ -69,7 +69,7 @@ describe("foreground GPS service", () => {
     expect(await requestDeviceLocation()).toEqual({
       kind: "gps",
       coordinates: { latitude: 30.0474, longitude: -99.1403 },
-      label: "Current GPS point · ±33 m",
+      label: "GPS point · single reading · ±33 m",
     });
     expect(position).toHaveBeenCalledWith({
       accuracy: Location.Accuracy.Balanced,

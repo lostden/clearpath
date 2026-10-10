@@ -1,9 +1,23 @@
-# Authored, unrun flow. Each fixture remains visibly simulated.
+# Authored, unexecuted. APP_ID must identify a disposable installed native test build.
+# Demo entry is explicit. Each local fixture remains visibly simulated.
 appId: ${APP_ID}
 name: Simulation source separation
 ---
 - launchApp:
     clearState: true
+    permissions:
+      all: deny
+- assertVisible: "CLEARPATH"
+- assertVisible: "SET LOCATION"
+- assertNotVisible: "SIMULATED DEMO"
+- scrollUntilVisible:
+    element: "Explore simulated demo"
+    direction: DOWN
+- tapOn: "Explore simulated demo"
+- assertVisible: "SIMULATED DEMO"
+- scrollUntilVisible:
+    element: "Flash Flood Warning"
+    direction: UP
 - assertVisible: "SIMULATED DEMO"
 - scrollUntilVisible:
     element:
@@ -24,7 +38,7 @@ name: Simulation source separation
     id: "demo-normal"
 - scrollUntilVisible:
     element:
-      text: "No active alerts in this simulated scenario."
+      text: '(?i)No active alerts in this simulated scenario\.'
     direction: UP
 - assertVisible: "SIMULATED DEMO"
 - scrollUntilVisible:
@@ -35,7 +49,18 @@ name: Simulation source separation
     id: "demo-offline"
 - scrollUntilVisible:
     element:
-      text: "Simulated internet outage"
+      text: "(?i)Simulated internet outage"
     direction: UP
 - assertVisible: "SIMULATED DEMO"
 - assertNotVisible: "LIVE · OFFICIAL NWS"
+- scrollUntilVisible:
+    element:
+      id: "mode-live"
+    direction: DOWN
+- tapOn:
+    id: "mode-live"
+- assertNotVisible: "SIMULATED DEMO"
+- scrollUntilVisible:
+    element: "SET LOCATION"
+    direction: UP
+- assertVisible: "POINT ALERTS / UNVERIFIED"

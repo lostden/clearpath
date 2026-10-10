@@ -24,26 +24,31 @@ export function LocationPicker({
   visible: boolean;
   onClose: () => void;
 }) {
+  return visible ? <LocationPickerSession onClose={onClose} /> : null;
+}
+function LocationPickerSession({ onClose }: { onClose: () => void }) {
   const { setLocation, setLocationError, setMode } = useAppState();
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [label, setLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [manualError, setManualError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const request = useRef(0);
-  useEffect(() => {
-    if (!visible) request.current += 1;
-  }, [visible]);
   useEffect(
     () => () => {
       request.current += 1;
     },
     [],
   );
-  function close() {
+  function cancelGps() {
     request.current += 1;
     setLoading(false);
+    setError(null);
+  }
+  function close() {
+    cancelGps();
     onClose();
   }
   function select(location: SelectedLocation) {
@@ -51,6 +56,7 @@ export function LocationPicker({
     setLocationError(null);
     setMode("live");
     setError(null);
+    setManualError(null);
     onClose();
   }
   async function gps() {
@@ -76,7 +82,7 @@ export function LocationPicker({
   return (
     <Modal
       testID="location-picker"
-      visible={visible}
+      visible
       animationType="none"
       presentationStyle="fullScreen"
       onRequestClose={close}
@@ -105,9 +111,10 @@ export function LocationPicker({
           GPS is a single foreground reading. It does not track you in the
           background.
         </Body>
+        {loading && <ActionButton title="Cancel GPS request" secondary onPress={cancelGps} />}
         {error && (
           <Panel>
-            <Body>{error}</Body>
+            <View accessibilityLiveRegion="polite" aria-live="polite"><Body>{error}</Body></View>
           </Panel>
         )}
         <SectionTitle>TEXAS / CITY CENTERS</SectionTitle>
@@ -169,12 +176,13 @@ export function LocationPicker({
           onFocus={() => setFocusedField("longitude")}
           onBlur={() => setFocusedField(null)}
           selectionColor={colors.orange}
-          placeholder="Longitude, for example −99.1403"
+          placeholder="Longitude, for example -99.1403"
           placeholderTextColor={colors.secondary}
           keyboardType="numbers-and-punctuation"
           value={longitude}
           onChangeText={setLongitude}
         />
+        {manualError && <View testID="location-manual-error" accessibilityLiveRegion="polite" aria-live="polite"><Body>{manualError}</Body></View>}
         <ActionButton
           testID="location-manual-save"
           title="Use these coordinates"
@@ -183,7 +191,7 @@ export function LocationPicker({
             try {
               select(manualLocation(latitude, longitude, label));
             } catch (cause) {
-              setError(
+              setManualError(
                 cause instanceof Error
                   ? cause.message
                   : "Check the coordinates.",
