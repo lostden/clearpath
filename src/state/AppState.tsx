@@ -25,7 +25,7 @@ type AppState = {
 const Context = createContext<AppState | null>(null);
 const locationStorageKey = "@clearpath/selected-location/v1";
 export function AppProvider({ children }: PropsWithChildren) {
-  const [mode, changeMode] = useState<"demo" | "live">("demo");
+  const [mode, changeMode] = useState<"demo" | "live">("live");
   const [scenario, changeScenario] = useState<DemoScenario>("flood");
   const [location, changeLocation] = useState<SelectedLocation | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);

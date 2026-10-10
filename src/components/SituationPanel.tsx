@@ -7,7 +7,7 @@ import {
   SectionTitle,
   SourceBadge,
 } from "@/ui/components";
-import { colors } from "@/ui/tokens";
+import { colors, typography } from "@/ui/tokens";
 
 type Props = {
   alerts: OfficialAlert[];
@@ -79,8 +79,8 @@ export function SituationPanel({
                 {
                   backgroundColor:
                     first.severity === "Extreme" || first.severity === "Severe"
-                      ? colors.dangerWash
-                      : colors.cautionWash,
+                      ? colors.orange
+                      : colors.yellow,
                 },
               ]}
             >
@@ -143,12 +143,12 @@ const s = StyleSheet.create({
   container: { gap: 16 },
   warning: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.line,
-    borderLeftWidth: 4,
-    padding: 20,
+    borderLeftWidth: 6,
+    padding: 16,
     gap: 14,
-    borderRadius: 14,
+    borderRadius: 0,
   },
   row: {
     flexDirection: "row",
@@ -157,43 +157,45 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  event: { fontSize: 16, color: colors.ink, fontWeight: "600" },
+  event: { fontSize: 16, lineHeight: 24, color: colors.ink, fontFamily: typography.bodyStrong },
   severity: {
-    color: colors.ink,
+    color: colors.background,
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: typography.bodyStrong,
     backgroundColor: colors.dangerWash,
     paddingVertical: 5,
     paddingHorizontal: 8,
-    borderRadius: 5,
+    borderRadius: 0,
+    textTransform: "uppercase",
   },
   headline: {
     color: colors.ink,
-    fontSize: 23,
-    lineHeight: 31,
-    fontWeight: "600",
-    letterSpacing: -0.4,
+    fontSize: 22,
+    lineHeight: 29,
+    fontFamily: typography.heading,
+    letterSpacing: -0.5,
   },
-  agency: { color: colors.secondary, fontSize: 13, lineHeight: 19 },
+  agency: { color: colors.secondary, fontFamily: typography.body, fontSize: 13, lineHeight: 20 },
   instruction: {
     gap: 8,
     paddingTop: 14,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: colors.line,
   },
   instructionLabel: {
     color: colors.secondary,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    fontWeight: "700",
+    fontSize: 12,
+    lineHeight: 18,
+    letterSpacing: 0.2,
+    fontFamily: typography.bodyStrong,
   },
-  instructionText: { color: colors.ink, fontSize: 17, lineHeight: 26 },
+  instructionText: { color: colors.ink, fontFamily: typography.body, fontSize: 16, lineHeight: 25 },
   more: { gap: 10 },
   additional: {
     minHeight: 64,
     gap: 5,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: 2,
     borderBottomColor: colors.line,
   },
 });

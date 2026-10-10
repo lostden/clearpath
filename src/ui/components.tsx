@@ -10,7 +10,7 @@ import {
   type ScrollViewProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "./tokens";
+import { colors, typography } from "./tokens";
 
 export function Screen({
   children,
@@ -36,7 +36,7 @@ export function Brand() {
         <View style={styles.stroke} />
         <View style={[styles.stroke, { height: 12 }]} />
       </View>
-      <Text style={styles.brandText}>ClearPath</Text>
+      <Text style={styles.brandText}>CLEARPATH</Text>
     </View>
   );
 }
@@ -55,10 +55,12 @@ export function SourceBadge({
     <View
       style={[
         styles.badge,
-        source === "live" && { backgroundColor: colors.blueWash },
+        source === "demo" && { backgroundColor: colors.yellow, borderColor: colors.yellow },
+        source === "cached" && { borderColor: colors.yellow },
+        source === "unavailable" && { borderColor: colors.orange },
       ]}
     >
-      <Text accessibilityLabel={labels[source]} style={styles.badgeText}>
+      <Text accessibilityLabel={labels[source]} style={[styles.badgeText, source === "demo" && { color: colors.background }]}>
         {labels[source]}
       </Text>
     </View>
@@ -109,10 +111,11 @@ export function ActionButton({
       style={({ pressed }) => [
         styles.button,
         secondary && styles.secondaryButton,
-        (pressed || disabled) && { opacity: 0.55 },
+        pressed && { borderColor: colors.yellow },
+        disabled && styles.disabledButton,
       ]}
     >
-      <Text style={[styles.buttonText, secondary && { color: colors.ink }]}>
+      <Text style={[styles.buttonText, (secondary || disabled) && { color: colors.ink }]}>
         {title}
       </Text>
     </Pressable>
@@ -145,18 +148,19 @@ export function confirmCall(number: string, label = number) {
 }
 export function EmergencyButton() {
   return (
+    <View style={styles.hardShadow}>
     <ActionButton
-      title="Emergency? Call 911"
-      secondary
+      title="GET HELP · CALL 911"
       onPress={() => confirmCall("911")}
     />
+    </View>
   );
 }
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: {
-    padding: 24,
-    gap: 18,
+    padding: 18,
+    gap: 20,
     width: "100%",
     maxWidth: 680,
     alignSelf: "center",
@@ -164,10 +168,10 @@ export const styles = StyleSheet.create({
   },
   brand: { flexDirection: "row", alignItems: "center", gap: 10 },
   mark: {
-    backgroundColor: colors.navy,
+    backgroundColor: colors.orange,
     height: 32,
     width: 32,
-    borderRadius: 9,
+    borderRadius: 0,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -176,63 +180,74 @@ export const styles = StyleSheet.create({
   stroke: {
     width: 4,
     height: 20,
-    borderRadius: 2,
-    backgroundColor: "white",
+    borderRadius: 0,
+    backgroundColor: colors.background,
     transform: [{ rotate: "25deg" }],
   },
   brandText: {
     color: colors.ink,
-    fontSize: 21,
-    fontWeight: "700",
-    letterSpacing: -0.6,
+    fontSize: 20,
+    fontFamily: typography.heading,
+    letterSpacing: -0.9,
   },
   heading: {
     color: colors.ink,
-    fontSize: 32,
-    fontWeight: "700",
-    letterSpacing: -0.9,
+    fontSize: 34,
+    lineHeight: 39,
+    fontFamily: typography.heading,
+    letterSpacing: -1.1,
+    textTransform: "uppercase",
   },
-  body: { color: colors.secondary, fontSize: 16, lineHeight: 24 },
-  sectionTitle: { color: colors.ink, fontSize: 19, fontWeight: "600" },
+  body: { color: colors.secondary, fontFamily: typography.body, fontSize: 16, lineHeight: 24 },
+  sectionTitle: { color: colors.ink, fontFamily: typography.heading, fontSize: 19, lineHeight: 25, letterSpacing: -0.4, textTransform: "uppercase" },
   panel: {
-    padding: 20,
+    padding: 16,
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.line,
-    borderRadius: 16,
+    borderRadius: 0,
     gap: 12,
   },
   badge: {
     alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     backgroundColor: colors.cautionWash,
-    borderRadius: 6,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: colors.line,
   },
   badgeText: {
     color: colors.ink,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.7,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: typography.bodyStrong,
+    letterSpacing: 0.2,
   },
   button: {
-    minHeight: 48,
-    borderRadius: 10,
+    minHeight: 52,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: colors.orange,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: colors.navy,
+    backgroundColor: colors.orange,
     alignItems: "center",
     justifyContent: "center",
   },
   secondaryButton: {
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.line,
   },
+  disabledButton: { backgroundColor: "#303030", borderColor: "#888888" },
+  hardShadow: { backgroundColor: colors.ink, paddingRight: 4, paddingBottom: 4 },
   buttonText: {
-    color: colors.surface,
+    color: colors.background,
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: typography.bodyStrong,
+    lineHeight: 21,
+    textTransform: "uppercase",
     textAlign: "center",
   },
 });

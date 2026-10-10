@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@jest/globals";
-import { normalizeNwsCollection, validTimestamp } from "../src/data/nws";
+import { isOfficialAlert, normalizeNwsCollection, validTimestamp } from "../src/data/nws";
 import {
   nwsCollection,
   nwsFeature,
@@ -8,6 +8,27 @@ import {
 } from "./fixtures/alerts";
 
 describe("NWS adapter", () => {
+  test("retains only exact official affected-zone links without replacing missing alert geometry", () => {
+    const url = "https://api.weather.gov/zones/forecast/TXZ345";
+    const [alert] = normalizeNwsCollection(nwsCollection(nwsFeature({
+      affectedZones: [url, url, "https://example.com/zones/forecast/TXZ345", `${url}?x=1`, null],
+    })), TEST_NOW);
+    expect(alert.affectedZones).toEqual([url]);
+    expect(alert.geometry).toBeNull();
+    expect(alert.instruction).toBe(officialAlert().instruction);
+  });
+
+  test("old cached alerts without optional zone links remain valid", () => {
+    expect(isOfficialAlert(officialAlert())).toBe(true);
+    expect(isOfficialAlert(officialAlert({ affectedZones: ["https://api.weather.gov/zones/county/TXC199"] }))).toBe(true);
+    expect(isOfficialAlert(officialAlert({ affectedZones: ["https://example.com/fake"] }))).toBe(false);
+  });
+
+  test("does not discard usable warning text when optional affected-zone links are malformed", () => {
+    const [alert] = normalizeNwsCollection(nwsCollection(nwsFeature({ affectedZones: "invalid optional field" })), TEST_NOW);
+    expect(alert).toEqual(officialAlert());
+  });
+
   test("normalizes actual public data and preserves original instructions exactly", () => {
     expect(
       normalizeNwsCollection(nwsCollection(nwsFeature()), TEST_NOW),

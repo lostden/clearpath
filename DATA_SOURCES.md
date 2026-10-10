@@ -1,30 +1,53 @@
 # Data sources
 
-Sources reviewed October 9, 2026. A documentation review is not evidence that a mobile integration succeeded. Executed requests and tests belong in TESTING.md.
+Sources reviewed October 9–10, 2026. The October 10 regional weather, earthquake, and river integrations were explicitly requested by the user. A documentation review is not evidence that a mobile integration succeeded. Executed requests and tests belong in TESTING.md; successful native tiles/overlays remain unverified.
 
 ## NWS: official weather alerts
 
 Use `https://api.weather.gov/alerts/active?point={latitude},{longitude}` with a unique User-Agent and `Accept: application/geo+json`. The API is free, cache-oriented, and subject to limits. [API service](https://www.weather.gov/documentation/services-web-api).
 
+Home uses that selected-point query. Map independently uses `alerts/active?area=TX` for Texas or `alerts/active?status=actual` for U.S. regional coverage. A regional warning may not apply to the selected point; it cannot replace Home's point-query result or establish the student's future geographic relevance rules. Only supplied polygons are drawn, and warnings without geometry remain in the regional list. [NWS OpenAPI](https://api.weather.gov/openapi.json).
+
 NWS recommends alert requests no more often than every 30 seconds. ClearPath refreshes in the foreground every minute and gates manual requests for the same point for at least 30 seconds; Retry-After can extend the delay. Network/timeout/429/5xx failures receive at most two retries with minimum 30/60-second backoff. Requests have a timeout and cancellation. A response becomes cached after a failed verification, loss of connectivity, or 90 seconds without a new successful response. These policies do not guarantee alert-delivery latency. [Alerts service](https://www.weather.gov/documentation/services-web-alerts).
+
+Map's regional observer also shares a 30-second request gate across Texas/U.S. coverage switches and polls once per minute only while Map is focused, the layer enabled, the app foregrounded, and connectivity available. Its memory-only cache is separate from the persisted exact-point Home snapshot. A successful regional fetch cannot relabel an old Home result as live.
 
 Retain identity, agency, event, headline, description, instructions, classifications, sent/onset/expiration times, source link, and supplied geometry. Missing instructions mean no specific instruction was supplied; do not fill the gap with an invented imperative. Some alerts use zones/counties instead of polygons, so missing polygon geometry is not absence of an alert. [NWS geolocation guide](https://www.weather.gov/media/documentation/docs/NWS_Geolocation.pdf).
 
 The successful retrieval time belongs to the client snapshot; the alert's issuance/expiration times belong to its source. Expiration must be evaluated again as time passes and after restart. A failed refresh cannot turn a previous response into current verified data. Response parsing cannot guarantee complete coverage of every local emergency; NWS is not a universal wildfire/evacuation feed.
 
-## USGS: milestone 6 roadmap
+### Optional linked zone outlines
 
-No USGS observation integration is claimed at this checkpoint. The current documentation points to the **v1** OGC API. Recheck it when milestone 6 begins. [USGS API documentation](https://api.waterdata.usgs.gov/docs/), [current OpenAPI](https://api.waterdata.usgs.gov/ogcapi/v1/openapi?f=html).
+Some warnings name affected NWS forecast, county, or fire zones through `affectedZones`. ClearPath offers a separate **View NWS zone areas** action for a currently verified live regional warning. Opening this preflight makes no boundary request; downloading requires its explicit button. Only exact linked `https://api.weather.gov/zones/{forecast|county|fire}/{zoneId}` endpoints are eligible, and redirects or mismatched response identities are rejected. The view uses thin, unfilled zone outlines in the native map or coordinate fallback. These administrative definitions never replace the alert's supplied geometry, contribute to its mapped-warning count, establish personal applicability, or measure flooding. [NWS API](https://www.weather.gov/documentation/services-web-api), [NWS geolocation guide, pages 5–6](https://www.weather.gov/media/documentation/docs/NWS_Geolocation.pdf).
 
-| Future need | Documented collection |
+One explicit attempt uses at most four distinct valid endpoints sequentially, including RAM hits, with a 12-second timeout per request. Accepted response bodies are limited to 1 MiB each and 2 MiB per batch. Per-boundary geometry is limited to 512 polygon parts, 2,048 rings, and 20,000 vertices; a batch allows 1,024 parts and 25,000 vertices. Large, invalid, failed, or over-budget areas are omitted and reported as partial coverage rather than simplified into a different area. Native fetch may buffer a response before its size is checked, so accepted-body limits do not guarantee actual network traffic is capped at those amounts.
+
+The separate zone cache keeps at most 16 LRU entries within a conservative 2 MiB memory budget, for less than 24 hours; nothing is persisted. Optional official `effectiveDate`/`expirationDate` values are validated: future-effective or expired definitions are rejected, expiration removes RAM copies before the age limit, and validity is checked again before returning a result. A reused boundary retains its original `fetchedAt` and `cached` label independently of the parent warning's live status. Successful retrieval alone does not make the administrative definition a current hazard polygon.
+
+There is no automatic boundary fetch, polling, or retry loop. A 429 or explicit Retry-After pauses uncached lookups globally; a 429 without that header defaults to 30 seconds. Valid RAM hits remain available with cached provenance during cooldown. Close, backgrounding, loss of verified context/connectivity, leaving Map, coverage/demo changes, or warning expiration aborts the active viewer request and discards late results. Double taps cannot create simultaneous viewer downloads. The alert must still match its identity, issuance time, and linked zone set; the original warning remains the source for instructions and all named areas.
+
+## USGS: worldwide recent earthquakes
+
+The implemented adapter reads `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson`, the official worldwide past-day earthquake feed, which USGS updates every minute. ClearPath polls at most once per minute when the live earthquake layer is enabled, Map is focused, and the app is foregrounded and connected. It displays earthquake points without treating them as a prediction or a local impact assessment. [Official GeoJSON feed documentation](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php).
+
+Preserve event identity, actual event/update times, reported magnitude (including unknown), depth, source page, and review status. The feed's generation time is separate from app retrieval time. Invalid or partially unverifiable collections must not become a verified empty result; non-earthquake event types are excluded. Cached events that age beyond 24 hours leave the displayed past-day window.
+
+## USGS: nearby Texas river observations
+
+The implemented river adapter uses the current **v1 OGC API**, with no API key. It discovers USGS stream monitoring locations within a coordinate bounding box, constrains the state to Texas (`state_code=48`), follows bounded official pagination, then checks a 50 km radius by geographic distance. It selects up to the nearest 12 stations; this is a limited nearby-station view, not every river gauge in Texas or complete flood coverage. Discovery metadata is cached in memory for one hour. [USGS API documentation](https://api.waterdata.usgs.gov/docs/), [current OpenAPI](https://api.waterdata.usgs.gov/ogcapi/v1/openapi?f=html).
+
+| Implemented need | Official collection / selection |
 | --- | --- |
-| Discover station metadata/location | [monitoring-locations](https://api.waterdata.usgs.gov/ogcapi/v1/collections/monitoring-locations?f=html) |
-| Latest measurement for each time series | [latest-continuous](https://api.waterdata.usgs.gov/ogcapi/v1/collections/latest-continuous?f=html) |
-| Recent series for possible trends | [continuous](https://api.waterdata.usgs.gov/ogcapi/v1/collections/continuous?f=html) |
+| Discover station metadata/location | [monitoring-locations](https://api.waterdata.usgs.gov/ogcapi/v1/collections/monitoring-locations?f=html); USGS stream stations in Texas, then 50 km radius / nearest 12 |
+| Latest supported observations | [latest-continuous](https://api.waterdata.usgs.gov/ogcapi/v1/collections/latest-continuous?f=html); selected station identifiers, instantaneous statistic `00011`, streamflow `00060`, gage height `00065` |
 
-Discovery should query a bounding box, follow pagination, then apply the configured radius locally; a bounding-box match alone is not a radius match. Validate permitted query parameters using current OpenAPI/schema before implementation. Join observations by monitoring-location identifier and parameter. Show units, observation time, qualifiers/status, and an official station link; distinguish missing data from zero.
+Observation requests batch the selected stations and poll once per five minutes only while the live river layer is enabled, Map is focused, and the app is foregrounded and connected. No selected point means no river request. Switches, demo mode, backgrounding, and leaving Map stop the relevant polling. The latest snapshot is kept only in memory; it is not persisted for offline cold launch. Failures retain the earlier snapshot with cached provenance, original timestamps, and the error. No automatic USGS retry loop is added; manual requests also honor cadence and provider Retry-After.
 
-USGS continuous sensors often sample at 15-minute intervals, but collection/transmission timing varies and measurements can be delayed. [Latest continuous documentation](https://api.waterdata.usgs.gov/ogcapi/v1/collections/latest-continuous?f=html). A gauge measures a station, not conditions at the user's precise point. Gage height is not a universal flood-depth measurement. Flood-stage labels require verified station-specific official thresholds and datum interpretation; do not infer them from height alone.
+USGS continuous sensors often sample at 15-minute intervals, but collection/transmission timing varies and measurements can be delayed. [Latest continuous documentation](https://api.waterdata.usgs.gov/ogcapi/v1/collections/latest-continuous?f=html). Preserve each real observation's timestamp, units, qualifier, provisional/approved status, and official station link. Actual zero remains zero; absent/rejected observations remain unavailable. A recent fetch can still contain an old sensor reading. ClearPath's delayed-reading label uses a 90-minute age boundary (or an implausible future timestamp); this is an app recency convention, not an agency flood threshold.
+
+A gauge measures a station, not conditions at the user's precise point. Gage height is relative to the station's reference, not floodwater depth at a road/home. Flood-stage labels require verified station-specific official thresholds and datum interpretation; no flood-stage or trend inference is implemented. Streamflow does not establish passable roads or evacuation-route safety.
+
+Both USGS layers distinguish source observation/event time, source feed-generation time where supplied, and successful app retrieval time. Retained data becomes cached after errors, lost connectivity, or the app freshness boundary; retrieval time is never advanced by a failed request. Earthquakes use a 90-second snapshot/feed-generation boundary and rivers a ten-minute snapshot boundary. Those source states describe verification freshness, not personalized hazard severity. The original milestone 5 student engine remains unimplemented.
 
 ## Roads and navigation
 
@@ -33,6 +56,8 @@ DriveTexas API access requires a key and may require TxDOT approval. No approval
 Until approved terms have been reviewed, link to [official DriveTexas](https://drivetexas.org/). Do not scrape or relabel its content as a ClearPath live feed. Construction-only WZDx is not an equivalent comprehensive emergency-road feed. The terms must be read in the approval process; the documentation review here does not grant redistribution permission.
 
 [Google Maps URLs](https://developers.google.com/maps/documentation/urls/get-started) can open a standard map/directions experience without a Maps API key. These external links do not establish road passability, an evacuation route, or flood safety. Native map tiles require separate platform setup as described in README.md.
+
+When basemap tiles are unavailable, the optional coordinate view draws the same supplied polygon geometry and enabled event/station points against labeled latitude/longitude axes. It uses structured local SVG primitives, not a downloaded map, terrain image, flood extent, road network, or navigation service. Its schematic label and independent source states remain visible; an empty plot does not establish safety.
 
 ## Offline preparation and numbers
 

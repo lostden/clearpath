@@ -15,7 +15,7 @@ describe("deliberate emergency dialer action", () => {
     expect(openDialer).not.toHaveBeenCalled();
 
     await fireEvent.press(
-      screen.getByRole("button", { name: "Emergency? Call 911" }),
+      screen.getByRole("button", { name: "GET HELP · CALL 911" }),
     );
     expect(showConfirmation).toHaveBeenCalledWith(
       "Call 911?",

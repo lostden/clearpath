@@ -11,6 +11,7 @@ import {
   ActionButton,
   Brand,
   Body,
+  Heading,
   Panel,
   Screen,
   SectionTitle,
@@ -25,9 +26,10 @@ import {
 import { DemoControls } from "@/components/DemoControls";
 import MapCanvas from "@/components/MapCanvas";
 import { useAlerts } from "@/hooks/useAlerts";
-import { colors } from "@/ui/tokens";
+import { colors, typography } from "@/ui/tokens";
 import { LocationPicker } from "@/components/LocationPicker";
 import { useAppState } from "@/state/AppState";
+import { ShareLocation } from "@/components/ShareLocation";
 export default function HomeScreen() {
   const feed = useAlerts();
   const { locationError } = useAppState();
@@ -43,6 +45,8 @@ export default function HomeScreen() {
             refreshing={feed.isRefreshing}
             onRefresh={() => void feed.refresh()}
             enabled={feed.canRefresh}
+            tintColor={colors.orange}
+            colors={[colors.orange]}
           />
         }
       >
@@ -54,8 +58,13 @@ export default function HomeScreen() {
             style={s.emergency}
             onPress={() => confirmCall("911")}
           >
-            <Text style={s.linkText}>911</Text>
+            <Text style={s.emergencyLabel}>GET HELP</Text>
+            <Text style={s.emergencyText}>911</Text>
           </Pressable>
+        </View>
+        <View style={s.titleBlock}>
+          <Text style={s.kicker}>01 / FIELD STATUS</Text>
+          <Heading>Check alerts</Heading>
         </View>
         <Pressable
           testID="location-picker-button"
@@ -64,18 +73,22 @@ export default function HomeScreen() {
           style={s.location}
           onPress={() => setShowLocation(true)}
         >
-          <Text style={s.locationTitle}>
-            {feed.selectedLocation?.label || "Choose your location"} →
-          </Text>
+          <View style={s.locationRow}>
+            <Text style={s.locationTitle}>{feed.selectedLocation?.label || "SET LOCATION"}</Text>
+            <Text style={s.locationArrow}>→</Text>
+          </View>
           <Text style={s.timestamp}>
             {feed.source === "demo"
               ? "Simulated location"
-              : feed.selectedLocation?.kind === "gps"
+              : !feed.selectedLocation
+                ? "GPS OR MANUAL"
+                : feed.selectedLocation.kind === "gps"
                 ? "GPS selection"
                 : "Manual selection"}{" "}
-            · change location
+            · CHANGE
           </Text>
         </Pressable>
+        <ShareLocation selectedLocation={feed.selectedLocation} source={feed.source} />
         {locationError && (
           <Panel>
             <Body>{locationError}</Body>
@@ -124,11 +137,10 @@ export default function HomeScreen() {
         ) : (
           <Panel>
             <SectionTitle>
-              Choose a point to check official alerts.
+              Set location
             </SectionTitle>
             <Body>
-              Allow foreground GPS or select a manual point. No current
-              conditions have been verified yet.
+              Use GPS or enter a point. Current alerts are unverified.
             </Body>
             <ActionButton
               title="Choose location"
@@ -158,7 +170,7 @@ export default function HomeScreen() {
           </Body>
         )}
         <View style={s.divider} />
-        <SectionTitle>Around your location</SectionTitle>
+        <SectionTitle>02 / HAZARD MAP</SectionTitle>
         {feed.selectedLocation && (
           <Pressable
             accessibilityRole="button"
@@ -174,8 +186,7 @@ export default function HomeScreen() {
           </Pressable>
         )}
         <Body>
-          Weather warnings take precedence over optional river and road
-          information. Follow local emergency authorities.
+          Open the map for regional warnings, earthquakes and river observations.
         </Body>
         <Pressable
           accessibilityRole="button"
@@ -183,10 +194,10 @@ export default function HomeScreen() {
           style={s.link}
           onPress={() => router.navigate("/prepare")}
         >
-          <Text style={s.linkText}>Emergency resources & preparation →</Text>
+          <Text style={s.linkText}>GET RESOURCES →</Text>
         </Pressable>
         <View style={s.divider} />
-        <SectionTitle>Presentation scenarios</SectionTitle>
+        <SectionTitle>03 / TRAINING DEMO</SectionTitle>
         <DemoControls />
         <Body>
           ClearPath cannot verify personal safety or guarantee emergency
@@ -216,24 +227,30 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  titleBlock: { gap: 8 },
+  kicker: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 13, lineHeight: 20, letterSpacing: 0.5 },
   emergency: {
-    minWidth: 60,
-    minHeight: 48,
+    minWidth: 64,
+    minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 9,
-    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.orange,
+    borderRadius: 0,
+    backgroundColor: colors.orange,
   },
-  location: { minHeight: 48, justifyContent: "center", gap: 4 },
-  locationTitle: { color: colors.ink, fontSize: 18, fontWeight: "600" },
-  timestamp: { color: colors.secondary, fontSize: 12, lineHeight: 18 },
+  emergencyText: { color: colors.background, fontFamily: typography.heading, fontSize: 22 },
+  emergencyLabel: { color: colors.background, fontFamily: typography.bodyStrong, fontSize: 12, lineHeight: 18 },
+  location: { minHeight: 64, justifyContent: "center", gap: 8, borderWidth: 2, borderColor: colors.line, padding: 14 },
+  locationRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  locationTitle: { flex: 1, color: colors.ink, fontSize: 17, lineHeight: 25, fontFamily: typography.bodyStrong },
+  locationArrow: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 20 },
+  timestamp: { color: colors.secondary, fontFamily: typography.body, fontSize: 13, lineHeight: 20 },
   divider: {
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: colors.line,
     marginVertical: 4,
   },
-  link: { minHeight: 48, justifyContent: "center" },
-  linkText: { color: colors.navy, fontSize: 16, fontWeight: "600" },
+  link: { minHeight: 52, justifyContent: "center", borderWidth: 2, borderColor: colors.orange, padding: 14 },
+  linkText: { color: colors.orange, fontSize: 16, fontFamily: typography.bodyStrong },
 });

@@ -24,7 +24,7 @@ import {
   safetyGuides,
 } from "@/data/preparedness";
 import { usePreparation } from "@/state/PreparednessState";
-import { colors } from "@/ui/tokens";
+import { colors, typography } from "@/ui/tokens";
 export default function PrepareScreen() {
   const { saved, ready, storageError, update, toggle } = usePreparation();
   const [guide, setGuide] = useState<string | null>(null);
@@ -32,6 +32,7 @@ export default function PrepareScreen() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [contactError, setContactError] = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const completed = checklistItems.filter(
     (item) => saved.checked[item.id],
   ).length;
@@ -61,8 +62,8 @@ export default function PrepareScreen() {
   }
   return (
     <Screen>
-      <Heading>A little preparation.</Heading>
-      <Body>Essentials you can open even when your connection is gone.</Body>
+      <Heading>PREPARE.</Heading>
+      <Body>Build a kit. Make a plan. Keep essentials offline.</Body>
       <View style={s.offlinePill}>
         <Text style={s.offlineText}>AVAILABLE OFFLINE</Text>
       </View>
@@ -73,13 +74,17 @@ export default function PrepareScreen() {
         </Panel>
       )}
       <View style={s.sectionRow}>
-        <SectionTitle>Your emergency kit</SectionTitle>
+        <View style={s.flex}>
+        <SectionTitle>01 / EMERGENCY KIT</SectionTitle>
+        </View>
         <Text style={s.progress}>
           {completed}/{checklistItems.length}
         </Text>
       </View>
       <View
+        accessibilityRole="progressbar"
         accessibilityLabel={`${completed} of ${checklistItems.length} emergency kit items completed`}
+        accessibilityValue={{ min: 0, max: checklistItems.length, now: completed }}
         style={s.progressTrack}
       >
         <View
@@ -95,7 +100,7 @@ export default function PrepareScreen() {
             key={item.id}
             testID={`checklist-${item.id}`}
             accessibilityRole="checkbox"
-              aria-checked={!!saved.checked[item.id]}
+            aria-checked={!!saved.checked[item.id]}
             accessibilityLabel={item.title}
             accessibilityHint={item.detail}
             accessibilityState={{
@@ -104,7 +109,7 @@ export default function PrepareScreen() {
             }}
             disabled={!ready}
             onPress={() => toggle(item.id)}
-            style={s.checkRow}
+            style={({ pressed }) => [s.checkRow, pressed && s.pressedRow]}
           >
             <View style={[s.box, saved.checked[item.id] && s.checked]}>
               <Text style={s.check}>{saved.checked[item.id] ? "✓" : ""}</Text>
@@ -116,20 +121,20 @@ export default function PrepareScreen() {
           </Pressable>
         ))}
       </View>
-      <SectionTitle>Know what to do</SectionTitle>
+      <SectionTitle>02 / FIELD GUIDANCE</SectionTitle>
       <View style={s.list}>
         {safetyGuides.map((item) => (
           <View key={item.id}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Read ${item.title}`}
-                aria-expanded={guide === item.id}
+              aria-expanded={guide === item.id}
               accessibilityState={{ expanded: guide === item.id }}
               onPress={() => setGuide(guide === item.id ? null : item.id)}
-              style={s.guideRow}
+              style={({ pressed }) => [s.guideRow, pressed && s.pressedRow]}
             >
               <Text style={[s.itemTitle, s.flex]}>{item.title}</Text>
-              <Text style={s.itemTitle}>{guide === item.id ? "−" : "+"}</Text>
+              <Text accessibilityElementsHidden style={s.expand}>{guide === item.id ? "−" : "+"}</Text>
             </Pressable>
             {guide === item.id && (
               <View style={s.guideContent}>
@@ -148,18 +153,20 @@ export default function PrepareScreen() {
           </View>
         ))}
       </View>
-      <SectionTitle>Your family plan</SectionTitle>
+      <SectionTitle>03 / FAMILY PLAN</SectionTitle>
       <Panel>
         <Body>
-          Agree on a meeting place and an out-of-area person everyone can
-          contact. Save the details here, and share the plan with your
-          household.
+          Choose a meeting place and an out-of-area contact. Save the plan.
+          Share it with your household.
         </Body>
         <Text style={s.inputLabel}>Meeting place</Text>
         <TextInput
           accessibilityLabel="Family meeting place"
           editable={ready}
-          style={s.input}
+          style={[s.input, focusedField === "meeting" && s.inputFocused]}
+          onFocus={() => setFocusedField("meeting")}
+          onBlur={() => setFocusedField(null)}
+          selectionColor={colors.orange}
           placeholder="Address or familiar landmark"
           placeholderTextColor={colors.secondary}
           value={saved.meetingPlace}
@@ -171,7 +178,10 @@ export default function PrepareScreen() {
         <TextInput
           accessibilityLabel="Family out-of-area contact"
           editable={ready}
-          style={s.input}
+          style={[s.input, focusedField === "family-contact" && s.inputFocused]}
+          onFocus={() => setFocusedField("family-contact")}
+          onBlur={() => setFocusedField(null)}
+          selectionColor={colors.orange}
           placeholder="Name and contact information"
           placeholderTextColor={colors.secondary}
           value={saved.outOfAreaContact}
@@ -180,7 +190,7 @@ export default function PrepareScreen() {
           multiline
         />
       </Panel>
-      <SectionTitle>Your emergency contacts</SectionTitle>
+      <SectionTitle>04 / SAVED CONTACTS</SectionTitle>
       {saved.contacts.map((contact) => (
         <Panel key={contact.id}>
           <Text style={s.itemTitle}>{contact.name}</Text>
@@ -215,23 +225,31 @@ export default function PrepareScreen() {
       ))}
       {!saved.contacts.length && (
         <Body>
-          Keep the people you need within reach. Contacts remain on this device.
+          Save key contacts. They remain on this device.
         </Body>
       )}
       {showContact ? (
         <Panel>
+          <Text style={s.inputLabel}>Contact name</Text>
           <TextInput
             accessibilityLabel="Contact name"
-            style={s.input}
+            style={[s.input, focusedField === "contact-name" && s.inputFocused]}
+            onFocus={() => setFocusedField("contact-name")}
+            onBlur={() => setFocusedField(null)}
+            selectionColor={colors.orange}
             placeholder="Name"
             placeholderTextColor={colors.secondary}
             value={name}
             onChangeText={setName}
             maxLength={80}
           />
+          <Text style={s.inputLabel}>Phone number</Text>
           <TextInput
             accessibilityLabel="Contact phone number"
-            style={s.input}
+            style={[s.input, focusedField === "contact-phone" && s.inputFocused]}
+            onFocus={() => setFocusedField("contact-phone")}
+            onBlur={() => setFocusedField(null)}
+            selectionColor={colors.orange}
             placeholder="Phone number"
             placeholderTextColor={colors.secondary}
             keyboardType="phone-pad"
@@ -259,7 +277,7 @@ export default function PrepareScreen() {
           disabled={!ready}
         />
       )}
-      <SectionTitle>Emergency numbers</SectionTitle>
+      <SectionTitle>05 / EMERGENCY NUMBERS</SectionTitle>
       <EmergencyButton />
       {importantNumbers
         .filter((item) => item.number !== "911")
@@ -271,15 +289,28 @@ export default function PrepareScreen() {
             onPress={() => confirmCall(item.number, item.label)}
           />
         ))}
-      <SectionTitle>About your privacy</SectionTitle>
+      <SectionTitle>LOCAL STORAGE / PRIVACY</SectionTitle>
       <Body>
-        ClearPath has no account or analytics. Foreground GPS is optional. Live
-        alert requests send your selected coordinates directly to the National
-        Weather Service. Native map providers receive the map area you view.
-        Preparedness, contacts, and one latest alert snapshot are stored locally
-        in app storage; this storage is not encrypted. Only the last selected
-        point is saved for reopening the matching offline alert snapshot. There
-        is no location history. Demo data never enters the live cache.
+        ClearPath has no account or analytics. Foreground GPS is optional.
+        Home warning requests send your selected coordinates directly to the
+        National Weather Service. Nearby river searches send them directly to
+        USGS. Regional weather requests send the selected Texas or U.S.
+        coverage; earthquake requests use a global feed. Google Maps, or
+        Apple Maps on iOS, receives the map area you view.
+      </Body>
+      <Body>
+        Preparedness, contacts, the last selected point, and one latest Home
+        NWS snapshot are saved in local app storage. The app does not encrypt
+        this storage. Regional weather, earthquake, and river copies stay in
+        memory and are not saved for reopening offline. There is no stored
+        location history. Demo data never enters the live cache.
+      </Body>
+      <Body>
+        Share location first opens an exact-message review. Tap Open share
+        sheet, then choose where to send the selected point in the device
+        share sheet. Saved GPS coordinates are labeled as last selected;
+        demo coordinates are labeled as training only. Sharing does not
+        recheck your position.
       </Body>
       <Body>
         ClearPath does not monitor in the background or replace emergency
@@ -291,15 +322,18 @@ export default function PrepareScreen() {
 const s = StyleSheet.create({
   offlinePill: {
     alignSelf: "flex-start",
-    backgroundColor: colors.blueWash,
-    padding: 8,
-    borderRadius: 6,
+    backgroundColor: colors.orange,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 2,
+    borderColor: colors.orange,
   },
   offlineText: {
-    color: colors.navy,
-    fontWeight: "700",
-    fontSize: 11,
-    letterSpacing: 0.8,
+    color: colors.background,
+    fontFamily: typography.bodyStrong,
+    fontSize: 14,
+    lineHeight: 22,
+    letterSpacing: 0.5,
   },
   sectionRow: {
     flexDirection: "row",
@@ -307,19 +341,19 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  progress: { color: colors.secondary, fontSize: 14 },
+  progress: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 16, lineHeight: 24 },
   progressTrack: {
-    height: 4,
-    backgroundColor: colors.line,
-    borderRadius: 2,
+    height: 12,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: colors.ink,
     overflow: "hidden",
   },
-  progressFill: { height: 4, backgroundColor: colors.navy },
+  progressFill: { height: 8, backgroundColor: colors.orange },
   list: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderWidth: 2,
+    borderColor: colors.ink,
     overflow: "hidden",
   },
   checkRow: {
@@ -328,52 +362,56 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 2,
     borderBottomColor: colors.line,
   },
   box: {
-    height: 24,
-    width: 24,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.secondary,
+    height: 28,
+    width: 28,
+    borderWidth: 2,
+    borderColor: colors.ink,
     justifyContent: "center",
     alignItems: "center",
   },
-  checked: { backgroundColor: colors.navy, borderColor: colors.navy },
-  check: { color: colors.surface, fontSize: 17, fontWeight: "700" },
+  checked: { backgroundColor: colors.orange, borderColor: colors.orange },
+  check: { color: colors.background, fontFamily: typography.bodyStrong, fontSize: 18, lineHeight: 24 },
+  pressedRow: { backgroundColor: colors.background },
   flex: { flex: 1 },
   itemTitle: {
     color: colors.ink,
+    fontFamily: typography.bodyStrong,
     fontSize: 16,
-    fontWeight: "500",
-    lineHeight: 23,
+    lineHeight: 24,
   },
   detail: {
     color: colors.secondary,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 3,
+    fontFamily: typography.body,
+    fontSize: 16,
+    lineHeight: 24,
+    marginTop: 4,
   },
   guideRow: {
-    minHeight: 56,
+    minHeight: 64,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 2,
     borderBottomColor: colors.line,
   },
+  expand: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 24, lineHeight: 30 },
   guideContent: { padding: 16, gap: 12 },
   input: {
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderWidth: 2,
+    borderColor: colors.ink,
     backgroundColor: colors.background,
-    borderRadius: 8,
     padding: 14,
     minHeight: 48,
     color: colors.ink,
+    fontFamily: typography.body,
     fontSize: 16,
+    lineHeight: 24,
   },
-  inputLabel: { color: colors.ink, fontSize: 14, fontWeight: "600" },
+  inputFocused: { borderColor: colors.orange },
+  inputLabel: { color: colors.ink, fontFamily: typography.bodyStrong, fontSize: 16, lineHeight: 24, textTransform: "uppercase" },
 });

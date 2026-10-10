@@ -6,13 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/brand/icon.png",
     "scheme": "clearpath",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
     "ios": {
       "icon": "./assets/brand/icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#173C57",
+        "backgroundColor": "#000000",
         "foregroundImage": "./assets/brand/adaptive.png",
         "monochromeImage": "./assets/brand/monochrome.png"
       },
@@ -27,7 +28,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#173C57",
+          "backgroundColor": "#000000",
           "image": "./assets/brand/splash.png",
           "imageWidth": 76
         }

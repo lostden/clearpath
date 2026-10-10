@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   manualLocation,
   requestDeviceLocation,
@@ -15,7 +16,7 @@ import {
   Screen,
   SectionTitle,
 } from "@/ui/components";
-import { colors } from "@/ui/tokens";
+import { colors, typography } from "@/ui/tokens";
 export function LocationPicker({
   visible,
   onClose,
@@ -29,6 +30,7 @@ export function LocationPicker({
   const [label, setLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const request = useRef(0);
   useEffect(() => {
     if (!visible) request.current += 1;
@@ -75,17 +77,19 @@ export function LocationPicker({
     <Modal
       testID="location-picker"
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType="none"
+      presentationStyle="fullScreen"
       onRequestClose={close}
     >
+      <SafeAreaView edges={["bottom"]} style={s.modalSafe}>
       <Screen>
         <ActionButton
           title="Close location selector"
           onPress={close}
           secondary
         />
-        <Heading>Where should we check?</Heading>
+        <Text style={s.kicker}>LOCATION / POINT SELECTOR</Text>
+        <Heading>SELECT POINT.</Heading>
         <Body>
           Choose GPS or a manual point. Live requests send these coordinates
           directly to the National Weather Service. Permission is requested only
@@ -106,7 +110,7 @@ export function LocationPicker({
             <Body>{error}</Body>
           </Panel>
         )}
-        <SectionTitle>Texas city centers</SectionTitle>
+        <SectionTitle>TEXAS / CITY CENTERS</SectionTitle>
         <Body>
           City centers check one point. Your address may have different
           warnings.
@@ -118,39 +122,53 @@ export function LocationPicker({
             accessibilityLabel={`Select ${location.label}`}
             disabled={loading}
             onPress={() => select(location)}
-            style={s.city}
+            style={({ pressed }) => [s.city, pressed && s.pressedCity]}
           >
-            <Text style={s.cityTitle}>{location.label}</Text>
+            <View style={s.cityHeader}>
+              <Text style={s.cityTitle}>{location.label}</Text>
+              <Text accessibilityElementsHidden style={s.arrow}>→</Text>
+            </View>
             <Text style={s.cityDetail}>
-              {location.coordinates.latitude}, {location.coordinates.longitude}{" "}
-              →
+              {location.coordinates.latitude}, {location.coordinates.longitude}
             </Text>
           </Pressable>
         ))}
-        <SectionTitle>Enter a precise point</SectionTitle>
+        <SectionTitle>MANUAL / COORDINATES</SectionTitle>
+        <Text style={s.inputLabel}>POINT LABEL</Text>
         <TextInput
           accessibilityLabel="Location label"
-          style={s.input}
+          style={[s.input, focusedField === "label" && s.inputFocused]}
+          onFocus={() => setFocusedField("label")}
+          onBlur={() => setFocusedField(null)}
+          selectionColor={colors.orange}
           placeholder="Optional name"
           placeholderTextColor={colors.secondary}
           value={label}
           onChangeText={setLabel}
           maxLength={80}
         />
+        <Text style={s.inputLabel}>LATITUDE</Text>
         <TextInput
           testID="location-manual-latitude"
           accessibilityLabel="Latitude"
-          style={s.input}
+          style={[s.input, focusedField === "latitude" && s.inputFocused]}
+          onFocus={() => setFocusedField("latitude")}
+          onBlur={() => setFocusedField(null)}
+          selectionColor={colors.orange}
           placeholder="Latitude, for example 30.0474"
           placeholderTextColor={colors.secondary}
           keyboardType="numbers-and-punctuation"
           value={latitude}
           onChangeText={setLatitude}
         />
+        <Text style={s.inputLabel}>LONGITUDE</Text>
         <TextInput
           testID="location-manual-longitude"
           accessibilityLabel="Longitude"
-          style={s.input}
+          style={[s.input, focusedField === "longitude" && s.inputFocused]}
+          onFocus={() => setFocusedField("longitude")}
+          onBlur={() => setFocusedField(null)}
+          selectionColor={colors.orange}
           placeholder="Longitude, for example −99.1403"
           placeholderTextColor={colors.secondary}
           keyboardType="numbers-and-punctuation"
@@ -178,27 +196,37 @@ export function LocationPicker({
           supported areas. No warning results establish personal safety.
         </Body>
       </Screen>
+      </SafeAreaView>
     </Modal>
   );
 }
 const s = StyleSheet.create({
+  modalSafe: { flex: 1, backgroundColor: colors.background },
+  kicker: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 14, lineHeight: 22, letterSpacing: 0.5 },
   city: {
-    minHeight: 60,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-    gap: 4,
-  },
-  cityTitle: { color: colors.ink, fontSize: 16 },
-  cityDetail: { color: colors.secondary, fontSize: 13 },
-  input: {
-    minHeight: 48,
+    minHeight: 76,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: colors.ink,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 10,
+    gap: 8,
+  },
+  pressedCity: { backgroundColor: colors.background, borderColor: colors.orange },
+  cityHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  cityTitle: { flex: 1, color: colors.ink, fontFamily: typography.bodyStrong, fontSize: 16, lineHeight: 24, textTransform: "uppercase" },
+  cityDetail: { color: colors.secondary, fontFamily: typography.body, fontSize: 16, lineHeight: 24 },
+  arrow: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 24, lineHeight: 30 },
+  inputLabel: { color: colors.ink, fontFamily: typography.bodyStrong, fontSize: 16, lineHeight: 24 },
+  input: {
+    minHeight: 56,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: colors.ink,
     padding: 14,
     color: colors.ink,
+    fontFamily: typography.body,
     fontSize: 16,
+    lineHeight: 24,
   },
+  inputFocused: { borderColor: colors.orange },
 });

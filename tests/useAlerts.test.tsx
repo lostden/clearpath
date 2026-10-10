@@ -68,12 +68,21 @@ async function mount() {
       </AppProvider>
     </QueryClientProvider>,
   );
+  // Scenario tests choose demo explicitly; the product's fresh-launch default
+  // is independent of this provider test fixture.
+  await act(() => settings.setMode("demo"));
 }
 
 async function selectLive(location = point) {
   await act(() => {
     settings.setLocation(location);
     settings.setMode("live");
+  });
+}
+
+async function advance(milliseconds: number) {
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(milliseconds);
   });
 }
 
@@ -115,6 +124,22 @@ test("demo mode never reads or writes the real cache and shares one feed across 
   await selectLive();
   await waitFor(() => expect(state.source).toBe("live"));
   expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("historical demo warnings and expired counts use the frozen presentation clock", async () => {
+  await mount();
+  await act(() => settings.setScenario("offline"));
+  expect(state.source).toBe("demo");
+  expect(state.alerts).toHaveLength(1);
+  expect(state.expiredCount).toBe(1);
+  expect(state.snapshot?.fetchedAt).toBe("2025-07-04T09:57:00.000Z");
+  const displayed = state.alerts;
+  await advance(24 * 60 * 60_000);
+  expect(state.alerts).toEqual(displayed);
+  expect(state.expiredCount).toBe(1);
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  expect(readCache).not.toHaveBeenCalled();
+  expect(writeCache).not.toHaveBeenCalled();
 });
 
 test("a successful empty live response remains distinct from a cached empty response", async () => {
@@ -295,6 +320,120 @@ test("manual refresh uses the shared 30-second request gate", async () => {
     await jest.advanceTimersByTimeAsync(1);
   });
   expect(fetchAlerts).toHaveBeenCalledTimes(2);
+});
+
+test("foreground polling replaces supplied warning geometry and removes overlays after a verified empty response", async () => {
+  const first = officialAlert({
+    geometry: {
+      type: "Polygon",
+      coordinates: [[[-99.1, 30.1], [-98.9, 30.1], [-99, 29.9], [-99.1, 30.1]]],
+    },
+  });
+  const updated = officialAlert({
+    id: "urn:test:updated",
+    sourceUrl: "https://api.weather.gov/alerts/urn:test:updated",
+    messageType: "Update",
+    references: [first.id],
+    sent: new Date(TEST_NOW + 60_000).toISOString(),
+    geometry: {
+      type: "Polygon",
+      coordinates: [[[-99.2, 30.2], [-98.8, 30.2], [-99, 29.8], [-99.2, 30.2]]],
+    },
+  });
+  fetchAlerts
+    .mockResolvedValueOnce([first])
+    .mockResolvedValueOnce([updated])
+    .mockResolvedValueOnce([]);
+  await mount();
+  await selectLive();
+  await waitFor(() => expect(state.alerts).toEqual([first]));
+  const firstRetrievedAt = state.snapshot!.fetchedAt;
+
+  await advance(60_000);
+  await waitFor(() => expect(state.alerts).toEqual([updated]));
+  expect(fetchAlerts).toHaveBeenCalledTimes(2);
+  expect(state.source).toBe("live");
+  expect(state.snapshot?.fetchedAt).not.toBe(firstRetrievedAt);
+  expect(state.alerts[0].geometry).toEqual(updated.geometry);
+
+  await advance(60_000);
+  await waitFor(() => expect(state.alerts).toEqual([]));
+  expect(fetchAlerts).toHaveBeenCalledTimes(3);
+  expect(state.source).toBe("live");
+  expect(state.snapshot?.locationKey).toBe("30,-99");
+});
+
+test("a short background pause rechecks the same point without waiting for a new polling interval", async () => {
+  await mount();
+  await selectLive();
+  await waitFor(() => expect(state.source).toBe("live"));
+  await advance(10_000);
+  await act(() => notifyAppState("background"));
+  await advance(25_000);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+
+  await act(() => notifyAppState("active"));
+  await waitFor(() => expect(fetchAlerts).toHaveBeenCalledTimes(2));
+  expect(Date.now() - TEST_NOW).toBeLessThan(60_000);
+  expect(state.snapshot?.locationKey).toBe("30,-99");
+});
+
+test("a quick reconnection rechecks through the shared request gate rather than duplicating early requests", async () => {
+  const starts: number[] = [];
+  fetchAlerts.mockImplementation(async () => {
+    starts.push(Date.now());
+    return [];
+  });
+  await mount();
+  await selectLive();
+  await waitFor(() => expect(state.source).toBe("live"));
+  await advance(5_000);
+  mockNetwork.isConnected = false;
+  await act(() => settings.setLocation({ ...point, label: "Disconnected" }));
+  expect(state.source).toBe("cached");
+  const savedRetrieval = state.snapshot?.fetchedAt;
+  await advance(5_000);
+  mockNetwork.isConnected = true;
+  await act(() => settings.setLocation({ ...point, label: "Reconnected" }));
+
+  await advance(starts[0] + 30_000 - Date.now() - 1);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  expect(state.snapshot?.fetchedAt).toBe(savedRetrieval);
+  await advance(1);
+  await waitFor(() => expect(fetchAlerts).toHaveBeenCalledTimes(2));
+  expect(starts[1] - starts[0]).toBeGreaterThanOrEqual(30_000);
+  expect(starts[1] - starts[0]).toBeLessThan(60_000);
+  expect(state.source).toBe("live");
+});
+
+test("a failed automatic verification retains supplied geometry as cached until a successful check clears it", async () => {
+  const warning = officialAlert({
+    geometry: {
+      type: "Polygon",
+      coordinates: [[[-99.1, 30.1], [-98.9, 30.1], [-99, 29.9], [-99.1, 30.1]]],
+    },
+  });
+  fetchAlerts
+    .mockResolvedValueOnce([warning])
+    .mockRejectedValueOnce(new ClearPathDataError("invalid-response", "Cannot verify updates"))
+    .mockResolvedValueOnce([]);
+  await mount();
+  await selectLive();
+  await waitFor(() => expect(state.alerts).toEqual([warning]));
+  const savedRetrieval = state.snapshot?.fetchedAt;
+
+  await advance(60_000);
+  await waitFor(() => expect(state.error).toBeTruthy());
+  expect(state.source).toBe("cached");
+  expect(state.snapshot?.source).toBe("cached");
+  expect(state.snapshot?.fetchedAt).toBe(savedRetrieval);
+  expect(state.alerts[0].geometry).toEqual(warning.geometry);
+
+  await advance(60_000);
+  await waitFor(() => expect(state.source).toBe("live"));
+  expect(state.error).toBeNull();
+  expect(state.alerts).toEqual([]);
+  expect(state.snapshot?.fetchedAt).not.toBe(savedRetrieval);
 });
 
 test("retry policy excludes invalid/ordinary 4xx data and respects provider backoff", () => {

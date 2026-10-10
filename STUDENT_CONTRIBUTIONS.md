@@ -8,6 +8,7 @@ This ledger distinguishes the student's project vision from original code and AI
 | --- | --- | --- |
 | Product motivation and requirements | Student supplied | Original project request and later decisions |
 | Expo scaffold and milestones 1–4 support code | Framework scaffold / Codex-assisted | Coherent commits and AI_USAGE.md |
+| October 10 tactical design, local fonts, startup/maps support, regional NWS/USGS layers, and manual linked-zone viewer | Codex-assisted at the student's explicit request | Requested scope, exact generated files/commits, official references, and TESTING.md; this does not complete original milestone 5 or all of milestone 6 |
 | Offline safety summaries and documentation | Codex-assisted, official references | Source links and student review |
 | Relevance/prioritization engine | **Pending student implementation** | Student code, design notes, tests, explanations |
 | Review and fixes after student implementation | Record individually | Review findings; identify generated suggestions adopted |

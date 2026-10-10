@@ -1,5 +1,6 @@
-import { Modal } from "react-native";
+import { Modal, StyleSheet, Text, View } from "react-native";
 import { useEffect, useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { OfficialAlert } from "@/domain/types";
 import {
   ActionButton,
@@ -11,6 +12,8 @@ import {
   SourceBadge,
   openLink,
 } from "@/ui/components";
+import { colors, typography } from "@/ui/tokens";
+import { DEMO_TIMESTAMP } from "@/data/demo";
 export type AlertSelection = {
   alert: OfficialAlert;
   source: "live" | "cached" | "demo" | "unavailable";
@@ -34,40 +37,45 @@ export function AlertDetail({
   source,
   onClose,
   fetchedAt,
+  onViewZoneAreas,
 }: {
   alert: OfficialAlert | null;
   source: AlertSelection["source"];
   onClose: () => void;
   fetchedAt?: string | null;
+  onViewZoneAreas?: () => void;
 }) {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
-    if (!alert) return;
+    if (!alert || source === "demo") return;
     const timer = setTimeout(
       () => setNow(Date.now()),
       Math.max(0, Date.parse(alert.expires) - Date.now() + 1),
     );
     return () => clearTimeout(timer);
-  }, [alert]);
+  }, [alert, source]);
+  const displayTime = source === "demo" ? DEMO_TIMESTAMP : now;
   return (
     <Modal
       visible={!!alert}
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
     >
       {alert && (
+        <SafeAreaView edges={["bottom"]} style={s.modalSafe}>
         <Screen>
           <ActionButton title="Close warning" onPress={onClose} secondary />
+          <Text style={s.kicker}>WARNING / SOURCE COPY</Text>
           <SourceBadge source={source} />
-          {Date.parse(alert.expires) <= now && (
-            <Panel>
+          {Date.parse(alert.expires) <= displayTime && (
+            <View style={s.expired}>
               <SectionTitle>This warning has expired.</SectionTitle>
               <Body>
                 Read this as a historical snapshot. Follow current official
                 instructions.
               </Body>
-            </Panel>
+            </View>
           )}
           {fetchedAt && (
             <Body>
@@ -77,14 +85,16 @@ export function AlertDetail({
           <Heading>{alert.event}</Heading>
           <Body>{alert.headline}</Body>
           <Panel>
-            <SectionTitle>Original instructions</SectionTitle>
+            <SectionTitle>{source === "demo" ? "SIMULATED INSTRUCTIONS" : "Original instructions"}</SectionTitle>
             <Body>
               {alert.instruction ||
                 "No instructions were supplied with this warning."}
             </Body>
           </Panel>
-          <SectionTitle>Full warning text</SectionTitle>
+          <SectionTitle>{source === "demo" ? "SIMULATED WARNING TEXT" : "Full warning text"}</SectionTitle>
           <Body>{alert.description}</Body>
+          <SectionTitle>ISSUANCE / TIMES</SectionTitle>
+          <Panel>
           <Body>Agency: {alert.agency}</Body>
           <Body>
             Severity: {alert.severity} · Urgency: {alert.urgency} · Certainty:{" "}
@@ -98,14 +108,39 @@ export function AlertDetail({
               : "Not provided"}
           </Body>
           <Body>Expires: {new Date(alert.expires).toLocaleString()}</Body>
+          </Panel>
           {alert.sourceUrl && (
             <ActionButton
               title="Open official NWS source"
               onPress={() => void openLink(alert.sourceUrl!)}
             />
           )}
+          {source !== "demo" && !!alert.affectedZones?.length && onViewZoneAreas && <>
+            <SectionTitle>NWS / Zone boundaries</SectionTitle>
+            <Body>Optional downloads of linked NWS zones. Zone boundaries are not supplied warning polygons or measured flood extent.</Body>
+            <ActionButton title="View NWS zone areas" secondary disabled={source !== "live" || Date.parse(alert.expires) <= displayTime} onPress={onViewZoneAreas} />
+          </>}
         </Screen>
+        </SafeAreaView>
       )}
     </Modal>
   );
 }
+
+const s = StyleSheet.create({
+  modalSafe: { flex: 1, backgroundColor: colors.background },
+  kicker: {
+    color: colors.orange,
+    fontFamily: typography.bodyStrong,
+    fontSize: 14,
+    lineHeight: 22,
+    letterSpacing: 0.5,
+  },
+  expired: {
+    borderWidth: 2,
+    borderColor: colors.yellow,
+    backgroundColor: colors.background,
+    padding: 20,
+    gap: 12,
+  },
+});

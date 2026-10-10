@@ -7,7 +7,7 @@ import {
 } from "expo-router/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "@/ui/tokens";
+import { colors, typography } from "@/ui/tokens";
 import { useAppState } from "@/state/AppState";
 import { useAlerts } from "@/hooks/useAlerts";
 
@@ -18,7 +18,7 @@ function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
       aria-selected={!!isFocused}
-      style={styles.button}
+      style={[styles.button, isFocused && styles.activeButton]}
     >
       <Text style={[styles.label, isFocused && styles.selected]}>
         {children}
@@ -36,14 +36,14 @@ export default function AppTabs() {
       <TabSlot style={styles.content} />
       {mode === "demo" && (
         <View style={styles.demoBar}>
-          <Text style={styles.demoLabel}>SIMULATED DEMO</Text>
+          <Text style={[styles.demoLabel, styles.darkText]}>SIMULATED DEMO</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Exit demo and return to live mode"
             onPress={() => setMode("live")}
             style={styles.exit}
           >
-            <Text style={styles.exitText}>Exit demo →</Text>
+            <Text style={styles.exitText}>EXIT →</Text>
           </Pressable>
         </View>
       )}
@@ -51,12 +51,12 @@ export default function AppTabs() {
         <View style={styles.liveBar}>
           <Text style={styles.demoLabel}>
             {feed.source === "cached"
-              ? "CACHED · NOT VERIFIED CURRENT"
+              ? "POINT ALERTS / CACHED · UNVERIFIED"
               : feed.source === "live"
-                ? "OFFICIAL NWS · LAST VERIFIED SNAPSHOT"
+                ? "POINT ALERTS / NWS VERIFIED COPY"
                 : feed.isLoading
-                  ? "CHECKING OFFICIAL ALERTS…"
-                  : "CURRENT ALERTS UNVERIFIED"}
+                  ? "POINT ALERTS / CHECKING NWS…"
+                  : "POINT ALERTS / UNVERIFIED"}
           </Text>
         </View>
       )}
@@ -81,53 +81,54 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   bar: {
     backgroundColor: colors.surface,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: colors.line,
     flexDirection: "row",
-    paddingTop: 8,
+    paddingTop: 0,
   },
   button: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 56,
     justifyContent: "center",
     alignItems: "center",
   },
+  activeButton: { backgroundColor: colors.orange },
   label: {
     fontSize: 15,
-    fontWeight: "500",
-    color: colors.secondary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    fontFamily: typography.bodyStrong,
+    color: colors.ink,
+    paddingHorizontal: 8,
+    paddingVertical: 14,
+    textTransform: "uppercase",
   },
   selected: {
-    color: colors.ink,
-    fontWeight: "700",
-    borderBottomWidth: 2,
-    borderBottomColor: colors.ink,
+    color: colors.background,
   },
   demoBar: {
     flexDirection: "row",
     gap: 12,
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 24,
-    backgroundColor: colors.cautionWash,
-    borderTopWidth: 1,
+    paddingHorizontal: 18,
+    backgroundColor: colors.yellow,
+    borderTopWidth: 2,
     borderTopColor: colors.line,
   },
   demoLabel: {
     flexShrink: 1,
     color: colors.ink,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.7,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: typography.bodyStrong,
+    letterSpacing: 0.1,
   },
+  darkText: { color: colors.background },
   exit: { minHeight: 48, justifyContent: "center", paddingHorizontal: 6 },
-  exitText: { color: colors.ink, fontSize: 13, fontWeight: "500" },
+  exitText: { color: colors.background, fontSize: 13, fontFamily: typography.bodyStrong },
   liveBar: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
     paddingVertical: 9,
-    borderTopWidth: 1,
+    borderTopWidth: 2,
     borderTopColor: colors.line,
     backgroundColor: colors.blueWash,
   },

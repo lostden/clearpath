@@ -49,6 +49,8 @@ export type OfficialAlert = {
   /** Null in demo fixtures: a simulation never links to a fabricated warning. */
   sourceUrl: string | null;
   geometry: AlertGeometry | null;
+  /** Optional provider links for separately requested administrative boundaries. */
+  affectedZones?: string[];
   messageType: AlertMessageType;
   /** Provider message identifiers and URLs that an update/cancellation replaces. */
   references: string[];

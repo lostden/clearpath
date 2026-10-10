@@ -7,6 +7,7 @@ import type {
   SelectedLocation,
 } from "../domain/types";
 import { ClearPathDataError, fetchJson } from "./http";
+import { validNwsZoneUrl } from "../services/nwsZones";
 
 const severities = [
   "Extreme",
@@ -122,6 +123,8 @@ export function isOfficialAlert(value: unknown): value is OfficialAlert {
     nonempty(value.agency) &&
     officialUrl(value.sourceUrl) &&
     (value.geometry === null || isAlertGeometry(value.geometry)) &&
+    (value.affectedZones === undefined ||
+      (Array.isArray(value.affectedZones) && value.affectedZones.every(validNwsZoneUrl))) &&
     Array.isArray(value.references) &&
     value.references.every(nonempty)
   );
@@ -161,6 +164,9 @@ function normalizeFeature(feature: unknown): OfficialAlert | null {
     sourceUrl,
     // Preserve usable warning text when no usable official polygon was supplied.
     geometry: isAlertGeometry(feature.geometry) ? feature.geometry : null,
+    ...(Array.isArray(properties.affectedZones)
+      ? { affectedZones: [...new Set(properties.affectedZones.filter(validNwsZoneUrl))] }
+      : {}),
     messageType: properties.messageType,
     references: [...new Set(referenceIds)],
   };
@@ -225,5 +231,25 @@ export async function getActiveAlerts(
       },
     },
   );
+  return normalizeNwsCollection(data);
+}
+
+export type WeatherCoverage = "TX" | "US";
+
+/** Regional weather coverage is independent of the selected-point alert query. */
+export async function getRegionalAlerts(
+  coverage: WeatherCoverage,
+  signal?: AbortSignal,
+): Promise<OfficialAlert[]> {
+  if (coverage !== "TX" && coverage !== "US")
+    throw new RangeError("Choose Texas or U.S. weather coverage.");
+  const query = coverage === "TX" ? "area=TX" : "status=actual";
+  const data = await fetchJson(`https://api.weather.gov/alerts/active?${query}`, {
+    signal,
+    headers: {
+      Accept: "application/geo+json",
+      "User-Agent": "ClearPath/0.1 (student emergency information app)",
+    },
+  });
   return normalizeNwsCollection(data);
 }

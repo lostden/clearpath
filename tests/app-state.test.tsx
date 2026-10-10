@@ -42,14 +42,14 @@ test.each([
   JSON.stringify({ ...point, label: 123 }),
   JSON.stringify({ ...point, kind: "background" }),
 ])(
-  "rejects invalid stored locations without entering live mode %#",
+  "rejects invalid stored locations without selecting a point %#",
   async (raw) => {
     await AsyncStorage.setItem(storageKey, raw);
     const hook = await renderHook(() => useAppState(), {
       wrapper: AppProvider,
     });
     expect(hook.result.current.location).toBeNull();
-    expect(hook.result.current.mode).toBe("demo");
+    expect(hook.result.current.mode).toBe("live");
   },
 );
 

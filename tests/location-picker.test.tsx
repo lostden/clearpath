@@ -93,7 +93,7 @@ test("invalid manual coordinates keep the selector open without changing mode/lo
       "Latitude must be between −90 and 90; longitude between −180 and 180.",
     ),
   ).toBeTruthy();
-  expect(screen.getByTestId("selected-point")).toHaveTextContent("demo:none");
+  expect(screen.getByTestId("selected-point")).toHaveTextContent("live:none");
   expect(onClose).not.toHaveBeenCalled();
 });
 
@@ -129,7 +129,7 @@ test("a late GPS completion after the selector closes cannot switch location or 
       kind: "gps",
     }),
   );
-  expect(screen.getByTestId("selected-point")).toHaveTextContent("demo:none");
+  expect(screen.getByTestId("selected-point")).toHaveTextContent("live:none");
   expect(onClose).not.toHaveBeenCalled();
 });
 
@@ -166,6 +166,6 @@ test("closing a pending GPS request cancels its UI result and restores the selec
       kind: "gps",
     }),
   );
-  expect(screen.getByTestId("selected-point")).toHaveTextContent("demo:none");
+  expect(screen.getByTestId("selected-point")).toHaveTextContent("live:none");
   expect(onClose).toHaveBeenCalledTimes(1);
 });

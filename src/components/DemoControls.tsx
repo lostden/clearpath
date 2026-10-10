@@ -2,7 +2,7 @@ import { Text, Pressable, StyleSheet, View } from "react-native";
 import { useAppState } from "@/state/AppState";
 import type { DemoScenario } from "@/domain/types";
 import { ActionButton, Body } from "@/ui/components";
-import { colors } from "@/ui/tokens";
+import { colors, typography } from "@/ui/tokens";
 const scenarios: { id: DemoScenario; label: string }[] = [
   { id: "flood", label: "Flood" },
   { id: "tornado", label: "Tornado" },
@@ -13,6 +13,8 @@ export function DemoControls() {
   const { mode, setMode, scenario, setScenario } = useAppState();
   return mode === "demo" ? (
     <View style={s.container}>
+      <Text style={s.label}>SIMULATION / SCENARIO</Text>
+      <Body>Local fixtures. No current emergency is represented.</Body>
       <View style={s.options}>
         {scenarios.map((option) => (
           <Pressable
@@ -22,12 +24,12 @@ export function DemoControls() {
             accessibilityLabel={`Simulate ${option.label}`}
             accessibilityState={{ selected: option.id === scenario }}
             onPress={() => setScenario(option.id)}
-            style={[s.option, option.id === scenario && s.selected]}
+            style={({ pressed }) => [s.option, option.id === scenario && s.selected, pressed && s.pressed]}
           >
             <Text
               style={[
                 s.text,
-                option.id === scenario && { color: colors.surface },
+                option.id === scenario && { color: colors.background },
               ]}
             >
               {option.label}
@@ -45,7 +47,7 @@ export function DemoControls() {
   ) : (
     <View style={s.container}>
       <Body>
-        Demo scenarios use local fixtures and are separate from official feeds.
+        Demo scenarios use local fixtures. They remain separate from official feeds.
       </Body>
       <ActionButton
         title="Explore simulated demo"
@@ -56,17 +58,19 @@ export function DemoControls() {
   );
 }
 const s = StyleSheet.create({
-  container: { gap: 12 },
-  options: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  container: { gap: 12, borderTopWidth: 2, borderTopColor: colors.line, paddingTop: 20 },
+  label: { color: colors.yellow, fontFamily: typography.bodyStrong, fontSize: 14, lineHeight: 22, letterSpacing: 0.5 },
+  options: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   option: {
-    minHeight: 48,
+    minHeight: 52,
     justifyContent: "center",
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.line,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: colors.ink,
     backgroundColor: colors.surface,
   },
-  selected: { backgroundColor: colors.navy },
-  text: { fontSize: 13, fontWeight: "600", color: colors.ink },
+  selected: { backgroundColor: colors.orange, borderColor: colors.orange },
+  pressed: { borderColor: colors.yellow },
+  text: { fontSize: 16, lineHeight: 24, fontFamily: typography.bodyStrong, color: colors.ink, textTransform: "uppercase" },
 });

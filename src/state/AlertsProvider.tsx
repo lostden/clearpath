@@ -12,7 +12,7 @@ import { AppState as NativeAppState } from "react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { readAlertCache, writeAlertCache } from "@/data/alertCache";
-import { DEMO_LOCATION, getDemoSnapshot } from "@/data/demo";
+import { DEMO_LOCATION, DEMO_TIMESTAMP, getDemoSnapshot } from "@/data/demo";
 import { ClearPathDataError } from "@/data/http";
 import { getActiveAlerts } from "@/data/nws";
 import { currentAlerts, locationKey } from "@/domain/alerts";
@@ -60,7 +60,7 @@ export function alertRetryDelay(attempt: number, error: Error): number {
   return Math.max(MIN_REQUEST_INTERVAL * 2 ** attempt, providerDelay);
 }
 
-function waitForRequestSlot(
+export function waitForRequestSlot(
   milliseconds: number,
   signal: AbortSignal,
 ): Promise<void> {
@@ -104,6 +104,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
   const pointKey = location ? locationKey(location) : null;
   const enabled =
     mode === "live" && pointKey !== null && !offline && foreground;
+  const availability = useRef({ enabled, pointKey });
   const selectedLocation = mode === "demo" ? DEMO_LOCATION : location;
   const demo = useMemo(
     () => (mode === "demo" ? getDemoSnapshot(scenario) : null),
@@ -199,6 +200,25 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     }
   }, [client, enabled, mode, pointKey]);
 
+  // A short interruption can leave Query's cached response within staleTime.
+  // Recheck when this point becomes available again; the query function still
+  // enforces the request interval and provider backoff, and joins any active fetch.
+  useEffect(() => {
+    const previous = availability.current;
+    availability.current = { enabled, pointKey };
+    if (
+      !enabled ||
+      previous.enabled ||
+      !pointKey ||
+      previous.pointKey !== pointKey
+    )
+      return;
+    void client.invalidateQueries(
+      { queryKey: ["nws-alerts", pointKey], exact: true },
+      { cancelRefetch: false },
+    );
+  }, [client, enabled, pointKey]);
+
   useEffect(() => {
     if (mode !== "live" || !location || !pointKey) return;
     let obsolete = false;
@@ -282,6 +302,9 @@ export function AlertsProvider({ children }: PropsWithChildren) {
 
   // Schedule the next meaningful boundary, including expiration while a screen stays open.
   useEffect(() => {
+    // Presentation snapshots use their fixed historical clock, never the
+    // current phone clock or real-time expiration timers.
+    if (mode !== "live") return;
     const clock = Date.now();
     const boundaries = [
       ...(snapshot?.alerts.map((alert) => Date.parse(alert.expires)) ?? []),
@@ -310,7 +333,8 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     if (!canRefresh) return;
     await refetch({ cancelRefetch: false });
   }, [canRefresh, refetch]);
-  const alerts = snapshot ? currentAlerts(snapshot.alerts, now) : [];
+  const displayNow = mode === "demo" ? DEMO_TIMESTAMP : now;
+  const alerts = snapshot ? currentAlerts(snapshot.alerts, displayNow) : [];
   const value: AlertsState = {
     source,
     alerts,
@@ -321,7 +345,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     error: mode === "live" ? verificationError : null,
     offline: mode === "demo" ? scenario === "offline" : offline,
     expiredCount: snapshot
-      ? snapshot.alerts.filter((alert) => Date.parse(alert.expires) <= now)
+      ? snapshot.alerts.filter((alert) => Date.parse(alert.expires) <= displayNow)
           .length
       : 0,
     refresh,
