@@ -89,7 +89,7 @@ test("switch changes persist the chosen mode and reopening restores the latest s
   await fireEvent.press(screen.getByRole("switch", { name: SWITCH_NAME }));
   await waitFor(async () => expect(await AsyncStorage.getItem(FEED_PREFERENCES_KEY)).toBe(JSON.stringify({ automatic: true })));
   expect(screen.getByRole("switch", { name: SWITCH_NAME }).props.accessibilityState.checked).toBe(true);
-  expect(screen.getByText("Weather and earthquakes: 60s. Rivers: 5min. Foreground only.")).toBeTruthy();
+  expect(screen.getByText("Weather and earthquakes: 60s. Rivers and enabled wildfire perimeters: 5min. Foreground only.")).toBeTruthy();
 
   await fireEvent.press(screen.getByRole("switch", { name: SWITCH_NAME }));
   await waitFor(async () => expect(await AsyncStorage.getItem(FEED_PREFERENCES_KEY)).toBe(JSON.stringify({ automatic: false })));

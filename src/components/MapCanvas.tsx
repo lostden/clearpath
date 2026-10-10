@@ -18,6 +18,7 @@ import { fieldMapStyle } from "@/data/mapStyle";
 import { geometryIntersectsRegion, pointInRegion, type MapRegion } from "@/domain/mapBounds";
 import CoordinateMap from "./CoordinateMap";
 import type { OfficialZoneBoundary } from "@/services/nwsZones";
+import type { OfficialWildfirePerimeter } from "@/services/wildfireTypes";
 export type MapCanvasProps = {
   point: Coordinates;
   alerts: OfficialAlert[];
@@ -37,6 +38,11 @@ export type MapCanvasProps = {
   initialSpan?: number;
   /** Optional on-demand zone outlines; never substituted for an alert polygon. */
   zoneBoundaries?: OfficialZoneBoundary[];
+  /** Published perimeter outlines have independent provenance from weather alerts. */
+  wildfirePerimeters?: OfficialWildfirePerimeter[];
+  wildfireSource?: "live" | "cached" | "unavailable";
+  showWildfires?: boolean;
+  onSelectWildfire?: (perimeter: OfficialWildfirePerimeter) => void;
 };
 export default function MapCanvas(props: MapCanvasProps) {
   const [attempt, setAttempt] = useState(0);
@@ -89,6 +95,10 @@ function NativeMapCanvas({
   pointIsSelection = true,
   initialSpan = 0.18,
   zoneBoundaries = [],
+  wildfirePerimeters = [],
+  wildfireSource = "unavailable",
+  showWildfires = false,
+  onSelectWildfire,
   provider,
   onRetry,
 }: MapCanvasProps & {
@@ -110,15 +120,21 @@ function NativeMapCanvas({
   const needsSpaceForFailure = showStatus && timedOut && !compact;
   const region = { ...point, latitudeDelta: initialSpan, longitudeDelta: initialSpan };
   const [viewport, setViewport] = useState<MapRegion>(region);
+  const realWildfires = source !== "demo" && showWildfires ? wildfirePerimeters : [];
+  const visibleWildfires = realWildfires.filter((perimeter) => geometryIntersectsRegion(perimeter.geometry, viewport));
+  const wildfireCopy = wildfireSource === "live" ? "VERIFIED COPY" : wildfireSource === "cached" ? "CACHED / UNVERIFIED" : "DATA UNAVAILABLE";
   if (coordinateView) return <View style={{ gap: 12 }}>
     <CoordinateMap point={point} alerts={alerts} source={source} compact={compact}
       showWarnings={showWarnings} showGauges={showGauges} showEarthquakes={showEarthquakes}
       earthquakes={earthquakes} rivers={rivers} earthquakeSource={earthquakeSource} riverSource={riverSource}
       onSelectAlert={onSelectAlert} onSelectEarthquake={onSelectEarthquake} onSelectRiver={onSelectRiver}
-      pointIsSelection={pointIsSelection} initialSpan={initialSpan} zoneBoundaries={zoneBoundaries} />
+      pointIsSelection={pointIsSelection} initialSpan={initialSpan} zoneBoundaries={zoneBoundaries}
+      wildfirePerimeters={wildfirePerimeters} wildfireSource={wildfireSource}
+      showWildfires={showWildfires} onSelectWildfire={onSelectWildfire} />
     {!compact && <ActionButton title="Retry Google Maps" secondary onPress={onRetry} />}
   </View>;
   return (
+    <>
     <View
       style={[
         s.container,
@@ -149,7 +165,9 @@ function NativeMapCanvas({
         toolbarEnabled={false}
         importantForAccessibility={showStatus ? "no-hide-descendants" : "auto"}
         accessibilityElementsHidden={showStatus}
-        accessibilityLabel={source !== "demo" && zoneBoundaries.length ? "Map of NWS affected zone outlines. Not warning polygons or measured hazard extent." : pointIsSelection ? "Map of selected point and source warning areas" : "Regional map of source warning areas"}
+        accessibilityLabel={realWildfires.length
+          ? `Map of ${pointIsSelection ? "selected point, " : ""}${showWarnings ? "source warning areas, " : ""}${zoneBoundaries.length ? "NWS zone boundaries, " : ""}published wildfire perimeter outlines. Captured perimeters are not current fire edges or evacuation areas.`
+          : source !== "demo" && zoneBoundaries.length ? "Map of NWS affected zone outlines. Not warning polygons or measured hazard extent." : pointIsSelection ? "Map of selected point and source warning areas" : "Regional map of source warning areas"}
       >
         {pointIsSelection && <Marker
           coordinate={point}
@@ -198,6 +216,19 @@ function NativeMapCanvas({
             coordinates={rings[0].map(([longitude, latitude]) => ({ latitude, longitude }))}
             holes={rings.slice(1).map((ring) => ring.map(([longitude, latitude]) => ({ latitude, longitude })))}
             fillColor="transparent" strokeColor={boundary.cached ? "#B0B0B0" : colors.ink} strokeWidth={2} />);
+        })}
+        {visibleWildfires.flatMap((perimeter) => {
+          const polygons = perimeter.geometry.type === "Polygon" ? [perimeter.geometry.coordinates] : perimeter.geometry.coordinates;
+          const capture = perimeter.capturedAt ? `Captured: ${perimeter.capturedAt}.` : "CAPTURE UNKNOWN";
+          return polygons.map((rings, index) => <Polygon
+            key={`wildfire-${perimeter.id}-${index}`} testID={`wildfire-perimeter-${perimeter.id}-${index}`}
+            coordinates={rings[0].map(([longitude, latitude]) => ({ latitude, longitude }))}
+            holes={rings.slice(1).map((ring) => ring.map(([longitude, latitude]) => ({ latitude, longitude })))}
+            fillColor="transparent" strokeColor={wildfireSource === "live" ? colors.ink : "#B0B0B0"} strokeWidth={3}
+            accessibilityLabel={`${wildfireCopy} published wildfire perimeter: ${perimeter.name}. ${capture}`}
+            tappable={!compact && !!onSelectWildfire}
+            onPress={!compact && onSelectWildfire ? () => onSelectWildfire(perimeter) : undefined}
+          />);
         })}
         {source !== "demo" && showEarthquakes && earthquakes.filter((event) => pointInRegion(event.coordinates, viewport)).map((event) => (
           <Marker key={`earth-${event.id}`} coordinate={event.coordinates}
@@ -263,6 +294,13 @@ function NativeMapCanvas({
         </View>
       )}
     </View>
+    {!compact && source !== "demo" && showWildfires && <View style={s.perimeterCaption}>
+      <Body>NIFC / PUBLISHED WILDFIRE PERIMETERS / {wildfireCopy}</Body>
+      <Body>{visibleWildfires.length} PERIMETER RECORDS IN VIEW / {realWildfires.length} IN THIS COPY</Body>
+      <Body>{wildfireSource === "live" ? "WHITE" : "GRAY"} OUTLINE / PUBLISHED PERIMETER / NO AREA FILL</Body>
+      <Body>Capture dates describe reported perimeter geometry. A fresh download does not establish the current fire edge, heat or an evacuation area.</Body>
+    </View>}
+    </>
   );
 }
 const s = StyleSheet.create({
@@ -286,4 +324,5 @@ const s = StyleSheet.create({
   },
   failureStatus: { position: "relative", minHeight: 420 },
   recenter: { position: "absolute", right: 12, bottom: 28 },
+  perimeterCaption: { paddingTop: 12, gap: 8 },
 });

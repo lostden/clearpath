@@ -12,7 +12,7 @@ ClearPath uses Expo Router for navigation, TypeScript for data boundaries, TanSt
 | `src/domain/types.ts` | App domain models; distinguish provenance and freshness |
 | `src/data/` | Point/regional NWS adapters, exact-point disk snapshot, bundled guidance/fixtures |
 | `src/domain/` | Validation, identity, update, and expiration helpers |
-| `src/services/` | Foreground GPS/manual points, official USGS adapters and bounded linked NWS zone loader |
+| `src/services/` | Foreground GPS/manual points, official USGS adapters, bounded NIFC perimeters and linked NWS zone loader |
 | `src/state/` and `src/hooks/` | Mode/point, feed preferences, independent query observers, freshness/cancellation and local preparation saves |
 | `src/student/` | Reserved original student relevance/prioritization work |
 | Tests | Unit/component coverage; see TESTING.md for actual locations and results |
@@ -32,6 +32,8 @@ flowchart TD
   E[USGS global past-day earthquakes] --> M
   L --> U[USGS nearby Texas stations and observations]
   U --> M
+  I[Independent Texas or U.S. incident scope] --> V[Opt-in bounded NIFC perimeter query]
+  V --> M
   M --> D[Regional warning details]
   D --> P[Zone preflight: no boundary request]
   P -->|Explicit download| Z[Linked NWS zones and bounded RAM cache]
@@ -59,15 +61,15 @@ Wire responses are untrusted. Adapters retain source text, validate identity/tim
 
 The automatic/manual feed preference is persisted separately and hydrated before feeds can start. Automatic is the fresh default; an unreadable preference fails to manual for that session. Manual mode stops automatic initial/resume requests, polling and NWS retry loops. Each explicit refresh remains a single logical attempt, gated by foreground/connectivity, selection/layer availability, cadence and provider Retry-After. It does not start background monitoring. Zone downloads remain explicit in either mode.
 
-With automatic updates enabled, point/regional weather and earthquakes poll at 60 seconds; rivers at five minutes. NWS requests have a 30-second minimum gate; regional coverage switches share their gate. Automatic NWS transient failures have at most two retries with 30/60-second minimum backoff. USGS has no automatic retry loop. Weather/earthquake verification ages at 90 seconds and river snapshots at ten minutes, with separate event/observation clocks. These are request/display policies, not emergency-delivery guarantees.
+With automatic updates enabled, point/regional weather and earthquakes poll at 60 seconds; rivers and enabled wildfire perimeters at five minutes. NWS requests have a 30-second minimum gate; regional coverage switches share their gate. Automatic NWS transient failures have at most two retries with 30/60-second minimum backoff. USGS/NIFC have no automatic retry loop. Weather/earthquake verification ages at 90 seconds and river/perimeter copies at ten minutes, with separate event/observation/capture clocks. These are request/display policies, not emergency-delivery guarantees.
 
 | Storage boundary | Contents |
 | --- | --- |
 | Bundled app assets | General safety guidance, kit references, demo fixtures and local fonts |
 | AsyncStorage | Last selected point, one latest exact-point Home NWS snapshot, preparation/checklist/plan/contacts, automatic/manual preference |
-| RAM only | Regional NWS/USGS query snapshots, river discovery metadata, bounded linked-zone cache with original timestamps and less-than-24-hour validity |
+| RAM only | Regional NWS/USGS/NIFC query snapshots, river discovery metadata, bounded linked-zone cache with original timestamps and less-than-24-hour validity |
 
-Regional/USGS/zone copies do not promise availability after a killed/reopened app. Restored Home copies remain cached and exact-point isolated. AsyncStorage is not encrypted, and no movement history is saved. Preparation has `loading`, `saving`, `saved` and `session` states. Successful hydration does not rewrite unchanged data; edited writes serialize, and only the latest revision can change save status/error. Unreadable preparation is protected from overwrite while session-only edits remain usable. A later edit/retry can recover a normal write failure.
+Regional/USGS/NIFC/zone copies do not promise availability after a killed/reopened app. Restored Home copies remain cached and exact-point isolated. AsyncStorage is not encrypted, and no movement history is saved. Preparation has `loading`, `saving`, `saved` and `session` states. Successful hydration does not rewrite unchanged data; edited writes serialize, and only the latest revision can change save status/error. Unreadable preparation is protected from overwrite while session-only edits remain usable. A later edit/retry can recover a normal write failure.
 
 ## Milestone 5 design boundary
 
@@ -75,4 +77,4 @@ The student owns how to express relevance, resolve updated messages, and organiz
 
 ## Remaining boundaries
 
-USGS observations cannot alter official NWS classifications; gage height is not flood depth or an inferred flood-stage threshold. DriveTexas remains an external link, and wildfire perimeters, shelter occupancy and evacuation orders are not integrated. Map includes labeled tile failures and a coordinate fallback. Successful native tiles, current physical rendering and complete later milestones are not claimed; executed checks remain in TESTING.md.
+USGS observations cannot alter official NWS classifications; gage height is not flood depth or an inferred flood-stage threshold. DriveTexas remains an external link; shelter occupancy and evacuation orders are not integrated. Optional NIFC published perimeters have independent incident coverage, bounded partial copies, exact unfilled outlines and separate capture/edit/retrieval times. They use RAM, start off, and never change NWS counts or enter demo. Their five-minute foreground request gate and ten-minute fetched-copy labeling do not establish a current fire edge. Map includes labeled tile failures and a coordinate fallback. Successful native tiles, current physical rendering and complete later milestones are not claimed; executed checks remain in TESTING.md.

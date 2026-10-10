@@ -13,7 +13,7 @@ export function FeedUpdateControl() {
       </Pressable>
     </View>
     {!ready ? <Body>Loading saved update mode.</Body> : automatic ?
-      <Body>Weather and earthquakes: 60s. Rivers: 5min. Foreground only.</Body> :
+      <Body>Weather and earthquakes: 60s. Rivers and enabled wildfire perimeters: 5min. Foreground only.</Body> :
       <Body>MANUAL MODE / Tap Refresh for each feed. New updates are not checked automatically.</Body>}
     <Body>Map tiles, zone downloads and links still use data.</Body>
     {storageError && <Body>{storageError}</Body>}

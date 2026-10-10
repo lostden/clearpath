@@ -3,6 +3,8 @@ import MapScreen from "../src/app/map";
 import { useAlerts } from "../src/hooks/useAlerts";
 import { useRegionalAlerts, type RegionalAlertsState } from "../src/hooks/useRegionalAlerts";
 import { useDisasterLayers, type DisasterLayers } from "../src/hooks/useDisasterLayers";
+import { useWildfireLayer, type WildfireLayerState } from "../src/hooks/useWildfireLayer";
+import type { OfficialWildfirePerimeter } from "../src/services/wildfireTypes";
 import type { MapCanvasProps } from "../src/components/MapCanvas";
 import type { AlertSelection } from "../src/components/AlertDetail";
 import type { OfficialEarthquake, RiverGauge } from "../src/services/usgsTypes";
@@ -22,6 +24,7 @@ jest.mock("expo-router", () => {
 jest.mock("../src/hooks/useAlerts", () => ({ useAlerts: jest.fn() }));
 jest.mock("../src/hooks/useRegionalAlerts", () => ({ useRegionalAlerts: jest.fn() }));
 jest.mock("../src/hooks/useDisasterLayers", () => ({ useDisasterLayers: jest.fn() }));
+jest.mock("../src/hooks/useWildfireLayer", () => ({ useWildfireLayer: jest.fn() }));
 jest.mock("../src/state/FeedPreferences", () => ({ useFeedPreferences: jest.fn() }));
 jest.mock("../src/components/MapCanvas", () => {
   const React = jest.requireActual<typeof import("react")>("react");
@@ -57,10 +60,20 @@ jest.mock("../src/components/ZoneAreaDetail", () => {
       React.createElement(View, { ...props, testID: "zone-area-detail" }),
   };
 });
+jest.mock("../src/components/WildfireDetail", () => {
+  const React = jest.requireActual<typeof import("react")>("react");
+  const { View } = jest.requireActual<typeof import("react-native")>("react-native");
+  return {
+    ...jest.requireActual("../src/components/WildfireDetail"),
+    WildfireDetail: (props: import("react").ComponentProps<typeof import("../src/components/WildfireDetail").WildfireDetail>) =>
+      React.createElement(View, { ...props, testID: "wildfire-detail" }),
+  };
+});
 
 const pointFeed = jest.mocked(useAlerts);
 const regionalFeed = jest.mocked(useRegionalAlerts);
 const disasterFeed = jest.mocked(useDisasterLayers);
+const wildfireFeed = jest.mocked(useWildfireLayer);
 const feedPreferences = jest.mocked(useFeedPreferences);
 const location = { coordinates: { latitude: 30, longitude: -99 }, label: "Selected test point", kind: "manual" as const };
 const pointWarning = officialAlert({ id: "point-warning", event: "Tornado Warning", headline: "Applies to point query" });
@@ -88,6 +101,15 @@ const river: RiverGauge = {
 let feed: ReturnType<typeof useAlerts>;
 let regional: RegionalAlertsState;
 let layers: DisasterLayers;
+let wildfire: WildfireLayerState;
+const perimeter: OfficialWildfirePerimeter = {
+  id: "test-perimeter", objectId: 1, incidentId: null, name: "TEST PUBLISHED FIRE",
+  geometry: { type: "Polygon", coordinates: [[[-99.1, 29.9], [-98.9, 29.9], [-98.9, 30.1], [-99.1, 29.9]]] },
+  capturedAt: new Date(TEST_NOW - 8 * 24 * 60 * 60_000).toISOString(),
+  polygonUpdatedAt: new Date(TEST_NOW - 60_000).toISOString(), incidentUpdatedAt: null,
+  acres: 0, reportedAcres: null, percentContained: null, state: "US-TX", mapMethod: "Infrared Image",
+  featureCategory: "Wildfire Daily Fire Perimeter", sourceUrl: "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0",
+};
 
 function mapProps(screen: Awaited<ReturnType<typeof render>>): MapCanvasProps {
   return screen.getByTestId("map-canvas").props as MapCanvasProps;
@@ -137,11 +159,20 @@ beforeEach(() => {
       error: null, canRefresh: true, refresh: jest.fn().mockResolvedValue(undefined),
     },
   };
+  wildfire = {
+    items: [perimeter], source: "live", fetchedAt: verifiedRegionalTime, coverage: "TX",
+    available: 24, countedAt: verifiedRegionalTime, returned: 20, omitted: 23, truncated: true,
+    reason: "Only part of the matching records could be loaded.", loading: false, refreshing: false,
+    error: null, canRefresh: true, refresh: jest.fn().mockResolvedValue(undefined),
+  };
   pointFeed.mockImplementation(() => feed);
   regionalFeed.mockImplementation(() => regional);
   disasterFeed.mockImplementation((_point, enabled) => enabled ? layers : {
     earthquakes: { ...layers.earthquakes, items: [], source: "unavailable", fetchedAt: null },
     rivers: { ...layers.rivers, items: [], source: "unavailable", fetchedAt: null },
+  });
+  wildfireFeed.mockImplementation((coverage, enabled) => enabled ? { ...wildfire, coverage } : {
+    ...wildfire, coverage, items: [], source: "unavailable", fetchedAt: null, canRefresh: false,
   });
 });
 afterEach(async () => {
@@ -339,4 +370,119 @@ test("entering demo disables the previous real zone view and fictional warnings 
   await act(() => mapProps(screen).onSelectAlert?.(snapshot.alerts[0]));
   expect(screen.getByTestId("alert-detail").props.onViewZoneAreas).toBeUndefined();
   expect(zoneProps(screen)).toMatchObject({ selection: null, enabled: false });
+});
+
+test("wildfire perimeters start off and enabling them adds a separate feed without changing NWS mapped counts", async () => {
+  const screen = await render(<MapScreen />);
+  expect(wildfireFeed).toHaveBeenLastCalledWith("TX", false, { automatic: true });
+  expect(mapProps(screen)).toMatchObject({ showWildfires: false, wildfirePerimeters: [] });
+  expect(screen.queryByRole("button", { name: "Read wildfire perimeter TEST PUBLISHED FIRE" })).toBeNull();
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters", checked: false }));
+  expect(wildfireFeed).toHaveBeenLastCalledWith("TX", true, { automatic: true });
+  expect(mapProps(screen)).toMatchObject({ showWildfires: true, wildfirePerimeters: [perimeter], wildfireSource: "live" });
+  expect(screen.getByText("2 RECORDS / 1 MAPPED / 1 WITHOUT SUPPLIED GEOMETRY")).toBeTruthy();
+  expect(screen.getByText("1 PERIMETERS IN COPY / 24 MATCHING MAPPED RECORDS AT COUNT TIME")).toBeTruthy();
+  expect(screen.getByText("23 matching mapped records not included.")).toBeTruthy();
+  expect(screen.getByText(`Captured: ${new Date(perimeter.capturedAt!).toLocaleString()}`)).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Refresh wildfire perimeters" }));
+  expect(wildfire.refresh).toHaveBeenCalledTimes(1);
+  expect(regional.refresh).not.toHaveBeenCalled();
+});
+
+test("wildfire incident coverage is independent of the weather region and selected point", async () => {
+  const screen = await render(<MapScreen />);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  await fireEvent.press(screen.getByRole("button", { name: "U.S. wildfire incident coverage" }));
+  expect(wildfireFeed).toHaveBeenLastCalledWith("US", true, { automatic: true });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "TX", automatic: true });
+  expect(mapProps(screen).point).toEqual(location.coordinates);
+  expect(screen.getByRole("button", { name: "U.S. wildfire incident coverage", selected: true })).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "U.S. weather coverage" }));
+  expect(wildfireFeed).toHaveBeenLastCalledWith("US", true, { automatic: true });
+  expect(regionalFeed).toHaveBeenLastCalledWith({ enabled: true, coverage: "US", automatic: true });
+});
+
+test("a wildfire detail retains capture dates and partial-copy provenance when removed or refreshed", async () => {
+  const screen = await render(<MapScreen />);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  await act(() => mapProps(screen).onSelectWildfire?.(perimeter));
+  const selection = screen.getByTestId("wildfire-detail").props.selection;
+  expect(screen.getByTestId("wildfire-detail").props).toMatchObject({ source: "live", selection: { item: perimeter, fetchedAt: verifiedRegionalTime, truncated: true, available: 24, omitted: 23 } });
+  wildfire = { ...wildfire, items: [] };
+  await screen.rerender(<MapScreen />);
+  expect(screen.getByTestId("wildfire-detail").props).toMatchObject({ source: "cached", selection });
+  wildfire = { ...wildfire, fetchedAt: new Date(TEST_NOW).toISOString(), items: [{ ...perimeter, capturedAt: null }], available: 1, omitted: 0, truncated: false };
+  await screen.rerender(<MapScreen />);
+  expect(screen.getByTestId("wildfire-detail").props.selection).toBe(selection);
+  expect(screen.getByTestId("wildfire-detail").props.source).toBe("cached");
+  expect(screen.getByText("CAPTURE DATE UNKNOWN")).toBeTruthy();
+});
+
+test("verified empty wildfire records remove outlines without claiming no fire or safety", async () => {
+  wildfire = { ...wildfire, items: [], available: 0, omitted: 0, returned: 0, truncated: false };
+  const screen = await render(<MapScreen />);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  expect(mapProps(screen).wildfirePerimeters).toEqual([]);
+  expect(screen.getByText("No matching mapped records returned. Fires without a published perimeter remain unknown.")).toBeTruthy();
+  wildfire = { ...wildfire, truncated: true, available: null };
+  await screen.rerender(<MapScreen />);
+  expect(screen.queryByText("No matching mapped records returned. Fires without a published perimeter remain unknown.")).toBeNull();
+  expect(screen.getByText("Current wildfire perimeters are unverified.")).toBeTruthy();
+});
+
+test("wildfire requests wait for preferences, respect manual mode and stop after map blur or demo", async () => {
+  feedPreferences.mockReturnValue({ automatic: false, ready: false, storageError: null, setAutomatic: jest.fn() });
+  const screen = await render(<MapScreen />);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  expect(wildfireFeed).toHaveBeenLastCalledWith("TX", false, { automatic: false });
+  feedPreferences.mockReturnValue({ automatic: false, ready: true, storageError: null, setAutomatic: jest.fn() });
+  await screen.rerender(<MapScreen />);
+  expect(wildfireFeed).toHaveBeenLastCalledWith("TX", true, { automatic: false });
+  await act(() => mockBlurMap?.());
+  expect(wildfireFeed).toHaveBeenLastCalledWith("TX", false, { automatic: false });
+  const snapshot = getDemoSnapshot("flood");
+  feed = { ...feed, source: "demo", alerts: snapshot.alerts, snapshot, selectedLocation: DEMO_LOCATION };
+  await screen.rerender(<MapScreen />);
+  expect(wildfireFeed).toHaveBeenLastCalledWith("TX", false, { automatic: false });
+  expect(mapProps(screen)).toMatchObject({ showWildfires: false, wildfirePerimeters: [] });
+  expect(screen.queryByRole("switch", { name: "Show wildfire perimeters" })).toBeNull();
+  expect(screen.getByTestId("wildfire-detail").props.selection).toBeNull();
+});
+
+test("turning wildfire perimeters off clears the selected detail and hides the optional records", async () => {
+  const screen = await render(<MapScreen />);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Read wildfire perimeter TEST PUBLISHED FIRE" }));
+  expect(screen.getByTestId("wildfire-detail").props.selection.item).toBe(perimeter);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  expect(wildfireFeed).toHaveBeenLastCalledWith("TX", false, { automatic: true });
+  expect(mapProps(screen)).toMatchObject({ showWildfires: false, wildfirePerimeters: [] });
+  expect(screen.getByTestId("wildfire-detail").props.selection).toBeNull();
+  expect(screen.queryByRole("button", { name: "Refresh wildfire perimeters" })).toBeNull();
+});
+
+test("a cached perimeter selection never gains live provenance from connectivity alone", async () => {
+  wildfire = { ...wildfire, source: "cached" };
+  const screen = await render(<MapScreen />);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Read wildfire perimeter TEST PUBLISHED FIRE" }));
+  expect(screen.getByTestId("wildfire-detail").props.selection.source).toBe("cached");
+  wildfire = { ...wildfire, source: "live" };
+  await screen.rerender(<MapScreen />);
+  expect(screen.getByTestId("wildfire-detail").props.source).toBe("cached");
+});
+
+test("entering and leaving demo does not reopen an earlier real perimeter detail", async () => {
+  const screen = await render(<MapScreen />);
+  await fireEvent.press(screen.getByRole("switch", { name: "Show wildfire perimeters" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Read wildfire perimeter TEST PUBLISHED FIRE" }));
+  const liveFeed = feed;
+  const snapshot = getDemoSnapshot("flood");
+  feed = { ...feed, source: "demo", alerts: snapshot.alerts, snapshot, selectedLocation: DEMO_LOCATION };
+  await screen.rerender(<MapScreen />);
+  expect(screen.getByTestId("wildfire-detail").props.selection).toBeNull();
+  feed = liveFeed;
+  await screen.rerender(<MapScreen />);
+  expect(mapProps(screen).showWildfires).toBe(true);
+  expect(screen.getByTestId("wildfire-detail").props.selection).toBeNull();
 });

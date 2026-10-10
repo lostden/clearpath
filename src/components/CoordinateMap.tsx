@@ -77,7 +77,8 @@ function CoordinatePlot({
   showEarthquakes = false, earthquakes = [], rivers = [],
   earthquakeSource = "unavailable", riverSource = "unavailable",
   zoneBoundaries = [],
-  onSelectAlert, onSelectEarthquake, onSelectRiver,
+  wildfirePerimeters = [], wildfireSource = "unavailable", showWildfires = false,
+  onSelectAlert, onSelectEarthquake, onSelectRiver, onSelectWildfire,
 }: MapCanvasProps) {
   const [{ center, span }, setViewport] = useState(() => viewport(point, clampSpan(initialSpan)));
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -109,6 +110,14 @@ function CoordinatePlot({
     return paths.length ? [{ boundary, paths }] : [];
   });
   const outsideZones = realZones.length - zoneDrawings.length;
+  const realWildfires = source !== "demo" && showWildfires ? wildfirePerimeters : [];
+  const wildfireDrawings = realWildfires.flatMap((perimeter) => {
+    if (!geometryIntersectsRegion(perimeter.geometry, region)) return [];
+    const polygons = perimeter.geometry.type === "Polygon" ? [perimeter.geometry.coordinates] : perimeter.geometry.coordinates;
+    const paths = polygons.flatMap((rings) => polygonPaths(rings, region));
+    return paths.length ? [{ perimeter, paths }] : [];
+  });
+  const outsideWildfires = realWildfires.length - wildfireDrawings.length;
   const realEarthquakes = source !== "demo" && showEarthquakes ? earthquakes.filter((event) => pointInRegion(event.coordinates, region)) : [];
   const realRivers = source !== "demo" && showGauges ? rivers.filter((gauge) => pointInRegion(gauge.coordinates, region)) : [];
   const showDemoGauge = source === "demo" && showGauges && pointInRegion(DEMO_GAUGE.coordinate, region);
@@ -124,6 +133,7 @@ function CoordinatePlot({
     {source === "demo" && !showWarnings && <Text style={s.provenance}>SIMULATED SCENE / {DEMO_DATE_LABEL}</Text>}
     {source !== "demo" && showEarthquakes && <Text style={s.provenance}>EARTHQUAKES / USGS / {sourceLabel(earthquakeSource)}</Text>}
     {source !== "demo" && showGauges && <Text style={s.provenance}>RIVERS / USGS / {sourceLabel(riverSource)}</Text>}
+    {source !== "demo" && showWildfires && <Text style={s.provenance}>WILDFIRE / NIFC / {sourceLabel(wildfireSource)}</Text>}
     {source === "demo" && showGauges && <Text style={s.provenance}>RIVER / SIMULATED / TRAINING ONLY</Text>}
     {realZones.length > 0 && <>
       <Text style={s.provenance}>NWS / ZONE BOUNDARIES / OUTLINES ONLY</Text>
@@ -155,6 +165,17 @@ function CoordinatePlot({
             d={d} fill="none" stroke={boundary.cached ? GRAY : colors.ink} strokeWidth={2}
             fillRule="evenodd" clipRule="evenodd"
           />))}
+          {wildfireDrawings.map(({ perimeter, paths }) => {
+            const capture = perimeter.capturedAt ? `Captured: ${perimeter.capturedAt}.` : "CAPTURE UNKNOWN";
+            // Keep every closed outer/hole/dateline subpath, with one accessible
+            // action for the published record instead of one per polygon part.
+            return <CoordinateArea
+              key={`wildfire-${perimeter.id}`} testID={`coordinate-wildfire-${perimeter.id}`}
+              d={paths.join(" ")} fill="none" stroke={wildfireSource === "live" ? colors.ink : GRAY} strokeWidth={3}
+              onActivate={!compact && onSelectWildfire ? () => onSelectWildfire(perimeter) : undefined}
+              label={`${sourceLabel(wildfireSource)} published wildfire perimeter: ${perimeter.name}. ${capture}`}
+            />;
+          })}
           {pointIsSelection && <Path testID="coordinate-selected-point" d={`M${selection.x - 7} ${selection.y} L${selection.x + 7} ${selection.y} M${selection.x} ${selection.y - 7} L${selection.x} ${selection.y + 7}`} stroke={colors.orange} strokeWidth={3} accessibilityLabel="Selected point, not a current device position" />}
           {realEarthquakes.map((event) => {
             const projected = projectCoordinate(event.coordinates, region);
@@ -187,8 +208,15 @@ function CoordinatePlot({
     </View>
     <Text style={s.note}>{[pointIsSelection && "+ SELECTED POINT", source !== "demo" && showEarthquakes && "E EPICENTER", showGauges && "R STATION"].filter(Boolean).join(" / ")}</Text>
     {realZones.length > 0 && <Text style={s.note}>WHITE OUTLINE / NWS ZONE{realZones.some((boundary) => boundary.cached) ? " / GRAY OUTLINE / CACHED NWS ZONE" : ""}</Text>}
+    {source !== "demo" && showWildfires && <>
+      <Text style={s.note}>{wildfireSource === "live" ? "WHITE" : "GRAY"} OUTLINE / PUBLISHED WILDFIRE PERIMETER / NO AREA FILL</Text>
+      <Text style={s.note}>{realWildfires.length} PUBLISHED WILDFIRE PERIMETER RECORDS / {wildfireDrawings.length} IN VIEW</Text>
+      <Text style={s.note}>Capture dates describe reported perimeter geometry. A fresh download does not establish the current fire edge, heat or an evacuation area.</Text>
+      {realWildfires.length === 0 && <Text style={s.note}>{wildfireSource === "live" ? "No published wildfire perimeters in this copy. Unreported fire conditions remain unknown." : wildfireSource === "cached" ? "No wildfire perimeters retained in this copy. Current coverage is unverified." : "Wildfire perimeter data unavailable."}</Text>}
+    </>}
     {outside > 0 && <Text style={s.note}>{outside} mapped warning {outside === 1 ? "record is" : "records are"} outside this view.{compact ? " Open the full map to inspect." : " Zoom out to inspect."}</Text>}
     {outsideZones > 0 && <Text style={s.note}>{outsideZones} NWS zone {outsideZones === 1 ? "boundary is" : "boundaries are"} outside this view.{compact ? " Open the full map to inspect." : " Zoom out to inspect."}</Text>}
+    {outsideWildfires > 0 && <Text style={s.note}>{outsideWildfires} published wildfire perimeter {outsideWildfires === 1 ? "record is" : "records are"} outside this view.{compact ? " Open the full map to inspect." : " Pan or zoom out to inspect."}</Text>}
     {showWarnings && mapped.length === 0 && <Text style={s.note}>{source === "unavailable" ? "Warning data unavailable." : source === "demo" ? "SIMULATED: No supplied warning areas in this exercise." : "No warning areas were supplied in this copy. Read the warning list."}</Text>}
     {!compact && <>
       <Text testID="coordinate-view-center" style={s.note}>VIEW CENTER / {center.latitude.toFixed(4)}, {center.longitude.toFixed(4)} / VIEWPORT ONLY</Text>

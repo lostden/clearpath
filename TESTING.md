@@ -77,10 +77,10 @@ The new USGS adapter/hook files passed TypeScript and scoped ESLint. Their two f
 
 | Current October 10 combined check | Executed result |
 | --- | --- |
-| Full Jest run | **30 suites / 353 tests passed**, 23.599 seconds, no console warnings; includes startup, offline-section and GPS-cancel refinements |
+| Full Jest run | **34 suites / 470 tests passed**, 37.837 seconds, no console warnings; the affected **28 screen/detail tests** passed again after the final demo-selection state refinement |
 | SDK dependency compatibility | `expo install --check`: dependencies are up to date |
 | Final TypeScript / Expo lint | Full typecheck and ESLint across source/tests passed with no diagnostic output |
-| Final native JavaScript export | Android **3.3 MB**, iOS **3.1 MB**, Hermes, **37 assets**; export passed after startup, offline-section and GPS-cancel changes |
+| Final native JavaScript export | Android **3.4 MB**, iOS **3.1 MB**, Hermes, **37 assets**; passed again after the final mode-boundary state refinement |
 | Expo Doctor | **21/21 passed** with the bundled Git executable available on PATH |
 | Current browser layout | Tactical screens inspected at **320 × 568** and **390 × 844**; details below |
 | Tactical text contrast | Eight foreground/background token pairs exceeded **4.5:1**; exact ratios below |
@@ -105,6 +105,18 @@ These token measurements cover the listed text pairs, not every composite elemen
 A real read-only adapter probe at **October 10, 2026, 22:05 UTC (5:05 p.m. America/Chicago)** parsed 200 earthquakes and 12 nearby stations for the Kerrville point `30.0474,-99.1403`. Seven stations had a supported measurement and five had none. The newest observed reading was `2026-10-10T21:55:00+00:00`; the river snapshot was fetched at `2026-10-10T22:05:32.210Z`. The earthquake feed was generated at `2026-10-10T22:05:12Z`. These counts/time values describe that probe only; they do not verify current local safety or successful phone map rendering. [Earthquake feed](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php), [Water Data API](https://api.waterdata.usgs.gov/ogcapi/v1/openapi?f=html).
 
 The phone is currently unplugged. Current font rendering, large-text layout, successful native tiles, regional polygons, earthquake/gauge markers, marker details, layer toggles, coordinate fallback, and share behavior require a new phone run. The fallback uses a bundled SVG longitude/latitude plot, explicitly labeled as schematic without a basemap/navigation; its addition is not evidence that Google Maps tiles work. No Google Cloud key/billing/signing configuration or native ClearPath APK build has been completed. The `preview` APK setup and its EAS environment are documented in README.md. A locally ignored key does not reach the cloud build automatically.
+
+### Optional NIFC perimeters — October 10, 2026
+
+The anonymous real adapter probe at **23:28:33 UTC** accepted **20 of 105** matching U.S. mapped records, with **85 omitted**, **47,905 vertices**, **174 polygon parts / 175 rings**, and **1,748,052 UTF-8 bytes** across four geometry pages (the count response was 15 bytes). Two capture dates remained unknown. Texas incident-state filtering returned count zero plus a valid empty geometry collection at **23:28:32 UTC**; this does not establish no fire affecting Texas. Results describe that retrieval only. [Official service](https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0).
+
+Adapter **57**, hook **21**, wildfire-rendering **28**, and detail **3** focused tests passed. Cases cover strict WF/category/incident-state validation, HTTP-200 ArcGIS errors, malformed/uncounted/all-invalid emptiness, exact holes/dateline geometry, UTF-8/vertex/part/ring limits, bounded pages, explicit partial copies, later-page Retry-After and discard-on-abort. Hook tests cover default off/manual mode, foreground/network/cancel, per-coverage RAM copies, verified-empty removal, double taps, capture-date preservation and provider/cadence gates surviving true Map unmount/remount. Screen tests also preserve a selected copy's initial source, invalidate details across demo entry/exit and keep wildfire scope/counts separate from weather and the selected point.
+
+The actual browser at **390 × 844** displayed the optional switch, a verified Texas empty mapped-record copy, the national **20/105/85 partial** result and supplied outlines after pan/zoom. Whiskey Creeks retained capture **September 30, 02:39:38 UTC** (September 29 on the Chicago device clock), independently of its October 10 polygon edit and client download. A multipart fire initially produced repeated coordinate-map controls; combining unchanged closed subpaths now gives one logical action per perimeter. Native pointer polygons retain all parts; multipart native screen-reader behavior still needs the phone. The refresh action sits above the record list, and coverage limits precede records.
+
+The final browser confirmed exactly one coordinate action for Dome's multipart perimeter, and **Enter** opened its retained detail. The detail was also inspected at **320 × 568**, with wrapped labels/dates and no horizontal clipping; DOM dialog bounds matched 320 × 568. Browser warn/error logs from 23:21 UTC onward were empty. Preview was returned to live Home, no selected point, Auto updates on, wildfire off, and viewport override reset.
+
+Saved ignored browser evidence: `artifacts/wildfire-detail-preview.jpg` and `artifacts/wildfire-detail-narrow-preview.jpg`. JavaScript exports and browser plots do not establish Google/Apple native tile or outline rendering. No new dependency, account, key, billing or installed APK was introduced. The final lint initially rejected a synchronous effect reset; the mode-boundary state adjustment passed full lint/typecheck and the affected 28 tests without suppressing a rule. Final bundles: Android `entry-bf3a9f5fc45f828ef5db8920e4af98c1.hbc`, iOS `entry-314d3e0939b7db90b31a29369c73e4a4.hbc`.
 
 ### On-demand NWS zone viewer — October 10, 2026
 

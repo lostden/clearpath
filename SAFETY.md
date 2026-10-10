@@ -22,6 +22,8 @@ An official warning polygon describes its reported coverage, not the extent of e
 
 River observations belong to their station and observation time. A nearest station can be in another drainage area. Never convert raw gage height or streamflow into an evacuation order, flood classification, or personal safety statement without suitable official, station-specific evidence.
 
+Published wildfire perimeters can lag conditions and omit unmapped incidents. Keep capture dates distinct from polygon/incident edits and app retrieval, including unknown dates. Draw exact unfilled supplied outlines, with separate source and partial-copy labels. Neither footprint acreage, reported containment nor absence of an outline verifies active burning, evacuation areas or local safety. Texas incident-state filtering is not geographic coverage of every fire affecting Texas. [NWCG perimeter dates and mapping methods](https://fs-prod-nwcg.s3.us-gov-west-1.amazonaws.com/s3fs-public/2023-08/NWCGWildlandFireEventPolygon.pdf).
+
 Standard Google Maps directions are general navigation. Do not label them flood-safe or verified evacuation routes. Missing reported road closures cannot establish passability. Follow official barriers and authorities; do not walk or drive into floodwater. [NWS flood safety](https://www.weather.gov/safety/flood-during).
 
 General offline preparedness summaries are references, not a substitute for incident-specific official instructions. Source attribution remains visible. Do not place static preparation advice in the official instruction field of a live warning.
