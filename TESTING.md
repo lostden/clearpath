@@ -10,7 +10,7 @@ EAS CLI 24.12.1 authenticated the user's existing account and linked `lostdens-t
 
 For those configuration changes, full TypeScript and source/test ESLint passed. `expo install --check` reported dependencies up to date; Expo Doctor 1.20.4 passed **21/21 checks**. Configured images/fonts are present and tracked, and the lockfile matches dependencies and devDependencies. The previous **575-test** result below applies to the earlier application checkpoint; it was not rerun for account metadata.
 
-Google Cloud project `clearpath-511305` visibly reports Maps SDK for Android enabled and a linked billing account. Its existing key is restricted to Android package `org.clearpath.student`, the recorded preview SHA-1, and Maps SDK for Android only. After explicit user approval, the key was saved to the linked Expo project's **preview** environment with **Sensitive** visibility. The first native preview build, `e7684ba1-0807-4eb7-90c6-f4a46112a772`, loaded that environment and is running from commit `352ab00`. No API-key value or private signing keystore was written into the repository. Build completion, APK inspection, installation, successful native tiles/overlays, and independent offline cold start remain pending at this setup checkpoint.
+Google Cloud project `clearpath-511305` visibly reports Maps SDK for Android enabled and a linked billing account. Its existing key is restricted to Android package `org.clearpath.student`, the recorded preview SHA-1, and Maps SDK for Android only. After explicit user approval, the key was saved to the linked Expo project's **preview** environment with **Sensitive** visibility. The first native preview build, `e7684ba1-0807-4eb7-90c6-f4a46112a772`, loaded that environment from commit `352ab00`. No API-key value or private signing keystore was written into the repository. Native compilation and artifact inspection subsequently completed as recorded below; phone installation, successful native tiles/overlays, and independent offline cold start remain pending.
 
 ### Overnight usability and install preparation — October 11, 2026
 
@@ -20,7 +20,20 @@ The compact native Home map is now passive after tiles load: its native descenda
 
 `scripts/install-preview.ps1` checks the APK filename, package metadata, required build identity fields and SHA-256 before invoking ADB. It selects an authorized USB phone, installs with `-r`, and requests launch only after Android reports success. It does not uninstall or clear app data. PowerShell 5.1 and 7 parser checks and missing-artifact failures passed before ADB. The phone is unplugged, so actual install/launch was not executed. Preview builds now increment their remote Android version code to distinguish later APKs; the preview environment and APK distribution remain unchanged.
 
-Updated preview build `2718ca97-bf7e-421f-82e4-7f9ab31cb4af` was submitted from tested commit `808f427`, reused the existing remote keystore and preview Maps variable, and incremented Android version code from **1** to **2**. The first build was still compiling Gradle; the newer build was queued. Artifact inspection and device acceptance remain pending.
+Updated preview build `2718ca97-bf7e-421f-82e4-7f9ab31cb4af` was submitted from tested commit `808f427`, reused the existing remote keystore and preview Maps variable, and incremented Android version code from **1** to **2**. The first build was still compiling Gradle when the newer build was queued. Both subsequently completed.
+
+### Completed Android APKs — October 11, 2026
+
+At **06:24 UTC / 1:24 AM America/Chicago**, EAS reported both native Android preview builds **FINISHED**, and their official APK downloads completed. Read-only binary-manifest/signing-block inspection found package `org.clearpath.student`, app version `1.0.0`, version codes **1** and **2**, and `debuggable=false`. Both contain exactly one nonempty application `com.google.android.geo.API_KEY` value; its contents were not printed. Both extracted v2 signing certificates have SHA-1 `F5:E1:17:60:19:33:5D:5A:12:A8:3C:D5:0F:24:B1:E3:3A:D5:F4:08`, matching the Google restriction, and their certificate public key matches the signer record. Certificate extraction does not perform full APK signature-integrity verification; Android installation remains the next acceptance step.
+
+| Downloaded build | Android version code | APK bytes | SHA-256 |
+| --- | --- | --- | --- |
+| `e7684ba1-0807-4eb7-90c6-f4a46112a772` / source `352ab00` | 1 | 113,409,201 | `76aae9da5afe7c81cb191db5093ecb5e474bd570a9b251ae57cf6ed512397aa8` |
+| `2718ca97-bf7e-421f-82e4-7f9ab31cb4af` / source `808f427` | 2 | 113,409,801 | `368af00113d7c0e5bfb85090ff6d757a6ddc1cd967a31f80d525acdfe6184969` |
+
+Both APKs contain `assets/index.android.bundle`. Resource-shrunk Android font files match all three tracked source fonts byte-for-byte by SHA-256: Archivo Black (90,988 bytes), Roboto Mono (87,540), and Roboto Mono Bold (87,696). This verifies bundled assets, not their physical rendering.
+
+The newer inspected APK was copied to ignored `artifacts/ClearPath-latest.apk`; its matching public build metadata was saved as `artifacts/ClearPath-preview.json`. Source and copied APK checksums match. The actual installer accepted that APK/metadata checksum, then stopped at the expected **No USB phone detected** error before any install or launch. The new `Install ClearPath.cmd` wrapper offers a double-click path, quotes the script path, captures its exit code before pausing, and keeps the result readable. Its path/syntax were reviewed; the wrapper itself was not executed. Both versioned APKs remain locally available. No APK, key value, or private signing material was committed.
 
 ## Automated checks
 
@@ -240,7 +253,7 @@ Run each flow and adjust platform-specific dialogs if needed. The emergency flow
 
 ## Known limits and issues
 
-- Physical Android home-screen startup through USB is confirmed for the current design on October 11. Complete current native acceptance checks and iOS/simulator verification remain pending. JavaScript export does not compile native projects or validate map keys and runtime permissions.
+- Physical Android Expo Go home-screen startup through USB is confirmed for the current design on October 11. Two native Android preview APKs compiled and passed the static artifact checks above. Installed-app acceptance and iOS/simulator verification remain pending. JavaScript export alone does not compile native projects or validate map keys and runtime permissions.
 - Google basemap tiles did not render in the observed Android Expo Go 57.0.9 run. The failure UI is confirmed on the phone; an installed build with its own restricted Maps key remains unverified.
 - NWS availability, incomplete warning geometry, and cached data freshness limit what can be verified. The app must retain explicit provenance and verification states.
 - The scoped USGS integration has adapter/hook test and real-request evidence above; successful phone overlays remain pending. Milestone 6 is only partially implemented. The original student relevance/priority engine remains blank, and its student-authored tests remain pending.
