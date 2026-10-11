@@ -56,13 +56,47 @@ export function manualLocation(
     kind: "manual",
   };
 }
+async function boundedLocationStep<T>(
+  work: Promise<T>,
+  duration: number,
+  message: string,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), duration);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 export async function requestDeviceLocation(): Promise<SelectedLocation> {
-  const permission = await Location.requestForegroundPermissionsAsync();
-  if (permission.status !== "granted")
+  let permission = await boundedLocationStep(
+    Location.getForegroundPermissionsAsync(),
+    8_000,
+    "Location access check timed out. Try GPS again or choose a manual location.",
+  );
+  // The Android request path enters the Activity permission flow even when
+  // permission is granted. Read first and ask only when access is missing.
+  if (!permission.granted && permission.canAskAgain) {
+    permission = await boundedLocationStep(
+      Location.requestForegroundPermissionsAsync(),
+      60_000,
+      "Location permission request timed out. Try GPS again or choose a manual location.",
+    );
+  }
+  if (!permission.granted)
     throw new Error(
       "Location permission denied. Choose a city center or enter coordinates instead.",
     );
-  if (!(await Location.hasServicesEnabledAsync()))
+  if (!(await boundedLocationStep(
+    Location.hasServicesEnabledAsync(),
+    8_000,
+    "Device location check timed out. Try GPS again or choose a manual location.",
+  )))
     throw new Error(
       "Device location services are off. Enable them or select a location manually.",
     );

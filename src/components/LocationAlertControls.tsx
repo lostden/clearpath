@@ -14,6 +14,7 @@ function ActiveLocationAlertControls({ notices }: { notices: NonNullable<ReturnT
   const { automatic, ready } = useFeedPreferences();
   return <Panel>
     <SectionTitle>LOCATION ALERTS / {notices.status}</SectionTitle>
+    {notices.error && <View accessibilityRole="alert" accessibilityLiveRegion="polite"><Body>{notices.error}</Body></View>}
     <Body>GPS FOLLOW / APP OPEN ONLY</Body>
     <Body>NWS / NEW MESSAGES AFTER FIRST CHECK</Body>
     {notices.enabled ? <ActionButton title="STOP GPS + ALERTS" onPress={notices.disable} secondary /> : <ActionButton title={notices.busy ? "ENABLING…" : "ENABLE GPS + ALERTS"} disabled={!notices.ready || notices.busy || !notices.supported || mode === "demo" || !ready || !automatic} onPress={() => void notices.enable()} />}
@@ -22,6 +23,5 @@ function ActiveLocationAlertControls({ notices }: { notices: NonNullable<ReturnT
     <Body>MANUAL POINT / STOPS FOLLOW</Body>
     <Body>CLOUD PUSH / NOT CONFIGURED. No closed-app alerts yet.</Body>
     {notices.lastNotice && <Body>{notices.lastNotice}</Body>}
-    {notices.error && <View accessibilityRole="alert" accessibilityLiveRegion="polite"><Body>{notices.error}</Body></View>}
   </Panel>;
 }

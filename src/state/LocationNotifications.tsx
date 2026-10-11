@@ -7,7 +7,7 @@ import { useFeedPreferences } from "./FeedPreferences";
 import { useAlertsContext } from "./AlertsProvider";
 import { locationKey } from "@/domain/alerts";
 import { acknowledgeNotificationDelivery, createNotificationLedger, evaluateNotificationSnapshot, restoreNotificationLedger, retargetNotificationLedger, type NotificationLedger } from "@/domain/notificationPolicy";
-import { GPS_FOLLOW_MAX_AGE_MS, startForegroundFollow } from "@/services/foregroundFollow";
+import { GPS_FOLLOW_MAX_AGE_MS, startForegroundFollow, type ForegroundFollowPhase } from "@/services/foregroundFollow";
 import { cancelNotification, initializeNotifications, listenNotificationResponses, readNotificationPermission, requestNotificationPermission, sendNwsNotification, sendTestNotification } from "@/services/notifications";
 
 export const LOCATION_NOTIFICATIONS_KEY = "@clearpath/location-notifications/v1";
@@ -28,6 +28,8 @@ export function LocationNotificationsProvider({ children }: PropsWithChildren) {
   const [busy, setBusy] = useState(false);
   const [permission, setPermission] = useState(false);
   const [tracking, setTracking] = useState(false);
+  const [gpsFailed, setGpsFailed] = useState(false);
+  const [gpsPhase, setGpsPhase] = useState<ForegroundFollowPhase | null>(null);
   const [foreground, setForeground] = useState(NativeAppState.currentState === "active");
   const [error, setError] = useState<string | null>(null);
   const [lastNotice, setLastNotice] = useState<string | null>(null);
@@ -56,6 +58,9 @@ export function LocationNotificationsProvider({ children }: PropsWithChildren) {
     ++operation.current;
     optedIn.current = false;
     ledger.current = null;
+    gpsError.current = null;
+    setGpsFailed(false);
+    setGpsPhase(null);
     setEnabled(false); setTracking(false); setBusy(false); setError(null);
     void persist(settings()).catch(() => { if (mounted.current) setError("OFF for this session. Could not save OFF; disable ClearPath notifications in Android settings before reopening."); });
   }, [persist, settings]);
@@ -123,6 +128,9 @@ export function LocationNotificationsProvider({ children }: PropsWithChildren) {
     if (!ready || busy || optedIn.current || !supported || latest.current.app.mode !== "live" || !latest.current.preferences.ready || !latest.current.preferences.automatic) return;
     const ticket = ++operation.current;
     const initialSelection = latest.current.app.locationRevision;
+    gpsError.current = null;
+    setGpsFailed(false);
+    setGpsPhase(null);
     setBusy(true); setError(null);
     try {
       const granted = await requestNotificationPermission();
@@ -148,6 +156,7 @@ export function LocationNotificationsProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!ready || !enabled || !permission || !foreground || app.mode !== "live" || !preferences.ready || !preferences.automatic || app.locationRevision !== selectionRevision.current) {
       setTracking(false);
+      setGpsPhase(null);
       return;
     }
     let cancelled = false;
@@ -155,6 +164,8 @@ export function LocationNotificationsProvider({ children }: PropsWithChildren) {
     const ticket = operation.current;
     const isCurrent = () => !cancelled && mounted.current && optedIn.current && ticket === operation.current && latest.current.permission && latest.current.app.mode === "live" && latest.current.foreground && latest.current.preferences.automatic && latest.current.app.locationRevision === selectionRevision.current;
     setTracking(false);
+    setGpsFailed(false);
+    setGpsPhase("CHECK GPS ACCESS");
     void startForegroundFollow((selected, observedAt) => {
       if (!isCurrent()) return;
       const point = locationKey(selected);
@@ -162,12 +173,14 @@ export function LocationNotificationsProvider({ children }: PropsWithChildren) {
       lastGpsAt.current = observedAt;
       latest.current.app.setLocation(selected, "follow");
       setTracking(true);
+      setGpsFailed(false);
       const recoveredError = gpsError.current;
       setError((current) => current === recoveredError ? null : current);
       gpsError.current = null;
-    }, (message) => { if (isCurrent()) { gpsError.current = message; setError(message); setTracking(false); cancelled = true; stop(); } }, isCurrent)
-      .then((remove) => { stop = remove; if (cancelled) remove(); })
-      .catch((cause) => { if (isCurrent()) { setTracking(false); const message = cause instanceof Error ? cause.message : "GPS following unavailable."; gpsError.current = message; setError(message); } });
+    }, (message) => { if (isCurrent()) { gpsError.current = message; setError(message); setTracking(false); setGpsFailed(true); setGpsPhase(null); cancelled = true; stop(); } }, isCurrent,
+    (phase) => { if (isCurrent()) setGpsPhase(phase); })
+      .then((remove) => { stop = remove; if (cancelled) remove(); else if (isCurrent()) setGpsPhase(null); })
+      .catch((cause) => { if (isCurrent()) { setTracking(false); setGpsFailed(true); setGpsPhase(null); const message = cause instanceof Error ? cause.message : "GPS following unavailable."; gpsError.current = message; setError(message); } });
     return () => { cancelled = true; stop(); };
   }, [app.locationRevision, app.mode, enabled, foreground, permission, preferences.automatic, preferences.ready, ready]);
 
@@ -214,7 +227,7 @@ export function LocationNotificationsProvider({ children }: PropsWithChildren) {
     finally { if (mounted.current && ticket === operation.current) setBusy(false); }
   }, [busy, supported]);
 
-  const status = !supported ? "NATIVE APP REQUIRED" : !ready ? "READING SETTINGS" : !enabled ? "OFF" : app.mode === "demo" ? "PAUSED / DEMO" : !preferences.automatic ? "PAUSED / MANUAL FEEDS" : !foreground ? "PAUSED / APP CLOSED" : !permission ? "PAUSED / OS PERMISSION" : tracking ? "ON / GPS FOLLOW / APP OPEN" : "WAITING FOR GPS";
+  const status = !supported ? "NATIVE APP REQUIRED" : !ready ? "READING SETTINGS" : !enabled ? "OFF" : app.mode === "demo" ? "PAUSED / DEMO" : !preferences.automatic ? "PAUSED / MANUAL FEEDS" : !foreground ? "PAUSED / APP CLOSED" : !permission ? "PAUSED / OS PERMISSION" : gpsFailed ? "PAUSED / GPS ERROR" : gpsPhase ?? (tracking ? "ON / GPS FOLLOW / APP OPEN" : "WAITING FOR GPS");
   return <Context.Provider value={{ ready, enabled, busy, supported, status, error, lastNotice, enable, disable, test }}>{children}</Context.Provider>;
 }
 

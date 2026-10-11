@@ -7,11 +7,13 @@ import {
 jest.mock("expo-location", () => ({
   Accuracy: { Balanced: 3 },
   PermissionStatus: { GRANTED: "granted", DENIED: "denied" },
+  getForegroundPermissionsAsync: jest.fn(),
   requestForegroundPermissionsAsync: jest.fn(),
   hasServicesEnabledAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
 }));
 
+const readPermission = jest.mocked(Location.getForegroundPermissionsAsync);
 const permission = jest.mocked(Location.requestForegroundPermissionsAsync);
 const services = jest.mocked(Location.hasServicesEnabledAsync);
 const position = jest.mocked(Location.getCurrentPositionAsync);
@@ -34,10 +36,17 @@ const gps = {
   },
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
-  permission.mockResolvedValue(allowed);
-  services.mockResolvedValue(true);
-  position.mockResolvedValue(gps);
+  readPermission.mockReset().mockResolvedValue(allowed);
+  permission.mockReset().mockResolvedValue(allowed);
+  services.mockReset().mockResolvedValue(true);
+  position.mockReset().mockResolvedValue(gps);
 });
 afterEach(() => {
   jest.useRealTimers();
@@ -45,14 +54,42 @@ afterEach(() => {
 
 describe("foreground GPS service", () => {
   test("permission denial leaves an actionable manual fallback without reading location", async () => {
-    permission.mockResolvedValue({
+    const denied = {
+      ...allowed,
+      status: Location.PermissionStatus.DENIED,
+      granted: false,
+    };
+    readPermission.mockResolvedValue(denied);
+    permission.mockResolvedValue(denied);
+    await expect(requestDeviceLocation()).rejects.toThrow(
+      "Location permission denied. Choose a city center or enter coordinates instead.",
+    );
+    expect(services).not.toHaveBeenCalled();
+    expect(position).not.toHaveBeenCalled();
+  });
+
+  test("missing foreground permission is requested once before a single point is acquired", async () => {
+    readPermission.mockResolvedValue({
       ...allowed,
       status: Location.PermissionStatus.DENIED,
       granted: false,
     });
-    await expect(requestDeviceLocation()).rejects.toThrow(
-      "Location permission denied. Choose a city center or enter coordinates instead.",
-    );
+    expect(await requestDeviceLocation()).toMatchObject({ kind: "gps" });
+    expect(readPermission).toHaveBeenCalledTimes(1);
+    expect(permission).toHaveBeenCalledTimes(1);
+    expect(permission.mock.invocationCallOrder[0]).toBeLessThan(services.mock.invocationCallOrder[0]);
+    expect(position).toHaveBeenCalledTimes(1);
+  });
+
+  test("permanently denied permission does not repeat a native prompt or request location", async () => {
+    readPermission.mockResolvedValue({
+      ...allowed,
+      status: Location.PermissionStatus.DENIED,
+      granted: false,
+      canAskAgain: false,
+    });
+    await expect(requestDeviceLocation()).rejects.toThrow(/Location permission denied/);
+    expect(permission).not.toHaveBeenCalled();
     expect(services).not.toHaveBeenCalled();
     expect(position).not.toHaveBeenCalled();
   });
@@ -65,7 +102,7 @@ describe("foreground GPS service", () => {
     expect(position).not.toHaveBeenCalled();
   });
 
-  test("returns a single validated foreground point with reported accuracy", async () => {
+  test("existing permission skips the native prompt and returns a single validated point with reported accuracy", async () => {
     expect(await requestDeviceLocation()).toEqual({
       kind: "gps",
       coordinates: { latitude: 30.0474, longitude: -99.1403 },
@@ -74,8 +111,62 @@ describe("foreground GPS service", () => {
     expect(position).toHaveBeenCalledWith({
       accuracy: Location.Accuracy.Balanced,
     });
-    expect(permission).toHaveBeenCalledTimes(1);
+    expect(readPermission).toHaveBeenCalledTimes(1);
+    expect(permission).not.toHaveBeenCalled();
     expect(position).toHaveBeenCalledTimes(1);
+  });
+
+  test("a hung permission read times out and its late grant cannot start location access", async () => {
+    jest.useFakeTimers();
+    const pending = deferred<Location.LocationPermissionResponse>();
+    readPermission.mockReturnValue(pending.promise);
+    const assertion = expect(requestDeviceLocation()).rejects.toThrow(/Location access check timed out/);
+    await jest.advanceTimersByTimeAsync(7_999);
+    expect(permission).not.toHaveBeenCalled();
+    expect(services).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(1);
+    await assertion;
+    pending.resolve(allowed);
+    await Promise.resolve();
+    expect(permission).not.toHaveBeenCalled();
+    expect(services).not.toHaveBeenCalled();
+    expect(position).not.toHaveBeenCalled();
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  test("a hung permission prompt times out and its late grant cannot request a GPS point", async () => {
+    jest.useFakeTimers();
+    readPermission.mockResolvedValue({
+      ...allowed,
+      status: Location.PermissionStatus.DENIED,
+      granted: false,
+    });
+    const pending = deferred<Location.LocationPermissionResponse>();
+    permission.mockReturnValue(pending.promise);
+    const assertion = expect(requestDeviceLocation()).rejects.toThrow(/Location permission request timed out/);
+    await jest.advanceTimersByTimeAsync(59_999);
+    expect(permission).toHaveBeenCalledTimes(1);
+    expect(services).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(1);
+    await assertion;
+    pending.resolve(allowed);
+    await Promise.resolve();
+    expect(services).not.toHaveBeenCalled();
+    expect(position).not.toHaveBeenCalled();
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  test("a hung services check times out and its late result cannot request a GPS point", async () => {
+    jest.useFakeTimers();
+    const pending = deferred<boolean>();
+    services.mockReturnValue(pending.promise);
+    const assertion = expect(requestDeviceLocation()).rejects.toThrow(/Device location check timed out/);
+    await jest.advanceTimersByTimeAsync(8_000);
+    await assertion;
+    pending.resolve(true);
+    await Promise.resolve();
+    expect(position).not.toHaveBeenCalled();
+    expect(jest.getTimerCount()).toBe(0);
   });
 
   test("rejects invalid native coordinates before they reach a live request", async () => {
@@ -90,12 +181,20 @@ describe("foreground GPS service", () => {
 
   test("an unresolved GPS reading times out with manual fallback", async () => {
     jest.useFakeTimers();
-    position.mockReturnValue(new Promise(() => undefined));
-    const assertion = expect(requestDeviceLocation()).rejects.toThrow(
+    const pending = deferred<Location.LocationObject>();
+    position.mockReturnValue(pending.promise);
+    const accepted = jest.fn();
+    const task = requestDeviceLocation();
+    void task.then(accepted, () => {});
+    const assertion = expect(task).rejects.toThrow(
       "GPS took too long. Try again outdoors or choose a manual location.",
     );
     await jest.advanceTimersByTimeAsync(20_000);
     await assertion;
+    pending.resolve(gps);
+    await Promise.resolve();
+    expect(accepted).not.toHaveBeenCalled();
+    expect(position).toHaveBeenCalledTimes(1);
     expect(jest.getTimerCount()).toBe(0);
   });
 });

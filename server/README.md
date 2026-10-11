@@ -4,6 +4,20 @@ This is an operator-controlled, single-process Node 22+ service for a small Clea
 
 The app's new local foreground-alert source and this optional cloud service are separate. The native cloud client is tested preparation, with no integrated enrollment controls yet. Firebase/FCM credentials in EAS, a rebuilt Android app, a reachable HTTPS host, private enrollment setup, and actual phone acceptance are still needed before cloud notifications work. No accounts, credentials, paid resources, terms, or deployments were created for this service.
 
+## Hosting research / October 11, 2026
+
+The user authorized research only, with no purchase. This watcher needs one continuously running Node process and a private persistent data directory. The following are candidates, not deployed or load-tested configurations.
+
+| Option | Cost and fit |
+| --- | --- |
+| Existing always-on computer or VPS | No new hosting subscription if already available. Suitable for a supervised pilot only after checking sleep, restart behavior, HTTPS reachability and private persistent storage. Availability has not been verified. |
+| DigitalOcean Basic Droplet, 1 GiB / 1 vCPU | $6/month base price with 25 GiB SSD and 1,000 GiB transfer. Recommended starting candidate for this small pilot; the memory choice is an engineering estimate, not a measured capacity claim. Domain, backup, taxes and overages can add costs. [Official pricing](https://www.digitalocean.com/pricing/droplets). |
+| Google Compute Engine eligible e2-micro | Eligible US-region compute and standard persistent disk have free-tier allowances, but an in-use external IPv4 address costs $0.005/hour after one free hour/month: about $3.60 for a 30-day month before other charges. This is not a verified zero-cost public host. [Free tier](https://docs.cloud.google.com/free/docs/free-cloud-features), [network pricing](https://cloud.google.com/vpc/network-pricing). |
+| Oracle Always Free compute | Eligible micro VMs include public IP and persistent-volume allowances, but shape capacity can be unavailable and Oracle may reclaim idle instances after its seven-day utilization check. A small watcher could meet those idle criteria; that is an inference, not a measurement. Suitable to investigate for supervised experiments, not the recommended unattended monitor. [Official limits](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm). |
+| Render free web service | Sleeps after 15 minutes without inbound traffic, loses local filesystem changes on restart and cannot attach a persistent disk. Incompatible with this polling process and JSON store without redesign. [Official free-service limits](https://render.com/docs/free). |
+
+A host that suspends the process or discards its filesystem would interrupt polling or durable dedup state. Using such a service would require a different scheduler and storage design. No reviewed host has been provisioned or verified with this app. The $6/month DigitalOcean candidate is the recommendation for an independent pilot; an existing computer is the option to investigate without a new hosting subscription. Firebase/FCM setup and the app's enrollment controls remain separate work even after choosing a host.
+
 ## Run and test
 
 From the repository root:
@@ -47,7 +61,7 @@ The first **successful** check baselines all existing current records without no
 
 Polling has a minimum of 60 seconds per device, global concurrency 2, and at most 10 device checks per scheduler pass. Each checked device sends at most three notices per pass. Queues, histories, receipts, input, response sizes, and device count are bounded. Inactive enrollments, including stored coordinates/token/dedup data, are purged after seven days without a location update. Explicit opt-out deletes them immediately from this service's active state; operator backups and push-provider retention need separate policies.
 
-Push payloads use channel `clearpath-nws`, title `NWS / <event>`, and generic body text directing the person to current instructions. They contain no coordinates, provider instructions, URL, or payload-selected navigation route. Data is limited to `{kind:"nws-point-alert",alertId}`; the app handles this kind by opening its fixed Home route and refreshing official data. Message timestamps remain in the server dedup ledger. Event names appear on the lock screen, so a warning type can still reveal contextual information. No test-notification endpoint exists.
+Push payloads use channel `clearpath-nws`, title `NWS / <event>`, and generic body text directing the person to current instructions. They contain no coordinates, provider instructions, URL, or payload-selected navigation route. Data is limited to `{kind:"nws-point-alert",alertId}`; the app handles this kind by opening its fixed live Home route to check current results. Automatic/manual feed preferences, network availability and request limits still apply; opening a notice does not guarantee a new retrieval. Message timestamps remain in the server dedup ledger. Event names appear on the lock screen, so a warning type can still reveal contextual information. No test-notification endpoint exists.
 
 TTL is bounded by warning expiry and one hour. Temporary known HTTP errors use bounded backoff and honor Retry-After. A lost response can occur after Expo accepted a message, so ambiguous sends are recorded as unknown and are not automatically resent. This favors avoiding duplicate alerts; a notice can be missed. Durable send intent prevents a restart from silently repeating an uncertain send. Cancellation or movement may occur after a push was already accepted; neither this service nor opt-out can retract that in-flight notification. The app must refresh current official instructions when opened.
 

@@ -7,6 +7,7 @@ import { useAlertsContext } from "../src/state/AlertsProvider";
 import { useFeedPreferences } from "../src/state/FeedPreferences";
 import { LOCATION_NOTIFICATIONS_KEY, LocationNotificationsProvider, useLocationNotifications } from "../src/state/LocationNotifications";
 import { startForegroundFollow } from "../src/services/foregroundFollow";
+import type { ForegroundFollowPhase } from "../src/services/foregroundFollow";
 import { cancelNotification, initializeNotifications, listenNotificationResponses, readNotificationPermission, requestNotificationPermission, sendNwsNotification, sendTestNotification } from "../src/services/notifications";
 import { createNotificationLedger } from "../src/domain/notificationPolicy";
 import type { AlertSnapshot, OfficialAlert, SelectedLocation } from "../src/domain/types";
@@ -281,8 +282,70 @@ test("GPS errors remove the subscription and expose a paused reading without fab
   await act(() => followers[0].error("GPS stopped"));
   expect(followers[0].remove).toHaveBeenCalledTimes(1);
   expect(hook.result.current.error).toBe("GPS stopped");
-  expect(hook.result.current.status).toBe("WAITING FOR GPS");
+  expect(hook.result.current.status).toBe("PAUSED / GPS ERROR");
   expect(followers[0].current()).toBe(false);
+});
+
+test("a failed first GPS fix shows a paused error, stays stopped and recovers only after an explicit retry", async () => {
+  const firstAttempt = deferred<() => void>();
+  jest.mocked(startForegroundFollow).mockImplementationOnce((_reading, _error, _current, phase) => {
+    phase?.("ACQUIRE GPS");
+    return firstAttempt.promise;
+  });
+  const hook = await mount();
+  await act(() => hook.result.current.enable());
+  expect(hook.result.current.status).toBe("ACQUIRE GPS");
+  expect(hook.result.current.error).toBeNull();
+  await act(() => firstAttempt.reject(new Error("GPS took too long. Retry or select a point manually.")));
+  expect(hook.result.current.status).toBe("PAUSED / GPS ERROR");
+  expect(hook.result.current.error).toMatch(/GPS took too long/);
+  await hook.rerender(undefined);
+  expect(startForegroundFollow).toHaveBeenCalledTimes(1);
+  await act(() => hook.result.current.disable());
+  await act(() => hook.result.current.enable());
+  expect(startForegroundFollow).toHaveBeenCalledTimes(2);
+  expect(hook.result.current.status).toBe("WAITING FOR GPS");
+  expect(hook.result.current.error).toBeNull();
+  await act(() => followers[0].reading(point));
+  expect(hook.result.current.status).toBe("ON / GPS FOLLOW / APP OPEN");
+});
+
+test("pending startup reports its current step until watcher setup finishes", async () => {
+  const registration = deferred<() => void>();
+  let reportPhase!: (phase: ForegroundFollowPhase) => void;
+  let acceptPoint!: (selected: SelectedLocation, observedAt: number) => void;
+  jest.mocked(startForegroundFollow).mockImplementationOnce((reading, _error, _current, phase) => {
+    acceptPoint = reading;
+    reportPhase = (value) => phase?.(value);
+    return registration.promise;
+  });
+  const hook = await mount();
+  await act(() => hook.result.current.enable());
+  expect(hook.result.current.status).toBe("CHECK GPS ACCESS");
+  await act(() => reportPhase("CHECK DEVICE LOCATION"));
+  expect(hook.result.current.status).toBe("CHECK DEVICE LOCATION");
+  await act(() => reportPhase("ACQUIRE GPS"));
+  expect(hook.result.current.status).toBe("ACQUIRE GPS");
+  await act(() => { acceptPoint(point, Date.now()); reportPhase("START GPS WATCH"); });
+  expect(hook.result.current.status).toBe("START GPS WATCH");
+  await act(() => registration.resolve(jest.fn()));
+  expect(hook.result.current.status).toBe("ON / GPS FOLLOW / APP OPEN");
+  await act(() => hook.result.current.disable());
+  await act(() => reportPhase("ACQUIRE GPS"));
+  expect(hook.result.current.status).toBe("OFF");
+});
+
+test("a GPS update cannot clear an unrelated notification scheduling error", async () => {
+  const hook = await enabled();
+  await publish(hook, []);
+  await waitFor(async () => expect((await savedSettings()).ledger.baselineEstablished).toBe(true));
+  jest.mocked(sendNwsNotification).mockRejectedValueOnce(new Error("OS scheduling failed"));
+  await publish(hook, [officialAlert()]);
+  await waitFor(() => expect(hook.result.current.error).toMatch(/Notification or local save failed/));
+  const unrelated = hook.result.current.error;
+  await act(() => followers[0].reading(point));
+  expect(hook.result.current.error).toBe(unrelated);
+  expect(hook.result.current.status).toBe("ON / GPS FOLLOW / APP OPEN");
 });
 
 test("foreground resume rechecks OS permission; revoked notification permission prevents a new GPS subscription", async () => {
