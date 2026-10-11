@@ -1,6 +1,14 @@
 # ClearPath verification record
 
-This record distinguishes executed checks from pending native verification. Android Expo Go startup and the map-loading failure UI were confirmed on a physical phone on October 10, 2026. The phone was unplugged during the subsequent tactical redesign and live-layer expansion; that current design and successful native map tiles/overlays remain unverified. Complete native feature checks, iOS startup, and native Maestro execution remain pending.
+This record distinguishes executed checks from pending native verification. Android Expo Go startup and the map-loading failure UI were confirmed on a physical phone on October 10, 2026. The current home screen was confirmed after restoring USB transport on October 11; successful native Google tiles/overlays remain unverified. Complete native feature checks, iOS startup, and native Maestro execution remain pending.
+
+## Android setup — October 11, 2026
+
+The moto g stylus - 2025 was authorized as device `ZA2233QT3V`. Metro listened on IPv4 localhost port 8082. After a remote-update download failure, `adb reverse --list` was empty; recreating `tcp:8082` and cold-opening Expo Go reached `ExperienceActivity`. The user then confirmed the ClearPath home screen without the reported `bodyStrong` error. A bounded current-Expo-Go-process log check showed no fresh matching TypeError, CLI-connect warning, or remote-download error after that launch. The earlier typography frame did not match current source lines; this is startup/transport evidence, not proof of a cache defect or complete screen acceptance.
+
+EAS CLI 24.12.1 authenticated the user's existing account and linked `lostdens-team/clearpath` to project `93c6f679-06ad-4edf-8ff7-8eec0290035b`. Expo generated the remote Android preview keystore for `org.clearpath.student`; its public SHA-1 is recorded in README for the Google restriction. No keystore or API-key values were written into the repository. Dynamic configuration now preserves `config.extra`, including the linked EAS project ID, before adding boolean map-configuration flags.
+
+For those configuration changes, full TypeScript and source/test ESLint passed. `expo install --check` reported dependencies up to date; Expo Doctor 1.20.4 passed **21/21 checks**. Configured images/fonts are present and tracked, and the lockfile matches dependencies and devDependencies. The previous **575-test** result below applies to the application checkpoint; it was not rerun for account metadata. The restricted Google key, native APK build/install, successful tiles/overlays, and independent offline cold start remain pending.
 
 ## Automated checks
 
@@ -220,7 +228,7 @@ Run each flow and adjust platform-specific dialogs if needed. The emergency flow
 
 ## Known limits and issues
 
-- Physical Android home-screen startup through USB is confirmed for the earlier design. The phone is unplugged during the latest redesign and new layer work. Complete current native acceptance checks and iOS/simulator verification remain pending. JavaScript export does not compile native projects or validate map keys and runtime permissions.
+- Physical Android home-screen startup through USB is confirmed for the current design on October 11. Complete current native acceptance checks and iOS/simulator verification remain pending. JavaScript export does not compile native projects or validate map keys and runtime permissions.
 - Google basemap tiles did not render in the observed Android Expo Go 57.0.9 run. The failure UI is confirmed on the phone; an installed build with its own restricted Maps key remains unverified.
 - NWS availability, incomplete warning geometry, and cached data freshness limit what can be verified. The app must retain explicit provenance and verification states.
 - The scoped USGS integration has adapter/hook test and real-request evidence above; successful phone overlays remain pending. Milestone 6 is only partially implemented. The original student relevance/priority engine remains blank, and its student-authored tests remain pending.

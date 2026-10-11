@@ -36,6 +36,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "93c6f679-06ad-4edf-8ff7-8eec0290035b"
+      }
+    },
+    "owner": "lostdens-team"
   }
 }

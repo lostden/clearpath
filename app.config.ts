@@ -42,6 +42,10 @@ export default function configure({ config }: ConfigContext): ExpoConfig {
       ],
       ...mapPlugins,
     ],
-    extra: { hasAndroidMapsKey: !!androidKey, hasIosMapsKey: !!iosKey },
+    extra: {
+      ...config.extra,
+      hasAndroidMapsKey: !!androidKey,
+      hasIosMapsKey: !!iosKey,
+    },
   };
 }
