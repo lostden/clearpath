@@ -20,7 +20,9 @@ type AppState = {
   location: SelectedLocation | null;
   /** Saved-point hydration has settled, or a point was explicitly selected. */
   locationReady: boolean;
-  setLocation: (location: SelectedLocation) => void;
+  setLocation: (location: SelectedLocation, origin?: "selection" | "follow") => void;
+  /** Explicit selections stop an opted-in GPS follower; its own updates do not. */
+  locationRevision: number;
   locationError: string | null;
   setLocationError: (error: string | null) => void;
 };
@@ -32,6 +34,7 @@ export function AppProvider({ children }: PropsWithChildren) {
   const [mode, changeMode] = useState<"demo" | "live">("live");
   const [scenario, changeScenario] = useState<DemoScenario>("flood");
   const [location, changeLocation] = useState<SelectedLocation | null>(null);
+  const [locationRevision, changeLocationRevision] = useState(0);
   const [locationReady, setLocationReady] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const changed = useRef(false);
@@ -82,12 +85,13 @@ export function AppProvider({ children }: PropsWithChildren) {
     changed.current = true;
     changeScenario(next);
   }, []);
-  const setLocation = useCallback((next: SelectedLocation) => {
+  const setLocation = useCallback((next: SelectedLocation, origin: "selection" | "follow" = "selection") => {
     if (!validCoordinates(next.coordinates)) {
       setLocationError("Please choose valid coordinates.");
       return;
     }
     changed.current = true;
+    if (origin === "selection") changeLocationRevision((revision) => revision + 1);
     const selected: SelectedLocation = {
       label: next.label,
       kind: next.kind,
@@ -121,6 +125,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       location,
       locationReady,
       setLocation,
+      locationRevision,
       locationError,
       setLocationError,
     }),
@@ -132,6 +137,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       location,
       locationReady,
       setLocation,
+      locationRevision,
       locationError,
     ],
   );

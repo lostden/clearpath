@@ -29,6 +29,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { useAppState } from "@/state/AppState";
 import { ShareLocation } from "@/components/ShareLocation";
 import { FeedUpdateControl } from "@/components/FeedUpdateControl";
+import { LocationAlertControls } from "@/components/LocationAlertControls";
 export default function HomeScreen() {
   const feed = useAlerts();
   const { locationError, locationReady } = useAppState();
@@ -191,7 +192,9 @@ export default function HomeScreen() {
           <Text style={s.linkText}>GET RESOURCES →</Text>
         </Pressable>
         <View style={s.divider} />
-        <SectionTitle>03 / TRAINING DEMO</SectionTitle>
+        <SectionTitle>03 / LOCATION ALERTS</SectionTitle>
+        <LocationAlertControls />
+        <SectionTitle>04 / TRAINING DEMO</SectionTitle>
         <DemoControls />
         <Body>
           ClearPath cannot verify personal safety or guarantee emergency

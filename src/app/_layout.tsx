@@ -8,6 +8,7 @@ import { queryClient } from "@/state/queryClient";
 import { AlertsProvider } from "@/state/AlertsProvider";
 import { useFonts } from "expo-font";
 import { FeedPreferencesProvider } from "@/state/FeedPreferences";
+import { LocationNotificationsProvider } from "@/state/LocationNotifications";
 
 export default function TabLayout() {
   // Bundled static faces work in Expo Go and installed builds. Rendering stays
@@ -24,9 +25,11 @@ export default function TabLayout() {
         <AppProvider>
           <FeedPreferencesProvider>
             <AlertsProvider>
-              <PreparednessProvider>
-                <AppTabs />
-              </PreparednessProvider>
+              <LocationNotificationsProvider>
+                <PreparednessProvider>
+                  <AppTabs />
+                </PreparednessProvider>
+              </LocationNotificationsProvider>
             </AlertsProvider>
           </FeedPreferencesProvider>
         </AppProvider>

@@ -2,6 +2,11 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 export default function configure({ config }: ConfigContext): ExpoConfig {
   const androidKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY;
   const iosKey = process.env.GOOGLE_MAPS_IOS_API_KEY;
+  // Cloud push stays inactive until the operator completes FCM, hosting and consent.
+  const cloudEndpoint = process.env.EXPO_PUBLIC_CLEARPATH_PUSH_URL;
+  const firebaseFile = process.env.GOOGLE_SERVICES_JSON;
+  const cloudPushEnabled = process.env.CLEARPATH_PUSH_ENABLED === "true" && !!cloudEndpoint && !!firebaseFile;
+  const backgroundGps = cloudPushEnabled && process.env.CLEARPATH_BACKGROUND_GPS === "true";
   const mapPlugins: NonNullable<ExpoConfig["plugins"]> = [];
   if (androidKey || iosKey)
     mapPlugins.push([
@@ -18,8 +23,9 @@ export default function configure({ config }: ConfigContext): ExpoConfig {
     android: {
       ...config.android,
       package: "org.clearpath.student",
+      ...(cloudPushEnabled ? { googleServicesFile: firebaseFile } : {}),
       blockedPermissions: [
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        ...(!backgroundGps ? ["android.permission.ACCESS_BACKGROUND_LOCATION"] : []),
         "android.permission.RECORD_AUDIO",
       ],
     },
@@ -30,6 +36,8 @@ export default function configure({ config }: ConfigContext): ExpoConfig {
     },
     plugins: [
       ...(config.plugins || []),
+      ["expo-notifications", { color: "#FF5A00", defaultChannel: "clearpath-nws" }],
+      "expo-secure-store",
       [
         "expo-font",
         {
@@ -63,8 +71,8 @@ export default function configure({ config }: ConfigContext): ExpoConfig {
           locationWhenInUsePermission:
             "ClearPath uses your location only when you choose GPS, to retrieve official warnings for that point. Manual selection is also available.",
           isIosBackgroundLocationEnabled: false,
-          isAndroidBackgroundLocationEnabled: false,
-          isAndroidForegroundServiceEnabled: false,
+          isAndroidBackgroundLocationEnabled: backgroundGps,
+          isAndroidForegroundServiceEnabled: backgroundGps,
         },
       ],
       ...mapPlugins,
@@ -73,6 +81,10 @@ export default function configure({ config }: ConfigContext): ExpoConfig {
       ...config.extra,
       hasAndroidMapsKey: !!androidKey,
       hasIosMapsKey: !!iosKey,
+      cloudPushEnabled,
+      cloudPushEndpoint: cloudPushEnabled ? cloudEndpoint : null,
+      cloudPushFcmConfigured: cloudPushEnabled,
+      cloudPushBackgroundLocationEnabled: backgroundGps,
     },
   };
 }

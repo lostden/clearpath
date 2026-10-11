@@ -51,7 +51,7 @@ beforeEach(() => {
   };
   settings = {
     mode: "live", setMode: jest.fn(), scenario: "flood", setScenario: jest.fn(),
-    location: null, locationReady: true, setLocation: jest.fn(), locationError: null, setLocationError: jest.fn(),
+    location: null, locationReady: true, locationRevision: 0, setLocation: jest.fn(), locationError: null, setLocationError: jest.fn(),
   };
   appState.mockImplementation(() => settings);
   alerts.mockImplementation(() => feed);
