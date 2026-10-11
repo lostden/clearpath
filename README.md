@@ -10,6 +10,8 @@ The original relevance and prioritization engine remains deliberately unimplemen
 
 The latest Android preview is **ready to install**. The [completed version 2 build](https://expo.dev/accounts/lostdens-team/projects/clearpath/builds/2718ca97-bf7e-421f-82e4-7f9ab31cb4af), from commit `808f427`, is downloaded and inspected. Its files are `artifacts/ClearPath-latest.apk` (113,409,801 bytes) and matching `artifacts/ClearPath-preview.json`. Phone installation is still pending.
 
+An [updated version 3 build](https://expo.dev/accounts/lostdens-team/projects/clearpath/builds/b7d53049-6e34-456b-a141-963974d3a840), from tested commit `a67b223`, is queued with persistent Close/Cancel controls in the full-screen views. The verified version 2 files remain the installer default until the newer APK completes and passes artifact inspection.
+
 Reconnect the phone with a USB data cable, unlock it, leave **USB debugging** enabled, and approve **Allow USB debugging** if prompted. In this project folder, double-click **Install ClearPath.cmd**. Alternatively, run:
 
 ```powershell

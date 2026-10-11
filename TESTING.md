@@ -43,6 +43,8 @@ Six focused suites passed **45 tests**, including a long untruncated warning and
 
 Browser verification reproduced Close as a descendant of the scrolling warning before the fix. After the change, at **360 × 640**, the warning body was scrolled to its bottom (`scrollTop=723`, content height 1,272, viewport height 549); Close remained entirely visible at x=18–342 and y=18–71 with no scroll ancestor. Pressing Close dismissed the warning and exposed the shared emergency control at y=510–568. No call was placed. The browser viewport was reset. This is web layout/interaction evidence; physical native keyboard, safe-area, large-font and screen-reader behavior remain pending. The ready version 2 APK predates this modal-exit batch until a newer native build completes.
 
+At **06:38 UTC**, preview build `b7d53049-6e34-456b-a141-963974d3a840` was submitted from tested commit `a67b2234ba3139ad18cf21f45c1994149e45c5da`. It loaded the existing preview Maps variable, reused the existing remote keystore, and incremented Android version code from **2** to **3**. Submission returned status **NEW**; compilation, artifact inspection and phone acceptance are not yet recorded for this build. The inspected version 2 APK and matching metadata remain the default.
+
 ## Automated checks
 
 Run from the project directory with Node 22.13 or later:
