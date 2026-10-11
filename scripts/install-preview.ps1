@@ -97,7 +97,15 @@ if ($LASTEXITCODE -ne 0 -or -not ($taskInstallOutput | Where-Object { $_.Trim() 
 }
 Write-Output 'ClearPath installed. The app can run after the USB cable is disconnected.'
 if ($NoLaunch) { return }
-$taskLaunchOutput = @(& $taskAdb @taskAdbArgs shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -p $taskPackage)
+# Launcher activities need not have the DEFAULT category required by implicit am start.
+$taskResolveOutput = @(& $taskAdb @taskAdbArgs shell cmd package resolve-activity --brief --user current -a android.intent.action.MAIN -c android.intent.category.LAUNCHER $taskPackage)
+$taskResolveExit = $LASTEXITCODE
+$taskComponentPattern = '^' + [regex]::Escape($taskPackage) + '/(?:\.)?[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*$'
+$taskComponents = @($taskResolveOutput | ForEach-Object { $_.Trim() } | Where-Object { $_ -cmatch $taskComponentPattern })
+if ($taskResolveExit -ne 0 -or $taskComponents.Count -ne 1 -or ($taskResolveOutput -match '^\s*(Error:|Exception:)')) {
+  throw 'ClearPath was installed, but Android did not resolve its launcher activity. Open ClearPath from the phone app drawer.'
+}
+$taskLaunchOutput = @(& $taskAdb @taskAdbArgs shell am start -W --user current -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n $taskComponents[0])
 if ($LASTEXITCODE -ne 0 -or ($taskLaunchOutput -match '^\s*(Error:|Exception:|Status:\s*timeout)')) {
   throw ('ClearPath was installed, but Android could not open it. Open ClearPath from the phone app drawer. ' + ($taskLaunchOutput -join ' '))
 }

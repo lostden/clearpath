@@ -24,6 +24,8 @@ The [2026 Congressional App Challenge rules](https://www.congressionalappchallen
 | October 11, 2026 | Codex and parallel Codex agents | Two EAS native preview builds, read-only APK package/version/certificate/Maps-metadata and bundled-asset inspection, checksum sidecar preparation and double-click USB installer wrapper | Both APK builds finished; version 2 is ready locally; actual APK checksum and expected missing-USB installer stop verified; certificate extraction is not full signature verification; phone installation/maps/offline cold start pending |
 | October 11, 2026 | Codex and parallel Codex agents | Safe-area-aware persistent Close/Cancel header across six full-screen detail, location and share modals | Generated usability support; 36 suites / 590 tests, TypeScript and scoped lint passed; 360 × 640 browser deep-scroll/close and returned emergency access verified; source text and operation cancellation preserved; native acceptance pending |
 
+| October 11, 2026 | Codex and parallel Codex agents | Standalone version 2 USB installation, resolved explicit Android launcher recovery, bounded process-only startup diagnostics and setup handoff | Android installation/explicit launch succeeded; user confirmed visible Google map tiles; remaining native feature/offline acceptance pending; overnight automation paused on return |
+
 Keep this log current. Record AI-generated snippets adopted into student modules and review suggestions that materially change implementation. Do not label generated tests, algorithms, safety text, or visual design as wholly independent student work.
 
 ## Submission disclosure draft
