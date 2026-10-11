@@ -1,4 +1,4 @@
-import { type PropsWithChildren } from "react";
+import { type PropsWithChildren, type ReactNode } from "react";
 import {
   Alert,
   Linking,
@@ -16,10 +16,12 @@ import { colors, typography } from "./tokens";
 
 export function Screen({
   children,
+  header,
   ...props
-}: PropsWithChildren<ScrollViewProps>) {
+}: PropsWithChildren<ScrollViewProps & { header?: ReactNode }>) {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.safe}>
+      {header != null && <View style={styles.screenHeader}>{header}</View>}
       <ScrollView
         {...props}
         contentContainerStyle={[styles.content, props.contentContainerStyle]}
@@ -189,6 +191,15 @@ export function EmergencyControl() {
 }
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  screenHeader: {
+    padding: 18,
+    width: "100%",
+    maxWidth: 680,
+    alignSelf: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: colors.line,
+    backgroundColor: colors.surface,
+  },
   content: {
     padding: 18,
     gap: 20,

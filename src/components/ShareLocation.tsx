@@ -100,8 +100,7 @@ export function ShareLocation({ selectedLocation, source }: {
       >
         {reviewedPoint && (
           <SafeAreaView edges={["bottom"]} style={s.safe}>
-            <Screen>
-              <ActionButton title="Cancel location sharing" onPress={closeReview} secondary />
+            <Screen header={<ActionButton title="Cancel location sharing" onPress={closeReview} secondary />}>
               <Text style={s.kicker}>SHARE / SELECTED POINT</Text>
               <Heading>REVIEW LOCATION.</Heading>
               <Body>Check the point. Choose a recipient in the system share sheet.</Body>

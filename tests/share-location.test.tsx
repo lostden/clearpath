@@ -1,4 +1,4 @@
-import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react-native";
 import { Share } from "react-native";
 import { ShareLocation } from "../src/components/ShareLocation";
 import { DEMO_DATE_LABEL, DEMO_LOCATION } from "../src/data/demo";
@@ -18,8 +18,12 @@ test("opening and cancelling a review never invokes the system share sheet", asy
   const screen = await render(<ShareLocation selectedLocation={manual} source="live" />);
   expect(Share.share).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByRole("button", { name: "Share location" }));
-  expect(screen.getByText("REVIEW LOCATION.")).toBeTruthy();
-  expect(screen.getByText(/Latitude: 30.0699306976302/)).toBeTruthy();
+  const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+  expect(scrollViews).toHaveLength(1);
+  const review = scrollViews[0];
+  expect(within(review).getByText("REVIEW LOCATION.")).toBeTruthy();
+  expect(within(review).getByText(/Latitude: 30.0699306976302/)).toBeTruthy();
+  expect(within(review).queryByRole("button", { name: "Cancel location sharing" })).toBeNull();
   expect(Share.share).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByRole("button", { name: "Cancel location sharing" }));
   expect(screen.queryByText("REVIEW LOCATION.")).toBeNull();
@@ -111,7 +115,7 @@ test("iOS dismissal is cancellation, not delivery", async () => {
   await waitFor(() => expect(screen.getByText("Sharing cancelled.")).toBeTruthy());
 });
 
-test("a pending share cannot open twice and late completion after Back cannot revive the review", async () => {
+test.each(["Back", "fixed Cancel"])("a pending share cannot open twice and late completion after %s cannot revive the review", async (dismissal) => {
   let resolveShare!: (result: Awaited<ReturnType<typeof Share.share>>) => void;
   jest.mocked(Share.share).mockReturnValueOnce(new Promise((resolve) => { resolveShare = resolve; }));
   const screen = await render(<ShareLocation selectedLocation={manual} source="live" />);
@@ -120,7 +124,16 @@ test("a pending share cannot open twice and late completion after Back cannot re
   expect(screen.getByRole("button", { name: "Opening share sheet…" })).toBeDisabled();
   await fireEvent.press(screen.getByRole("button", { name: "Opening share sheet…" }));
   expect(Share.share).toHaveBeenCalledTimes(1);
-  await fireEvent(screen.getByTestId("share-location-review"), "requestClose");
+  if (dismissal === "Back") {
+    await fireEvent(screen.getByTestId("share-location-review"), "requestClose");
+  } else {
+    const cancel = screen.getByRole("button", { name: "Cancel location sharing" });
+    expect(cancel).toBeEnabled();
+    const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+    expect(scrollViews).toHaveLength(1);
+    expect(within(scrollViews[0]).queryByRole("button", { name: "Cancel location sharing" })).toBeNull();
+    await fireEvent.press(cancel);
+  }
   await act(() => resolveShare({ action: Share.sharedAction }));
   expect(screen.queryByText("REVIEW LOCATION.")).toBeNull();
   expect(screen.queryByText("Share sheet closed. Confirm delivery in the app you chose.")).toBeNull();

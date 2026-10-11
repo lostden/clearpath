@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render } from "@testing-library/react-native";
+import { act, cleanup, fireEvent, render, within } from "@testing-library/react-native";
 import { useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { ZoneAreaDetail } from "../src/components/ZoneAreaDetail";
@@ -53,7 +53,7 @@ test("partial downloads expose failed and absent zones without implying full cov
   expect(screen.getByText("Download limits reached.")).toBeTruthy();
 });
 
-test("changing or closing the selected alert aborts its request and rejects a late result", async () => {
+test("changing the selected alert aborts its request and rejects a late result", async () => {
   let resolve!: (value: ZoneBoundaryResult) => void;
   download.mockImplementation(() => new Promise((done) => { resolve = done; }));
   const screen = await render(<ZoneAreaDetail selection={selection} enabled onClose={jest.fn()} />);
@@ -65,6 +65,29 @@ test("changing or closing the selected alert aborts its request and rejects a la
   await act(async () => resolve(result));
   expect(screen.queryByTestId("zone-map")).toBeNull();
   expect(screen.getByText("No zone boundaries downloaded.")).toBeTruthy();
+  expect(download).toHaveBeenCalledTimes(1);
+});
+
+test("fixed Close remains outside scrolling zone content and aborts a pending download before its late result", async () => {
+  let resolve!: (value: ZoneBoundaryResult) => void;
+  download.mockImplementation(() => new Promise((done) => { resolve = done; }));
+  const onClose = jest.fn();
+  const screen = await render(<ZoneAreaDetail selection={selection} enabled onClose={onClose} />);
+  await fireEvent.press(screen.getByRole("button", { name: "Download NWS boundaries" }));
+  const signal = download.mock.calls[0][1]!;
+  const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+  expect(scrollViews).toHaveLength(1);
+  const content = within(scrollViews[0]);
+  expect(content.getByText("DOWNLOADING / NWS zone boundaries")).toBeTruthy();
+  expect(content.getByText(selection.alert.event)).toBeTruthy();
+  expect(content.queryByRole("button", { name: "Close zone areas" })).toBeNull();
+  expect(screen.getAllByRole("button", { name: "Close zone areas" })).toHaveLength(1);
+
+  await fireEvent.press(screen.getByRole("button", { name: "Close zone areas" }));
+  expect(onClose).toHaveBeenCalledTimes(1);
+  expect(signal.aborted).toBe(true);
+  await act(async () => resolve(result));
+  expect(screen.queryByTestId("zone-map")).toBeNull();
   expect(download).toHaveBeenCalledTimes(1);
 });
 

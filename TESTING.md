@@ -35,6 +35,14 @@ Both APKs contain `assets/index.android.bundle`. Resource-shrunk Android font fi
 
 The newer inspected APK was copied to ignored `artifacts/ClearPath-latest.apk`; its matching public build metadata was saved as `artifacts/ClearPath-preview.json`. Source and copied APK checksums match. The actual installer accepted that APK/metadata checksum, then stopped at the expected **No USB phone detected** error before any install or launch. The new `Install ClearPath.cmd` wrapper offers a double-click path, quotes the script path, captures its exit code before pausing, and keeps the result readable. Its path/syntax were reviewed; the wrapper itself was not executed. Both versioned APKs remain locally available. No APK, key value, or private signing material was committed.
 
+### Persistent modal exits — October 11, 2026
+
+Source review found the only Close action inside AlertDetail's scrolling warning copy while its full-screen modal covers the shared emergency control. The same pattern existed in observation, wildfire, zone, location and share-review modals. Screen now accepts a header within its top/left/right safe area and outside the content ScrollView. Those six existing Close/Cancel actions use it, retaining their labels and callbacks. The header follows the existing 680-pixel content limit, padding and hard border. Agency text, source links, pending GPS/zone/share result guards, bottom safe areas, native Back handlers and immediate transitions are unchanged.
+
+Six focused suites passed **45 tests**, including a long untruncated warning and its source link, a focused keyboard-aware coordinate form with pending GPS, canceled zone downloads/late results, and canceled pending share completion. Scoped lint for all 13 changed files and full TypeScript passed. The combined regression run passed **36 suites / 590 tests** without console warnings.
+
+Browser verification reproduced Close as a descendant of the scrolling warning before the fix. After the change, at **360 × 640**, the warning body was scrolled to its bottom (`scrollTop=723`, content height 1,272, viewport height 549); Close remained entirely visible at x=18–342 and y=18–71 with no scroll ancestor. Pressing Close dismissed the warning and exposed the shared emergency control at y=510–568. No call was placed. The browser viewport was reset. This is web layout/interaction evidence; physical native keyboard, safe-area, large-font and screen-reader behavior remain pending. The ready version 2 APK predates this modal-exit batch until a newer native build completes.
+
 ## Automated checks
 
 Run from the project directory with Node 22.13 or later:

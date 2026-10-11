@@ -64,8 +64,7 @@ export function AlertDetail({
     >
       {alert && (
         <SafeAreaView edges={["bottom"]} style={s.modalSafe}>
-        <Screen>
-          <ActionButton title="Close warning" onPress={onClose} secondary />
+        <Screen header={<ActionButton title="Close warning" onPress={onClose} secondary />}>
           <Text style={s.kicker}>WARNING / SOURCE COPY</Text>
           <SourceBadge source={source} />
           {Date.parse(alert.expires) <= displayTime && (

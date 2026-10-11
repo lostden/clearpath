@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from "@testing-library/react-native";
+import { cleanup, fireEvent, render, within } from "@testing-library/react-native";
 import { Linking } from "react-native";
 import { WildfireDetail, WILDFIRE_LIMIT_COPY, wildfireDetailSource, type WildfireSelection } from "../src/components/WildfireDetail";
 
@@ -17,10 +17,18 @@ const selection: WildfireSelection = {
 
 afterEach(async () => { await cleanup(); });
 
-test("perimeter details keep old capture, edits and retrieval separate with published-footprint limits", async () => {
+test("perimeter details retain published-footprint limits and Close outside scrolling content", async () => {
   const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
   const close = jest.fn();
   const screen = await render(<WildfireDetail selection={selection} source="live" onClose={close} />);
+  const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+  expect(scrollViews).toHaveLength(1);
+  const content = within(scrollViews[0]);
+  expect(screen.getAllByRole("button", { name: "Close perimeter" })).toHaveLength(1);
+  expect(content.queryByRole("button", { name: "Close perimeter" })).toBeNull();
+  expect(content.getByText(selection.item.name)).toBeTruthy();
+  expect(content.getByText(WILDFIRE_LIMIT_COPY)).toBeTruthy();
+  expect(content.getByRole("button", { name: "Open official NIFC record" })).toBeTruthy();
   expect(screen.getByText(`Captured: ${new Date(selection.item.capturedAt!).toLocaleString()}`)).toBeTruthy();
   expect(screen.getByText(`Polygon record edited: ${new Date(selection.item.polygonUpdatedAt!).toLocaleString()}`)).toBeTruthy();
   expect(screen.getByText(`Copy retrieved: ${new Date(selection.fetchedAt!).toLocaleString()}`)).toBeTruthy();

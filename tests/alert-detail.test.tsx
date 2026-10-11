@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render } from "@testing-library/react-native";
+import { act, cleanup, fireEvent, render, within } from "@testing-library/react-native";
+import { Linking } from "react-native";
 import {
   AlertDetail,
   detailSource,
@@ -33,6 +34,31 @@ test("warning detail preserves the full description and original agency instruct
   expect(
     screen.getByRole("button", { name: "Open official NWS source" }),
   ).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Close warning" }));
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("a long warning keeps Close outside its scrolling source copy without truncating instructions or changing its source link", async () => {
+  const warning = {
+    ...officialAlert,
+    description: Array.from({ length: 30 }, (_, index) =>
+      `Test paragraph ${index + 1}. ${officialAlert.description}`).join("\n\n"),
+  };
+  const onClose = jest.fn();
+  const openSource = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+  const screen = await render(<AlertDetail alert={warning} source="live" onClose={onClose} />);
+  const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+  expect(scrollViews).toHaveLength(1);
+  const content = within(scrollViews[0]);
+
+  expect(content.getByText(warning.description)).toBeTruthy();
+  expect(content.getByText(warning.instruction!)).toBeTruthy();
+  expect(content.getByText(warning.headline!)).toBeTruthy();
+  expect(content.queryByRole("button", { name: "Close warning" })).toBeNull();
+  expect(screen.getAllByRole("button", { name: "Close warning" })).toHaveLength(1);
+  await fireEvent.press(content.getByRole("button", { name: "Open official NWS source" }));
+  expect(openSource).toHaveBeenCalledTimes(1);
+  expect(openSource).toHaveBeenCalledWith(officialAlert.sourceUrl);
   await fireEvent.press(screen.getByRole("button", { name: "Close warning" }));
   expect(onClose).toHaveBeenCalledTimes(1);
 });

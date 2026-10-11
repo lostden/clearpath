@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from "@testing-library/react-native";
+import { cleanup, fireEvent, render, within } from "@testing-library/react-native";
 import { Linking } from "react-native";
 import { HazardDetail, hazardDetailSource, type HazardSelection } from "../src/components/HazardDetail";
 import type { OfficialEarthquake, RiverGauge } from "../src/services/usgsTypes";
@@ -28,10 +28,17 @@ const copies = () => ({
 
 afterEach(async () => { await cleanup(); });
 
-test("earthquake details retain observation, provider-generation, update and retrieval times separately", async () => {
+test("earthquake details retain observation times and a Close action outside scrolling content", async () => {
   const open = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
   const close = jest.fn();
   const screen = await render(<HazardDetail selection={earthquakeSelection} source="cached" onClose={close} />);
+  const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+  expect(scrollViews).toHaveLength(1);
+  const content = within(scrollViews[0]);
+  expect(screen.getAllByRole("button", { name: "Close observation" })).toHaveLength(1);
+  expect(content.queryByRole("button", { name: "Close observation" })).toBeNull();
+  expect(content.getByText(quake.name)).toBeTruthy();
+  expect(content.getByRole("button", { name: "Open official USGS source" })).toBeTruthy();
   expect(screen.getByText("USGS / CACHED · UNVERIFIED")).toBeTruthy();
   expect(screen.getByText(`Observed: ${new Date(quake.observedAt).toLocaleString()}`)).toBeTruthy();
   expect(screen.getByText(`Updated: ${new Date(quake.updatedAt).toLocaleString()}`)).toBeTruthy();
@@ -48,6 +55,13 @@ test("earthquake details retain observation, provider-generation, update and ret
 
 test("river detail keeps exact zero, units and provisional observation while missing streamflow stays unavailable", async () => {
   const screen = await render(<HazardDetail selection={riverSelection} source="live" onClose={jest.fn()} />);
+  const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+  expect(scrollViews).toHaveLength(1);
+  const content = within(scrollViews[0]);
+  expect(screen.getAllByRole("button", { name: "Close observation" })).toHaveLength(1);
+  expect(content.queryByRole("button", { name: "Close observation" })).toBeNull();
+  expect(content.getByText(river.name)).toBeTruthy();
+  expect(content.getByRole("button", { name: "Open official USGS source" })).toBeTruthy();
   expect(screen.getByText("USGS / LAST VERIFIED COPY")).toBeTruthy();
   expect(screen.getByText("0.00 ft")).toBeTruthy();
   expect(screen.getByText(`Observed: ${new Date(river.gageHeight!.observedAt).toLocaleString()}`)).toBeTruthy();

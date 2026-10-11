@@ -102,8 +102,7 @@ function ZoneSession({ selection, enabled, onClose }: {
   };
   return <Modal visible animationType="none" presentationStyle="fullScreen" onRequestClose={close}>
     <SafeAreaView edges={["bottom"]} style={s.safe}>
-      <Screen>
-        <ActionButton title="Close zone areas" secondary onPress={close} />
+      <Screen header={<ActionButton title="Close zone areas" secondary onPress={close} />}>
         <Text style={s.kicker}>NWS / AFFECTED ZONE BOUNDARIES</Text>
         <Heading>Zone areas</Heading>
         <Body>{alert.event}</Body>

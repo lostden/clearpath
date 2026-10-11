@@ -88,12 +88,9 @@ function LocationPickerSession({ onClose }: { onClose: () => void }) {
       onRequestClose={close}
     >
       <SafeAreaView edges={["bottom"]} style={s.modalSafe}>
-      <Screen>
-        <ActionButton
-          title="Close location selector"
-          onPress={close}
-          secondary
-        />
+      <Screen header={
+        <ActionButton title="Close location selector" onPress={close} secondary />
+      }>
         <Text style={s.kicker}>LOCATION / POINT SELECTOR</Text>
         <Heading>SELECT POINT.</Heading>
         <Body>

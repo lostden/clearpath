@@ -77,8 +77,7 @@ export function HazardDetail({ selection, source, onClose }: {
   const item = selection?.item;
   return <Modal visible={!!selection} animationType="none" presentationStyle="fullScreen" onRequestClose={onClose}>
     {selection && item && <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Screen>
-        <ActionButton title="Close observation" secondary onPress={onClose} />
+      <Screen header={<ActionButton title="Close observation" secondary onPress={onClose} />}>
         <SectionTitle>{source === "live" ? "USGS / LAST VERIFIED COPY" : "USGS / CACHED · UNVERIFIED"}</SectionTitle>
         <Heading>{selection.kind === "earthquake" ? "Earthquake" : "River station"}</Heading>
         <Body>{item.name}</Body>

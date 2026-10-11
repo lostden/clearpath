@@ -43,8 +43,7 @@ export function WildfireDetail({ selection, source, onClose }: {
   const item = selection?.item;
   return <Modal visible={!!selection} animationType="none" presentationStyle="fullScreen" onRequestClose={onClose}>
     {selection && item && <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: colors.background }}>
-      <Screen>
-        <ActionButton title="Close perimeter" secondary onPress={onClose} />
+      <Screen header={<ActionButton title="Close perimeter" secondary onPress={onClose} />}>
         <SectionTitle>{source === "live" ? "NIFC / LAST VERIFIED COPY" : "NIFC / CACHED · UNVERIFIED"}</SectionTitle>
         <Heading>Published perimeter</Heading>
         <Body>{item.name}</Body>

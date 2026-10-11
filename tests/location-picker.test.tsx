@@ -1,4 +1,4 @@
-import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react-native";
 import { Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LocationPicker } from "../src/components/LocationPicker";
@@ -137,7 +137,7 @@ test("a late GPS completion after the selector closes cannot switch location or 
   expect(onClose).not.toHaveBeenCalled();
 });
 
-test("closing a pending GPS request cancels its UI result and restores the selectable controls", async () => {
+test("fixed Close stays outside the keyboard-aware coordinate form and rejects a pending GPS result", async () => {
   let resolveGps!: (
     location: Awaited<ReturnType<typeof requestDeviceLocation>>,
   ) => void;
@@ -153,9 +153,19 @@ test("closing a pending GPS request cancels its UI result and restores the selec
       <SelectedPoint />
     </AppProvider>,
   );
+  const scrollViews = screen.container.queryAll((node) => node.type === "RCTScrollView");
+  expect(scrollViews).toHaveLength(1);
+  const form = scrollViews[0];
+  expect(within(form).getByLabelText("Latitude")).toBeTruthy();
+  expect(within(form).getByLabelText("Longitude")).toBeTruthy();
+  expect(within(form).queryByRole("button", { name: "Close location selector" })).toBeNull();
+  expect(form.props.automaticallyAdjustKeyboardInsets).toBe(true);
+  await fireEvent(within(form).getByLabelText("Latitude"), "focus");
+  await fireEvent.changeText(within(form).getByLabelText("Latitude"), "30.0474");
   await fireEvent.press(
     screen.getByRole("button", { name: "Use foreground GPS" }),
   );
+  expect(screen.getByRole("button", { name: "Close location selector" })).toBeEnabled();
   await fireEvent.press(
     screen.getByRole("button", { name: "Close location selector" }),
   );
@@ -171,6 +181,7 @@ test("closing a pending GPS request cancels its UI result and restores the selec
     }),
   );
   expect(screen.getByTestId("selected-point")).toHaveTextContent("live:none");
+  expect(within(form).getByLabelText("Latitude").props.value).toBe("30.0474");
   expect(onClose).toHaveBeenCalledTimes(1);
 });
 
