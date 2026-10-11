@@ -20,6 +20,8 @@ The compact native Home map is now passive after tiles load: its native descenda
 
 `scripts/install-preview.ps1` checks the APK filename, package metadata, required build identity fields and SHA-256 before invoking ADB. It selects an authorized USB phone, installs with `-r`, and requests launch only after Android reports success. It does not uninstall or clear app data. PowerShell 5.1 and 7 parser checks and missing-artifact failures passed before ADB. The phone is unplugged, so actual install/launch was not executed. Preview builds now increment their remote Android version code to distinguish later APKs; the preview environment and APK distribution remain unchanged.
 
+Updated preview build `2718ca97-bf7e-421f-82e4-7f9ab31cb4af` was submitted from tested commit `808f427`, reused the existing remote keystore and preview Maps variable, and incremented Android version code from **1** to **2**. The first build was still compiling Gradle; the newer build was queued. Artifact inspection and device acceptance remain pending.
+
 ## Automated checks
 
 Run from the project directory with Node 22.13 or later:

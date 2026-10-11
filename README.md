@@ -8,7 +8,7 @@ The original relevance and prioritization engine remains deliberately unimplemen
 
 ### Install the preview over USB
 
-The first signed Android preview [EAS build](https://expo.dev/accounts/lostdens-team/projects/clearpath/builds/e7684ba1-0807-4eb7-90c6-f4a46112a772) is **in progress**. Build completion and installation are not yet verified. Once its verified files are available as `artifacts/ClearPath-latest.apk` and `artifacts/ClearPath-preview.json`, use this morning install path:
+The first signed Android preview is **in progress**. A [newer preview with the verified usability fixes](https://expo.dev/accounts/lostdens-team/projects/clearpath/builds/2718ca97-bf7e-421f-82e4-7f9ab31cb4af) is queued from commit `808f427`, Android version code **2**. Build completion and installation are not yet verified. Once the newest inspected APK and matching metadata are available as `artifacts/ClearPath-latest.apk` and `artifacts/ClearPath-preview.json`, use this morning install path:
 
 Reconnect the phone with a USB data cable, unlock it, leave **USB debugging** enabled, and approve **Allow USB debugging** if prompted. Run from this checkout:
 
