@@ -11,6 +11,7 @@ import { colors, typography } from "@/ui/tokens";
 import { useAppState } from "@/state/AppState";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useFeedPreferences } from "@/state/FeedPreferences";
+import { EmergencyControl } from "@/ui/components";
 
 function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   return (
@@ -36,21 +37,9 @@ export default function AppTabs() {
   return (
     <Tabs style={styles.container}>
       <TabSlot style={styles.content} />
-      {mode === "demo" && (
-        <View style={styles.demoBar}>
-          <Text style={[styles.demoLabel, styles.darkText]}>SIMULATED DEMO</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Exit demo and return to live mode"
-            onPress={() => setMode("live")}
-            style={styles.exit}
-          >
-            <Text style={styles.exitText}>EXIT →</Text>
-          </Pressable>
-        </View>
-      )}
-      {mode === "live" && (
-        <View style={styles.liveBar}>
+      <View testID="shared-status-strip" style={[styles.statusStrip, mode === "demo" && styles.demoStrip]}>
+        <View style={[styles.statusCopy, mode === "demo" && styles.demoCopy]}>
+        {mode === "demo" ? <Text style={[styles.demoLabel, styles.darkText]}>SIMULATED DEMO</Text> : <>
           {ready && !automatic && <Text style={[styles.demoLabel, styles.manual]}>FEEDS / MANUAL REFRESH</Text>}
           <Text style={styles.demoLabel}>
             {feed.source === "cached"
@@ -61,8 +50,18 @@ export default function AppTabs() {
                   ? "POINT ALERTS / CHECKING NWS…"
                   : "POINT ALERTS / UNVERIFIED"}
           </Text>
+        </>}
         </View>
-      )}
+        {mode === "demo" && <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Exit demo and return to live mode"
+          onPress={() => setMode("live")}
+          style={styles.exit}
+        >
+          <Text style={styles.exitText}>EXIT →</Text>
+        </Pressable>}
+        <EmergencyControl />
+      </View>
       <TabList
         style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 8) }]}
       >
@@ -107,16 +106,21 @@ const styles = StyleSheet.create({
   selected: {
     color: colors.background,
   },
-  demoBar: {
+  statusStrip: {
     flexDirection: "row",
-    gap: 12,
+    flexWrap: "wrap",
+    gap: 8,
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 18,
-    backgroundColor: colors.yellow,
+    paddingVertical: 6,
+    backgroundColor: colors.blueWash,
     borderTopWidth: 2,
     borderTopColor: colors.line,
   },
+  statusCopy: { flexBasis: 140, flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: "100%" },
+  demoCopy: { flexBasis: 96 },
+  demoStrip: { backgroundColor: colors.yellow },
   demoLabel: {
     flexShrink: 1,
     color: colors.ink,
@@ -127,13 +131,6 @@ const styles = StyleSheet.create({
   },
   darkText: { color: colors.background },
   manual: { color: colors.orange, marginBottom: 4 },
-  exit: { minHeight: 48, justifyContent: "center", paddingHorizontal: 6 },
-  exitText: { color: colors.background, fontSize: 13, fontFamily: typography.bodyStrong },
-  liveBar: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderTopWidth: 2,
-    borderTopColor: colors.line,
-    backgroundColor: colors.blueWash,
-  },
+  exit: { minHeight: 52, minWidth: 52, maxWidth: "100%", justifyContent: "center", alignItems: "center", paddingHorizontal: 6 },
+  exitText: { color: colors.background, fontSize: 13, fontFamily: typography.bodyStrong, flexShrink: 1 },
 });

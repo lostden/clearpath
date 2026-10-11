@@ -612,3 +612,112 @@ test("retry policy excludes invalid/ordinary 4xx data and respects provider back
     ),
   ).toBe(120_000);
 });
+
+test.each(["demo", "point", "offline", "background", "hydrating", "unmounted"] as const)(
+  "a captured Home refresh cannot request after its context becomes %s", async (change) => {
+    mockPreferences.automatic = false;
+    const view = await mount();
+    await selectLive();
+    const held = state.refresh;
+    if (change === "demo") await act(() => settings.setMode("demo"));
+    if (change === "point") await selectLive({ ...point, coordinates: { latitude: 30.2, longitude: -99.2 } });
+    if (change === "offline") {
+      mockNetwork.isConnected = false;
+      await view.rerender(<Fixture />);
+    }
+    if (change === "background") await act(() => notifyAppState("background"));
+    if (change === "hydrating") {
+      mockPreferences.ready = false;
+      await view.rerender(<Fixture />);
+    }
+    if (change === "unmounted") await view.unmount();
+    await act(() => held());
+    expect(fetchAlerts).not.toHaveBeenCalled();
+    expect(writeCache).not.toHaveBeenCalled();
+  },
+);
+
+test("an obsolete Home callback stays blocked after returning to its original point", async () => {
+  mockPreferences.automatic = false;
+  await mount();
+  await selectLive();
+  const held = state.refresh;
+  await selectLive({ ...point, coordinates: { latitude: 30.2, longitude: -99.2 } });
+  await selectLive();
+  await act(() => held());
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  await act(() => state.refresh());
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test.each([30_000, 120_000])("Home's %i ms deadline survives a true provider remount", async (delay) => {
+  mockPreferences.automatic = false;
+  if (delay > 30_000) fetchAlerts.mockRejectedValueOnce(new ClearPathDataError("http", "limited", { status: 429, retryAfterMs: delay }));
+  const view = await mount();
+  await selectLive();
+  const held = state.refresh;
+  const started = Date.now();
+  await act(() => state.refresh());
+  await view.unmount();
+  await render(<Fixture />);
+  await waitFor(() => expect(state.selectedLocation?.coordinates).toEqual(point.coordinates));
+  expect(state.canRefresh).toBe(false);
+  await act(() => { void held(); void state.refresh(); });
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await advance(started + delay - Date.now() - 1);
+  expect(state.canRefresh).toBe(false);
+  await advance(1);
+  expect(state.canRefresh).toBe(true);
+  await act(() => state.refresh());
+  expect(fetchAlerts).toHaveBeenCalledTimes(2);
+});
+
+test("Home provider Retry-After blocks a new point without showing the old point copy", async () => {
+  mockPreferences.automatic = false;
+  fetchAlerts.mockRejectedValueOnce(new ClearPathDataError("http", "limited", { status: 429, retryAfterMs: 120_000 }));
+  await mount();
+  await selectLive();
+  const started = Date.now();
+  await act(() => state.refresh());
+  const next = { ...point, coordinates: { latitude: 30.2, longitude: -99.2 } };
+  await selectLive(next);
+  expect(state.source).toBe("unavailable");
+  expect(state.snapshot).toBeNull();
+  expect(state.canRefresh).toBe(false);
+  await act(() => state.refresh());
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await advance(started + 120_000 - Date.now());
+  await act(() => state.refresh());
+  expect(fetchAlerts.mock.calls[1][0]).toEqual(next);
+});
+
+test("two immediate Home manual presses share the pending request", async () => {
+  mockPreferences.automatic = false;
+  let finish!: (alerts: ReturnType<typeof officialAlert>[]) => void;
+  fetchAlerts.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  await mount();
+  await selectLive();
+  const refresh = state.refresh;
+  let first!: Promise<void>;
+  let second!: Promise<void>;
+  await act(async () => { first = refresh(); second = refresh(); await Promise.resolve(); });
+  expect(first).toBe(second);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await act(async () => { finish([]); await Promise.all([first, second]); });
+  expect(state.canRefresh).toBe(false);
+});
+
+test("Home cancels a delayed reconnect slot when the user switches to demo", async () => {
+  const view = await mount();
+  await selectLive();
+  await waitFor(() => expect(state.source).toBe("live"));
+  mockNetwork.isConnected = false;
+  await view.rerender(<Fixture />);
+  mockNetwork.isConnected = true;
+  await view.rerender(<Fixture />);
+  await waitFor(() => expect(state.isRefreshing).toBe(true));
+  await act(() => settings.setMode("demo"));
+  await advance(30_000);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  expect(state.source).toBe("demo");
+});

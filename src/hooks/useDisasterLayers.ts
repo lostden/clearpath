@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppState } from "react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { ClearPathDataError } from "../data/http";
 import { EARTHQUAKE_WINDOW_MS, getEarthquakes } from "../services/usgsEarthquakes";
 import { getNearbyRiverGauges } from "../services/usgsRivers";
 import type { OfficialEarthquake, RiverGauge, UsgsSnapshot } from "../services/usgsTypes";
+import { checkRequestContext, claimFeedSlot, pauseFeedProvider, useFeedDeadline, useManualFeedRefresh, useRequestContext } from "../state/feedRequestGate";
 
 export type DisasterLayer<T> = {
   items: T[];
@@ -42,42 +43,6 @@ export function layerSource(
     ? "cached" : "live";
 }
 
-function waitForSlot(milliseconds: number, signal: AbortSignal): Promise<void> {
-  if (signal.aborted) return Promise.reject(new ClearPathDataError("cancelled", "The request was cancelled."));
-  if (milliseconds <= 0) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const cancel = () => {
-      clearTimeout(timer);
-      signal.removeEventListener("abort", cancel);
-      reject(new ClearPathDataError("cancelled", "The request was cancelled."));
-    };
-    const timer = setTimeout(() => { signal.removeEventListener("abort", cancel); resolve(); }, milliseconds);
-    signal.addEventListener("abort", cancel, { once: true });
-  });
-}
-
-/** Request scheduling runs outside rendering; the callback publishes its deadline to UI state. */
-async function requestWithGate<T>(
-  gates: Map<string, number>, key: string, interval: number,
-  request: (signal: AbortSignal) => Promise<UsgsSnapshot<T>>, signal: AbortSignal,
-  publish: (deadline: number) => void,
-): Promise<UsgsSnapshot<T>> {
-  await waitForSlot((gates.get(key) ?? 0) - Date.now(), signal);
-  const deadline = Date.now() + interval;
-  gates.set(key, deadline);
-  publish(deadline);
-  try {
-    return await request(signal);
-  } catch (error) {
-    if (error instanceof ClearPathDataError && error.retryAfterMs !== undefined) {
-      const blockedUntil = Math.max(gates.get(key) ?? 0, Date.now() + error.retryAfterMs);
-      gates.set(key, blockedUntil);
-      publish(blockedUntil);
-    }
-    throw error;
-  }
-}
-
 function useLayer<T>(
   key: readonly string[],
   request: (signal: AbortSignal) => Promise<UsgsSnapshot<T>>,
@@ -91,13 +56,23 @@ function useLayer<T>(
   coverage: string,
 ): DisasterLayer<T> {
   const client = useQueryClient();
-  const gate = useRef(new Map<string, number>());
-  const [requestGates, setRequestGates] = useState<Record<string, number>>({});
   const keyString = JSON.stringify(key);
-  const requestFn = useCallback(({ signal }: { signal: AbortSignal }) =>
-    requestWithGate(gate.current, keyString, interval, request, signal,
-      (deadline) => setRequestGates((previous) => ({ ...previous, [keyString]: deadline }))),
-  [interval, keyString, request]);
+  const provider = key[0] === "usgs-earthquakes" ? "usgs-earthquakes" : "usgs-rivers";
+  const nextAllowed = useFeedDeadline(client, provider, keyString);
+  const isCurrent = useRequestContext(enabled, keyString, automatic);
+  const requestFn = useCallback(async ({ signal }: { signal: AbortSignal }) => {
+    await claimFeedSlot(client, provider, keyString, interval, signal, isCurrent);
+    checkRequestContext(signal, isCurrent);
+    try {
+      const snapshot = await request(signal);
+      checkRequestContext(signal, isCurrent);
+      return snapshot;
+    } catch (error) {
+      if (!signal.aborted && isCurrent() && error instanceof ClearPathDataError)
+        pauseFeedProvider(client, provider, error.retryAfterMs);
+      throw error;
+    }
+  }, [client, interval, isCurrent, keyString, provider, request]);
   const query = useQuery<UsgsSnapshot<T>, Error>({
     queryKey: key,
     enabled: enabled && automatic,
@@ -115,10 +90,8 @@ function useLayer<T>(
     // The serialized key changes only when the actual query identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [automatic, client, enabled, keyString]);
-  const canRefresh = enabled && !query.isFetching && now >= (requestGates[keyString] ?? 0);
-  const refresh = useCallback(async () => {
-    if (canRefresh) await query.refetch({ cancelRefetch: false });
-  }, [canRefresh, query]);
+  const canRefresh = enabled && !query.isFetching && now >= nextAllowed;
+  const refresh = useManualFeedRefresh(client, provider, keyString, key, isCurrent, query.refetch);
   const snapshot = visible ? query.data : undefined;
   const error = visible ? query.error : null;
   return {

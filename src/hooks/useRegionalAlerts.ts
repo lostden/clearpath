@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,8 +9,8 @@ import type { OfficialAlert } from "@/domain/types";
 import {
   alertRetryDelay,
   shouldRetryAlerts,
-  waitForRequestSlot,
 } from "@/state/AlertsProvider";
+import { checkRequestContext, claimFeedSlot, pauseFeedProvider, useFeedDeadline, useManualFeedRefresh, useRequestContext } from "@/state/feedRequestGate";
 
 const REQUEST_INTERVAL = 30_000;
 const VERIFIED_AGE = 90_000;
@@ -50,11 +50,9 @@ export function useRegionalAlerts({
   const requestAllowed = requested && foreground && !offline;
   const enabled = requestAllowed && automatic;
   const availability = useRef({ enabled, coverage });
-  // One regional observer's coverage switches share a gate, preventing rapid
-  // TX/US changes from bypassing the request interval or provider Retry-After.
-  const lastStarted = useRef(-Infinity);
-  const blockedUntil = useRef(0);
-  const [nextAllowed, setNextAllowed] = useState(0);
+  // Regional TX/US requests retain their shared cadence across observer remounts.
+  const nextAllowed = useFeedDeadline(client, "nws", "regional");
+  const isCurrent = useRequestContext(requestAllowed, coverage, automatic);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
@@ -77,16 +75,9 @@ export function useRegionalAlerts({
     retry: automatic ? shouldRetryAlerts : false,
     retryDelay: alertRetryDelay,
     queryFn: async ({ signal }) => {
-      await waitForRequestSlot(
-        Math.max(lastStarted.current + REQUEST_INTERVAL, blockedUntil.current) -
-          Date.now(),
-        signal,
-      );
-      if (signal.aborted)
-        throw new ClearPathDataError("cancelled", "The request was cancelled.");
+      await claimFeedSlot(client, "nws", "regional", REQUEST_INTERVAL, signal, isCurrent);
+      checkRequestContext(signal, isCurrent);
       const started = Date.now();
-      lastStarted.current = started;
-      setNextAllowed(Math.max(started + REQUEST_INTERVAL, blockedUntil.current));
       setNow(started);
       let alerts: OfficialAlert[];
       try {
@@ -94,16 +85,13 @@ export function useRegionalAlerts({
       } catch (error) {
         if (
           error instanceof ClearPathDataError &&
-          error.retryAfterMs !== undefined
+          !signal.aborted && isCurrent()
         ) {
-          const deadline = Date.now() + error.retryAfterMs;
-          blockedUntil.current = Math.max(blockedUntil.current, deadline);
-          setNextAllowed((previous) => Math.max(previous, deadline));
+          pauseFeedProvider(client, "nws", error.retryAfterMs);
         }
         throw error;
       }
-      if (signal.aborted)
-        throw new ClearPathDataError("cancelled", "The request was cancelled.");
+      checkRequestContext(signal, isCurrent);
       return { coverage, alerts, fetchedAt: new Date().toISOString() };
     },
   });
@@ -168,10 +156,7 @@ export function useRegionalAlerts({
   }, [nextAllowed, now, snapshot]);
 
   const canRefresh = requestAllowed && !query.isFetching && now >= nextAllowed;
-  const refetch = query.refetch;
-  const refresh = useCallback(async () => {
-    if (canRefresh) await refetch({ cancelRefetch: false });
-  }, [canRefresh, refetch]);
+  const refresh = useManualFeedRefresh(client, "nws", "regional", ["nws-regional-alerts", coverage], isCurrent, query.refetch);
   const alerts = snapshot ? currentAlerts(snapshot.alerts, now) : [];
   return {
     alerts,

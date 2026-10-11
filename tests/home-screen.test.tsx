@@ -172,3 +172,39 @@ test("demo uses its simulated point and snapshot while saved-location restoratio
   expect(map.alerts).toBe(snapshot.alerts);
   expect(screen.getByTestId("situation-panel").props).toMatchObject({ source: "demo", alerts: snapshot.alerts });
 });
+
+test.each(["live", "cached", "demo"] as const)("%s warning reaches the situation before sharing while preserving its source copy and point details", async (source) => {
+  const snapshot = getDemoSnapshot("flood");
+  const selectedLocation = source === "demo" ? DEMO_LOCATION : savedGps;
+  const alerts = snapshot.alerts;
+  feed = {
+    ...feed, source, selectedLocation, alerts,
+    snapshot: { ...snapshot, source, locationKey: `${selectedLocation.coordinates.latitude},${selectedLocation.coordinates.longitude}` },
+  };
+  settings = { ...settings, locationReady: true };
+  const screen = await render(<HomeScreen />);
+  expect(screen.getAllByTestId(/^(situation-panel|share-location)$/).map((item) => item.props.testID)).toEqual(["situation-panel", "share-location"]);
+  const situation = screen.getByTestId("situation-panel").props;
+  expect(situation.source).toBe(source);
+  expect(situation.alerts).toBe(alerts);
+  expect(situation.alerts[0].instruction).toBe(alerts[0].instruction);
+  expect(situation.alerts[0].description).toBe(alerts[0].description);
+  expect(screen.getByText(selectedLocation.label)).toBeTruthy();
+  expect(screen.getByText(source === "demo" ? "Simulated location · CHANGE" : "GPS selection · CHANGE")).toBeTruthy();
+  expect(screen.getByText(`${source === "demo" ? "Scenario snapshot" : "Last successful update"}: ${new Date(snapshot.fetchedAt).toLocaleString()}`)).toBeTruthy();
+  expect(screen.getByText("FIELD STATUS")).toBeTruthy();
+  expect(screen.queryByText("Check alerts")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Emergency? Call 911" })).toBeNull();
+});
+
+test("compacting Home retains offline, location and persistence error cues before the saved warning", async () => {
+  settings = { ...settings, locationReady: true, locationError: "The selected point could not be saved." };
+  feed = { ...feed, source: "cached", selectedLocation: savedGps, offline: true, storageError: "Offline alert copy could not be saved." };
+  const screen = await render(<HomeScreen />);
+  expect(screen.getByText(settings.locationError!)).toBeTruthy();
+  expect(screen.getByText(feed.storageError!)).toBeTruthy();
+  expect(screen.getByText("Offline connection")).toBeTruthy();
+  expect(screen.getByText("Current alerts cannot be verified. Preparedness and saved contacts remain available.")).toBeTruthy();
+  expect(screen.getByTestId("situation-panel").props.source).toBe("cached");
+  expect(screen.getByRole("button", { name: "Choose GPS or manual location" })).toBeEnabled();
+});

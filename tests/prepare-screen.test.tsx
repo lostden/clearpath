@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react-native";
 import { Alert, Linking } from "react-native";
 import PrepareScreen from "../src/app/prepare";
 import { PreparednessProvider } from "../src/state/PreparednessState";
@@ -27,13 +27,12 @@ beforeEach(async () => {
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
 });
 
-test("offline field guides and 911 are available before local hydration without rendering the kit", async () => {
+test("offline field guides are available before local hydration without rendering the kit", async () => {
   let finishRead!: (raw: string | null) => void;
   jest.mocked(AsyncStorage.getItem).mockReturnValueOnce(new Promise((resolve) => { finishRead = resolve; }));
   const screen = await preparation();
   expect(screen.getByText("LOCAL COPY / LOADING")).toBeTruthy();
   expect(screen.getByRole("header", { name: "02 / FIELD GUIDANCE" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "GET HELP · CALL 911" })).toBeTruthy();
   expect(screen.queryByRole("header", { name: "01 / EMERGENCY KIT" })).toBeNull();
   expect(screen.queryByRole("checkbox", { name: "Drinking water" })).toBeNull();
   for (const name of sectionButtons) {
@@ -47,7 +46,7 @@ test("offline field guides and 911 are available before local hydration without 
   await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
 });
 
-test("section switches retain a kit edit and keep the full index plus 911 available", async () => {
+test("section switches retain a kit edit and keep the full index available", async () => {
   const screen = await preparation();
   await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
   await fireEvent.press(screen.getByRole("button", { name: "Show emergency kit" }));
@@ -63,7 +62,6 @@ test("section switches retain a kit edit and keep the full index plus 911 availa
   for (const name of sectionButtons) {
     expect(screen.getByRole("button", { name }).props.accessibilityState.selected).toBe(name === "Show emergency kit");
   }
-  expect(screen.getAllByRole("button", { name: "GET HELP · CALL 911" })).toHaveLength(1);
   await waitFor(async () => expect(JSON.parse((await AsyncStorage.getItem(storageKey))!).checked.water).toBe(true));
   expect(Linking.openURL).not.toHaveBeenCalled();
 });
@@ -100,6 +98,41 @@ test("family-plan edits and a contact draft survive leaving their sections", asy
   expect(Alert.alert).not.toHaveBeenCalled();
 });
 
+test.each([
+  ["blank name", "   ", "555 0100"],
+  ["blank phone", "Test contact", ""],
+  ["invalid phone characters", "Test contact", "not a phone"],
+  ["phone with fewer than three digits", "Test contact", "12"],
+])("%s retains the contact draft and announces validation without creating or saving a contact", async (_case, name, phone) => {
+  const screen = await preparation();
+  await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
+  await fireEvent.press(screen.getByRole("button", { name: "Show saved contacts" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Add emergency contact", disabled: false }));
+  const writes = jest.spyOn(AsyncStorage, "setItem");
+  const retainedCopy = await AsyncStorage.getItem(storageKey);
+  await fireEvent.changeText(screen.getByLabelText("Contact name"), name);
+  await fireEvent.changeText(screen.getByLabelText("Contact phone number"), phone);
+  expect(writes).not.toHaveBeenCalled();
+  expect(screen.queryByTestId("contact-validation-error")).toBeNull();
+
+  await fireEvent.press(screen.getByRole("button", { name: "Save contact", disabled: false }));
+
+  const error = screen.getByTestId("contact-validation-error");
+  expect(error.props.accessibilityLiveRegion).toBe("polite");
+  expect(error.props["aria-live"]).toBe("polite");
+  expect(within(error).getByText("Enter a name and a valid phone number.")).toBeTruthy();
+  expect(within(error.parent!).getByRole("button", { name: "Save contact" })).toBeTruthy();
+  expect(screen.getByLabelText("Contact name").props.value).toBe(name);
+  expect(screen.getByLabelText("Contact phone number").props.value).toBe(phone);
+  expect(screen.getByText("Save key contacts. They remain on this device.")).toBeTruthy();
+  expect(screen.queryAllByRole("button", { name: /^Call / })).toHaveLength(0);
+  expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy();
+  expect(writes).not.toHaveBeenCalled();
+  expect(await AsyncStorage.getItem(storageKey)).toBe(retainedCopy);
+  expect(Linking.openURL).not.toHaveBeenCalled();
+  expect(Alert.alert).not.toHaveBeenCalled();
+});
+
 test("saved contact and resource dialers require deliberate section and confirmation actions", async () => {
   await AsyncStorage.setItem(storageKey, JSON.stringify({
     checked: {}, meetingPlace: "", outOfAreaContact: "",
@@ -111,7 +144,6 @@ test("saved contact and resource dialers require deliberate section and confirma
   expect(screen.queryByRole("button", { name: "2-1-1 Texas — community resources · 211" })).toBeNull();
   for (const name of sectionButtons) {
     await fireEvent.press(screen.getByRole("button", { name }));
-    expect(screen.getAllByRole("button", { name: "GET HELP · CALL 911" })).toHaveLength(1);
     for (const indexName of sectionButtons) {
       expect(screen.getByRole("button", { name: indexName }).props.accessibilityState.selected).toBe(indexName === name);
     }

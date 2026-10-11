@@ -1,15 +1,33 @@
 # Authored, unexecuted. Requires an installed native test build identified by APP_ID.
 # This flow stops at Cancel. It never opens the phone dialer or places a call.
 appId: ${APP_ID}
-name: Deliberate emergency action cancellation
+name: Persistent emergency action cancellation
 ---
 - launchApp
 - tapOn: "(?i)Home"
-- scrollUntilVisible:
-    element:
-      text: "Emergency\\? Call 911"
-    direction: UP
+- assertVisible: "Emergency\\? Call 911"
 - tapOn: "Emergency\\? Call 911"
 - assertVisible: "Call 911\\?"
 - tapOn: "(?i)Cancel"
 - assertNotVisible: "Call 911\\?"
+- tapOn: "(?i)Map"
+- assertVisible: "Emergency\\? Call 911"
+- tapOn: "Emergency\\? Call 911"
+- assertVisible: "Call 911\\?"
+- tapOn: "(?i)Cancel"
+- assertNotVisible: "Call 911\\?"
+- tapOn: "(?i)Prepare"
+- tapOn: "Show emergency kit"
+- scrollUntilVisible:
+    element: "Family meeting plan"
+    direction: DOWN
+- assertVisible: "Emergency\\? Call 911"
+- tapOn: "Emergency\\? Call 911"
+- assertVisible: "Call 911\\?"
+- tapOn: "(?i)Cancel"
+- assertNotVisible: "Call 911\\?"
+- tapOn: "(?i)Map"
+- assertVisible: "Emergency\\? Call 911"
+- tapOn: "(?i)Prepare"
+- assertVisible: "Family meeting plan"
+- assertVisible: "Emergency\\? Call 911"

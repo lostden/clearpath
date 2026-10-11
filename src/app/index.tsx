@@ -11,11 +11,9 @@ import {
   ActionButton,
   Brand,
   Body,
-  Heading,
   Panel,
   Screen,
   SectionTitle,
-  confirmCall,
 } from "@/ui/components";
 import { SituationPanel } from "@/components/SituationPanel";
 import {
@@ -42,6 +40,7 @@ export default function HomeScreen() {
   return (
     <>
       <Screen
+        contentContainerStyle={s.content}
         refreshControl={
           <RefreshControl
             refreshing={feed.isRefreshing}
@@ -54,19 +53,7 @@ export default function HomeScreen() {
       >
         <View style={s.top}>
           <Brand />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Emergency? Call 911"
-            style={s.emergency}
-            onPress={() => confirmCall("911")}
-          >
-            <Text style={s.emergencyLabel}>GET HELP</Text>
-            <Text style={s.emergencyText}>911</Text>
-          </Pressable>
-        </View>
-        <View style={s.titleBlock}>
-          <Text style={s.kicker}>01 / FIELD STATUS</Text>
-          <Heading>Check alerts</Heading>
+          <Text accessibilityRole="header" style={s.kicker}>FIELD STATUS</Text>
         </View>
         <Pressable
           testID="location-picker-button"
@@ -92,7 +79,6 @@ export default function HomeScreen() {
             · CHANGE
           </Text>
         </Pressable>
-        <ShareLocation selectedLocation={feed.selectedLocation} source={feed.source} />
         {locationError && (
           <Panel>
             <Body>{locationError}</Body>
@@ -175,6 +161,7 @@ export default function HomeScreen() {
             this display.
           </Body>
         )}
+        <ShareLocation selectedLocation={feed.selectedLocation} source={feed.source} />
         <View style={s.divider} />
         {feed.source !== "demo" && <FeedUpdateControl />}
         <SectionTitle>02 / HAZARD MAP</SectionTitle>
@@ -229,26 +216,16 @@ export default function HomeScreen() {
   );
 }
 const s = StyleSheet.create({
+  content: { gap: 12 },
   top: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
     justifyContent: "space-between",
     alignItems: "center",
   },
-  titleBlock: { gap: 8 },
-  kicker: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 13, lineHeight: 20, letterSpacing: 0.5 },
-  emergency: {
-    minWidth: 64,
-    minHeight: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.orange,
-    borderRadius: 0,
-    backgroundColor: colors.orange,
-  },
-  emergencyText: { color: colors.background, fontFamily: typography.heading, fontSize: 22 },
-  emergencyLabel: { color: colors.background, fontFamily: typography.bodyStrong, fontSize: 12, lineHeight: 18 },
-  location: { minHeight: 64, justifyContent: "center", gap: 8, borderWidth: 2, borderColor: colors.line, padding: 14 },
+  kicker: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 12, lineHeight: 18, flexShrink: 1, maxWidth: "100%" },
+  location: { minHeight: 52, justifyContent: "center", gap: 4, borderWidth: 2, borderColor: colors.line, padding: 10 },
   locationRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   locationTitle: { flex: 1, color: colors.ink, fontSize: 17, lineHeight: 25, fontFamily: typography.bodyStrong },
   locationArrow: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 20 },

@@ -156,6 +156,18 @@ export function EmergencyButton() {
     </View>
   );
 }
+export function EmergencyControl() {
+  return <Pressable
+    testID="shared-emergency-control"
+    accessibilityRole="button"
+    accessibilityLabel="Emergency? Call 911"
+    onPress={() => confirmCall("911")}
+    style={({ pressed }) => [styles.emergencyControl, pressed && { borderColor: colors.yellow }]}
+  >
+    <Text style={styles.emergencyLabel}>GET HELP</Text>
+    <Text style={styles.emergencyNumber}>911</Text>
+  </Pressable>;
+}
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: {
@@ -166,11 +178,12 @@ export const styles = StyleSheet.create({
     alignSelf: "center",
     paddingBottom: 32,
   },
-  brand: { flexDirection: "row", alignItems: "center", gap: 10 },
+  brand: { flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 1, maxWidth: "100%" },
   mark: {
     backgroundColor: colors.orange,
     height: 32,
     width: 32,
+    flexShrink: 0,
     borderRadius: 0,
     flexDirection: "row",
     justifyContent: "center",
@@ -189,6 +202,7 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: typography.heading,
     letterSpacing: -0.9,
+    flexShrink: 1,
   },
   heading: {
     color: colors.ink,
@@ -242,6 +256,20 @@ export const styles = StyleSheet.create({
   },
   disabledButton: { backgroundColor: "#303030", borderColor: "#888888" },
   hardShadow: { backgroundColor: colors.ink, paddingRight: 4, paddingBottom: 4 },
+  emergencyControl: {
+    minWidth: 72,
+    minHeight: 52,
+    maxWidth: "100%",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.orange,
+    backgroundColor: colors.orange,
+  },
+  emergencyLabel: { color: colors.background, fontFamily: typography.bodyStrong, fontSize: 12, lineHeight: 18, textAlign: "center", flexShrink: 1 },
+  emergencyNumber: { color: colors.background, fontFamily: typography.heading, fontSize: 22, lineHeight: 26, textAlign: "center", flexShrink: 1 },
   buttonText: {
     color: colors.background,
     fontSize: 15,

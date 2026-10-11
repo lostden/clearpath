@@ -6,6 +6,8 @@ Sources reviewed October 9–10, 2026. The October 10 regional weather, earthqua
 
 Automatic updates are enabled by default after local preference hydration. Switching **Auto updates** off stops initial/coverage/point-change requests, periodic polling, automatic retries, and resume/reconnect feed requests. It cancels pending work when the policy changes. Foreground, connectivity, selected-point, enabled-layer, cadence, and Retry-After rules still govern explicit refresh buttons. Warning expiry, retained-data aging, past-day earthquake filtering, and source timestamps continue independently of this policy. Map tiles, manually requested NWS boundaries, and external links are outside the feed setting. A single manual river refresh can involve bounded discovery and observation pagination; it is not a promise of one HTTP request or a fixed traffic budget.
 
+Request cadence deadlines survive observer remounts for the lifetime of the in-memory QueryClient. NWS point and regional requests share provider Retry-After pauses; USGS earthquake and river providers retain separate pauses. Obsolete refresh callbacks and canceled waiting slots cannot start new downloads. Nothing in this scheduling state is persisted.
+
 The boolean preference is stored locally. Its read completes before feed requests are permitted, preventing a restored manual preference from briefly downloading automatically. Invalid/unreadable saved preferences fall back to manual mode with visible status. Failed preference writes preserve the session choice and report that reopening may not retain it.
 
 ## NWS: official weather alerts

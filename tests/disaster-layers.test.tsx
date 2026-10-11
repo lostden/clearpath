@@ -6,6 +6,7 @@ import { layerSource, useDisasterLayers, type DisasterLayers, type DisasterLayer
 import { getEarthquakes } from "../src/services/usgsEarthquakes";
 import { getNearbyRiverGauges } from "../src/services/usgsRivers";
 import type { Coordinates } from "../src/domain/types";
+import { ClearPathDataError } from "../src/data/http";
 
 const mockNetwork = { isConnected: true, isInternetReachable: true };
 jest.mock("@react-native-community/netinfo", () => ({ useNetInfo: () => mockNetwork }));
@@ -257,4 +258,117 @@ test("source freshness considers failed verification, retrieval age and stale ge
   expect(layerSource(data, false, null, NOW + 90_000, 90_000)).toBe("cached");
   expect(layerSource(data, false, new Error("failed"), NOW, 90_000)).toBe("cached");
   expect(layerSource({ ...data, generatedAt: new Date(NOW - 120_000).toISOString() }, false, null, NOW, 90_000)).toBe("cached");
+});
+
+test.each(["disabled", "layer-off", "offline", "background", "unmounted"] as const)(
+  "captured USGS refreshes cannot request after their context becomes %s", async (change) => {
+    const view = await mount(true, { automatic: false });
+    const heldEarth = state.earthquakes.refresh;
+    const heldRiver = state.rivers.refresh;
+    if (change === "disabled") await view.rerender(<QueryClientProvider client={client}><Probe enabled={false} options={{ automatic: false }} /></QueryClientProvider>);
+    if (change === "layer-off") await view.rerender(<QueryClientProvider client={client}><Probe options={{ automatic: false, earthquakes: false, rivers: false }} /></QueryClientProvider>);
+    if (change === "offline") {
+      mockNetwork.isInternetReachable = false;
+      await view.rerender(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+    }
+    if (change === "background") await act(() => notifyState("background"));
+    if (change === "unmounted") await view.unmount();
+    await act(async () => { await Promise.all([heldEarth(), heldRiver()]); });
+    expect(earthquakes).not.toHaveBeenCalled();
+    expect(rivers).not.toHaveBeenCalled();
+  },
+);
+
+test("an obsolete river callback cannot request the old point, even after returning to it", async () => {
+  const view = await mount(true, { automatic: false });
+  const held = state.rivers.refresh;
+  await view.rerender(<QueryClientProvider client={client}><Probe selected={{ latitude: 30.2, longitude: -99.2 }} options={{ automatic: false }} /></QueryClientProvider>);
+  await act(() => held());
+  expect(rivers).not.toHaveBeenCalled();
+  await view.rerender(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+  await act(() => held());
+  expect(rivers).not.toHaveBeenCalled();
+  await act(() => state.rivers.refresh());
+  expect(rivers.mock.calls[0][0]).toEqual(point);
+});
+
+test.each(["earthquakes", "rivers"] as const)("the %s cadence survives an observer remount with its existing copy", async (layer) => {
+  const view = await mount(true, { automatic: false });
+  const started = Date.now();
+  const held = state[layer].refresh;
+  await act(() => state[layer].refresh());
+  const fetchedAt = state[layer].fetchedAt;
+  await view.unmount();
+  await render(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+  expect(state[layer].fetchedAt).toBe(fetchedAt);
+  expect(state[layer].canRefresh).toBe(false);
+  await act(async () => { await Promise.all([held(), state[layer].refresh()]); });
+  const request = layer === "earthquakes" ? earthquakes : rivers;
+  expect(request).toHaveBeenCalledTimes(1);
+  const interval = layer === "earthquakes" ? 60_000 : 300_000;
+  await advance(started + interval - Date.now());
+  await act(() => state[layer].refresh());
+  expect(request).toHaveBeenCalledTimes(2);
+});
+
+test("a river provider pause survives remount and point change without delaying earthquake requests", async () => {
+  rivers.mockRejectedValueOnce(new ClearPathDataError("http", "limited", { status: 429, retryAfterMs: 600_000 }));
+  const view = await mount(true, { automatic: false });
+  const started = Date.now();
+  await act(() => state.rivers.refresh());
+  await view.unmount();
+  const next = { latitude: 30.2, longitude: -99.2 };
+  await render(<QueryClientProvider client={client}><Probe selected={next} options={{ automatic: false }} /></QueryClientProvider>);
+  expect(state.rivers.source).toBe("unavailable");
+  expect(state.rivers.canRefresh).toBe(false);
+  expect(state.earthquakes.canRefresh).toBe(true);
+  await act(() => state.earthquakes.refresh());
+  expect(earthquakes).toHaveBeenCalledTimes(1);
+  await act(() => state.rivers.refresh());
+  expect(rivers).toHaveBeenCalledTimes(1);
+  await advance(started + 600_000 - Date.now());
+  await act(() => state.rivers.refresh());
+  expect(rivers.mock.calls[1][0]).toEqual(next);
+});
+
+test("earthquake Retry-After survives a remount without delaying the river service", async () => {
+  earthquakes.mockRejectedValueOnce(new ClearPathDataError("http", "limited", { status: 429, retryAfterMs: 120_000 }));
+  const view = await mount(true, { automatic: false });
+  const started = Date.now();
+  await act(() => state.earthquakes.refresh());
+  await view.unmount();
+  await render(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+  expect(state.earthquakes.canRefresh).toBe(false);
+  await act(() => state.rivers.refresh());
+  expect(rivers).toHaveBeenCalledTimes(1);
+  await act(() => state.earthquakes.refresh());
+  expect(earthquakes).toHaveBeenCalledTimes(1);
+  await advance(started + 120_000 - Date.now());
+  await act(() => state.earthquakes.refresh());
+  expect(earthquakes).toHaveBeenCalledTimes(2);
+});
+
+test("changing back to a river point keeps its original gate without borrowing the other point's copy", async () => {
+  const view = await mount(true, { automatic: false });
+  await act(() => state.rivers.refresh());
+  const fetchedAt = state.rivers.fetchedAt;
+  await view.rerender(<QueryClientProvider client={client}><Probe selected={{ latitude: 30.2, longitude: -99.2 }} options={{ automatic: false }} /></QueryClientProvider>);
+  expect(state.rivers.source).toBe("unavailable");
+  expect(state.rivers.canRefresh).toBe(true);
+  await act(() => state.rivers.refresh());
+  await view.rerender(<QueryClientProvider client={client}><Probe options={{ automatic: false }} /></QueryClientProvider>);
+  expect(state.rivers.fetchedAt).toBe(fetchedAt);
+  expect(state.rivers.canRefresh).toBe(false);
+  await act(() => state.rivers.refresh());
+  expect(rivers).toHaveBeenCalledTimes(2);
+});
+
+test("a disabled USGS layer cancels an already waiting request slot before download", async () => {
+  const view = await mount();
+  await waitFor(() => expect(state.earthquakes.source).toBe("live"));
+  await act(() => { void client.invalidateQueries({ queryKey: ["usgs-earthquakes", "last-day"], exact: true }); });
+  await waitFor(() => expect(state.earthquakes.refreshing).toBe(true));
+  await view.rerender(<QueryClientProvider client={client}><Probe options={{ earthquakes: false }} /></QueryClientProvider>);
+  await advance(60_000);
+  expect(earthquakes).toHaveBeenCalledTimes(1);
 });

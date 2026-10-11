@@ -43,6 +43,7 @@ async function mount(options: Options = { enabled: true, coverage: "TX" }) {
     </QueryClientProvider>,
   );
   return {
+    unmount: screen.unmount,
     update: async (next: Options) =>
       screen.rerender(
         <QueryClientProvider client={client}>
@@ -403,4 +404,75 @@ test("expiration removes cached overlays and unmapped records while the layer is
   expect(state.fetchedAt).toBe(fetchedAt);
   expect(state.source).toBe("cached");
   expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test.each(["disabled", "coverage", "offline", "background", "unmounted"] as const)(
+  "a captured regional refresh cannot request after its context becomes %s", async (change) => {
+    const screen = await mount({ enabled: true, coverage: "TX", automatic: false });
+    const held = state.refresh;
+    if (change === "disabled") await screen.update({ enabled: false, coverage: "TX", automatic: false });
+    if (change === "coverage") await screen.update({ enabled: true, coverage: "US", automatic: false });
+    if (change === "offline") {
+      mockNetwork.isConnected = false;
+      await screen.update({ enabled: true, coverage: "TX", automatic: false });
+    }
+    if (change === "background") await act(() => notifyAppState("background"));
+    if (change === "unmounted") await screen.unmount();
+    await act(() => held());
+    expect(fetchAlerts).not.toHaveBeenCalled();
+  },
+);
+
+test("an obsolete regional callback stays blocked after returning to its original coverage", async () => {
+  const screen = await mount({ enabled: true, coverage: "TX", automatic: false });
+  const held = state.refresh;
+  await screen.update({ enabled: true, coverage: "US", automatic: false });
+  await screen.update({ enabled: true, coverage: "TX", automatic: false });
+  await act(() => held());
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  await act(() => state.refresh());
+  expect(fetchAlerts.mock.calls.map(([coverage]) => coverage)).toEqual(["TX"]);
+});
+
+test.each([30_000, 120_000])("regional's %i ms deadline survives remount and coverage switching", async (delay) => {
+  if (delay > 30_000) fetchAlerts.mockRejectedValueOnce(new ClearPathDataError("http", "limited", { status: 429, retryAfterMs: delay }));
+  const screen = await mount({ enabled: true, coverage: "TX", automatic: false });
+  const started = Date.now();
+  await act(() => state.refresh());
+  await screen.unmount();
+  await render(<QueryClientProvider client={client}><Probe enabled coverage="US" automatic={false} /></QueryClientProvider>);
+  expect(state.source).toBe("unavailable");
+  expect(state.canRefresh).toBe(false);
+  await act(() => state.refresh());
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await advance(started + delay - Date.now() - 1);
+  expect(state.canRefresh).toBe(false);
+  await advance(1);
+  await act(() => state.refresh());
+  expect(fetchAlerts.mock.calls.map(([coverage]) => coverage)).toEqual(["TX", "US"]);
+});
+
+test("two immediate regional manual presses share the pending request", async () => {
+  let finish!: (alerts: ReturnType<typeof officialAlert>[]) => void;
+  fetchAlerts.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  await mount({ enabled: true, coverage: "TX", automatic: false });
+  const refresh = state.refresh;
+  let first!: Promise<void>;
+  let second!: Promise<void>;
+  await act(async () => { first = refresh(); second = refresh(); await Promise.resolve(); });
+  expect(first).toBe(second);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  await act(async () => { finish([]); await Promise.all([first, second]); });
+  expect(state.canRefresh).toBe(false);
+});
+
+test("disabling regional coverage cancels a scheduled slot before any download starts", async () => {
+  const screen = await mount();
+  await waitFor(() => expect(state.source).toBe("live"));
+  await screen.update({ enabled: true, coverage: "US" });
+  expect(state.isRefreshing).toBe(true);
+  await screen.update({ enabled: false, coverage: "US" });
+  await advance(30_000);
+  expect(fetchAlerts.mock.calls.map(([coverage]) => coverage)).toEqual(["TX"]);
+  expect(state.source).toBe("unavailable");
 });

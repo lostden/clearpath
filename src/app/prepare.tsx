@@ -70,18 +70,7 @@ export default function PrepareScreen() {
   }
   return (
     <Screen>
-      <View style={s.headerRow}>
-        <View style={s.flex}><Heading>PREPARE.</Heading></View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="GET HELP · CALL 911"
-          onPress={() => confirmCall("911")}
-          style={({ pressed }) => [s.emergency, pressed && { borderColor: colors.yellow }]}
-        >
-          <Text style={s.emergencyLabel}>GET HELP</Text>
-          <Text style={s.emergencyNumber}>911</Text>
-        </Pressable>
-      </View>
+      <Heading>PREPARE.</Heading>
       <View style={s.localStatus}>
       <View style={s.offlinePill}>
         <Text style={s.offlineText}>AVAILABLE OFFLINE</Text>
@@ -314,7 +303,11 @@ export default function PrepareScreen() {
             onChangeText={setPhone}
             maxLength={30}
           />
-          {contactError && <Body>{contactError}</Body>}
+          {contactError && (
+            <View testID="contact-validation-error" accessibilityLiveRegion="polite" aria-live="polite">
+              <Body>{contactError}</Body>
+            </View>
+          )}
           <ActionButton
             title="Save contact"
             onPress={addContact}
@@ -383,10 +376,6 @@ export default function PrepareScreen() {
   );
 }
 const s = StyleSheet.create({
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  emergency: { minHeight: 60, minWidth: 78, alignItems: "center", justifyContent: "center", padding: 8, backgroundColor: colors.orange, borderWidth: 2, borderColor: colors.orange },
-  emergencyLabel: { color: colors.background, fontFamily: typography.bodyStrong, fontSize: 11, lineHeight: 16 },
-  emergencyNumber: { color: colors.background, fontFamily: typography.heading, fontSize: 22, lineHeight: 26 },
   localStatus: { gap: 8 },
   sectionIndex: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   sectionChoice: {

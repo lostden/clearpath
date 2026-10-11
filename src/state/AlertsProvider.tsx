@@ -1,6 +1,5 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -23,6 +22,8 @@ import type {
 } from "@/domain/types";
 import { useAppState } from "./AppState";
 import { useFeedPreferences } from "./FeedPreferences";
+import { checkRequestContext, claimFeedSlot, pauseFeedProvider, useFeedDeadline, useManualFeedRefresh, useRequestContext } from "./feedRequestGate";
+export { waitForRequestSlot } from "./feedRequestGate";
 
 const MIN_REQUEST_INTERVAL = 30_000;
 const MAX_VERIFIED_AGE = 90_000;
@@ -61,29 +62,6 @@ export function alertRetryDelay(attempt: number, error: Error): number {
   return Math.max(MIN_REQUEST_INTERVAL * 2 ** attempt, providerDelay);
 }
 
-export function waitForRequestSlot(
-  milliseconds: number,
-  signal: AbortSignal,
-): Promise<void> {
-  if (signal.aborted)
-    return Promise.reject(
-      new ClearPathDataError("cancelled", "The request was cancelled."),
-    );
-  if (milliseconds <= 0) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const cancel = () => {
-      clearTimeout(timer);
-      signal.removeEventListener("abort", cancel);
-      reject(new ClearPathDataError("cancelled", "The request was cancelled."));
-    };
-    const timer = setTimeout(() => {
-      signal.removeEventListener("abort", cancel);
-      resolve();
-    }, milliseconds);
-    signal.addEventListener("abort", cancel, { once: true });
-  });
-}
-
 /** One observer, connectivity subscription, and display clock are shared by every tab. */
 export function AlertsProvider({ children }: PropsWithChildren) {
   const { mode, scenario, location } = useAppState();
@@ -98,15 +76,15 @@ export function AlertsProvider({ children }: PropsWithChildren) {
   const [now, setNow] = useState(Date.now);
   const [cached, setCached] = useState<AlertSnapshot | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
-  const requestStarts = useRef(new Map<string, number>());
-  const providerBlockedUntil = useRef(new Map<string, number>());
-  const [requestGates, setRequestGates] = useState<Record<string, number>>({});
   const persisted = useRef<string | null>(null);
   const persistenceQueue = useRef<Promise<void>>(Promise.resolve());
   const pointKey = location ? locationKey(location) : null;
   const requestAllowed =
     ready && mode === "live" && pointKey !== null && !offline && foreground;
   const enabled = requestAllowed && automatic;
+  const gateKey = `point:${pointKey}`;
+  const nextAllowed = useFeedDeadline(client, "nws", gateKey);
+  const isCurrent = useRequestContext(requestAllowed, gateKey, automatic);
   const availability = useRef({ enabled, pointKey });
   const selectedLocation = mode === "demo" ? DEMO_LOCATION : location;
   const demo = useMemo(
@@ -137,19 +115,8 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     queryFn: async ({ signal }) => {
       if (!location || !pointKey)
         throw new Error("Select a location to retrieve alerts.");
-      const lastStarted = requestStarts.current.get(pointKey) ?? -Infinity;
-      const nextAllowed = Math.max(
-        lastStarted + MIN_REQUEST_INTERVAL,
-        providerBlockedUntil.current.get(pointKey) ?? 0,
-      );
-      await waitForRequestSlot(nextAllowed - Date.now(), signal);
-      if (signal.aborted)
-        throw new ClearPathDataError("cancelled", "The request was cancelled.");
-      requestStarts.current.set(pointKey, Date.now());
-      setRequestGates((previous) => ({
-        ...previous,
-        [pointKey]: Date.now() + MIN_REQUEST_INTERVAL,
-      }));
+      await claimFeedSlot(client, "nws", gateKey, MIN_REQUEST_INTERVAL, signal, isCurrent);
+      checkRequestContext(signal, isCurrent);
       setNow(Date.now());
       let alerts: OfficialAlert[];
       try {
@@ -157,22 +124,13 @@ export function AlertsProvider({ children }: PropsWithChildren) {
       } catch (error) {
         if (
           error instanceof ClearPathDataError &&
-          error.retryAfterMs !== undefined
+          !signal.aborted && isCurrent()
         ) {
-          providerBlockedUntil.current.set(
-            pointKey,
-            Date.now() + error.retryAfterMs,
-          );
-          const blockedUntil = Date.now() + error.retryAfterMs;
-          setRequestGates((previous) => ({
-            ...previous,
-            [pointKey]: Math.max(previous[pointKey] ?? 0, blockedUntil),
-          }));
+          pauseFeedProvider(client, "nws", error.retryAfterMs);
         }
         throw error;
       }
-      if (signal.aborted)
-        throw new ClearPathDataError("cancelled", "The request was cancelled.");
+      checkRequestContext(signal, isCurrent);
       return {
         source: "live",
         alerts,
@@ -268,7 +226,6 @@ export function AlertsProvider({ children }: PropsWithChildren) {
           : null,
     [demo, knownSnapshot, mode, verified],
   );
-  const nextAllowed = pointKey ? (requestGates[pointKey] ?? 0) : 0;
   const canRefresh = requestAllowed && !query.isFetching && now >= nextAllowed;
 
   useEffect(() => {
@@ -331,11 +288,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     return () => clearTimeout(timer);
   }, [knownSnapshot, mode, nextAllowed, now, snapshot]);
 
-  const refetch = query.refetch;
-  const refresh = useCallback(async () => {
-    if (!canRefresh) return;
-    await refetch({ cancelRefetch: false });
-  }, [canRefresh, refetch]);
+  const refresh = useManualFeedRefresh(client, "nws", gateKey, ["nws-alerts", pointKey], isCurrent, query.refetch);
   const displayNow = mode === "demo" ? DEMO_TIMESTAMP : now;
   const alerts = snapshot ? currentAlerts(snapshot.alerts, displayNow) : [];
   const value: AlertsState = {
