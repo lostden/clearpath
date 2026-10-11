@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import {
   Panel,
   Screen,
   SectionTitle,
+  confirmAction,
   confirmCall,
   openLink,
 } from "@/ui/components";
@@ -252,19 +252,18 @@ export default function PrepareScreen() {
             title={`Remove ${contact.name}`}
             secondary
             onPress={() =>
-              Alert.alert("Remove saved contact?", contact.name, [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Remove",
-                  style: "destructive",
-                  onPress: () =>
+              confirmAction({
+                title: "Remove saved contact?",
+                message: contact.name,
+                confirmLabel: "Remove",
+                destructive: true,
+                onConfirm: () =>
                     update({
                       contacts: saved.contacts.filter(
                         (item) => item.id !== contact.id,
                       ),
                     }),
-                },
-              ])
+              })
             }
           />
         </Panel>

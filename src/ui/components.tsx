@@ -2,11 +2,13 @@ import { type PropsWithChildren } from "react";
 import {
   Alert,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  type AlertButton,
   type ScrollViewProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -131,20 +133,37 @@ export async function openLink(url: string) {
     );
   }
 }
-export function confirmCall(number: string, label = number) {
+export function confirmAction({ title, message, confirmLabel, onConfirm, destructive = false }: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  destructive?: boolean;
+}) {
+  if (Platform.OS === "web") {
+    // Browser dialogs return false when cancelled or suppressed. Never perform
+    // the action during server rendering or without an explicit OK response.
+    if (typeof window !== "undefined" && typeof window.confirm === "function" &&
+        window.confirm(`${title}\n\n${message}\n\nOK: ${confirmLabel}`)) {
+      onConfirm();
+    }
+    return;
+  }
+  const confirm: AlertButton = { text: confirmLabel, onPress: onConfirm };
+  if (destructive) confirm.style = "destructive";
   Alert.alert(
-    `Call ${label}?`,
-    "This will open your phone dialer. You must confirm the call on your device.",
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Open dialer",
-        onPress: () => {
-          void openLink(`tel:${number}`);
-        },
-      },
-    ],
+    title,
+    message,
+    [{ text: "Cancel", style: "cancel" }, confirm],
   );
+}
+export function confirmCall(number: string, label = number) {
+  confirmAction({
+    title: `Call ${label}?`,
+    message: "This will open your phone dialer. You must confirm the call on your device.",
+    confirmLabel: "Open dialer",
+    onConfirm: () => { void openLink(`tel:${number}`); },
+  });
 }
 export function EmergencyButton() {
   return (

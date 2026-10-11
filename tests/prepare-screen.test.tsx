@@ -1,12 +1,22 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, waitFor, within } from "@testing-library/react-native";
-import { Alert, Linking } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 import PrepareScreen from "../src/app/prepare";
 import { PreparednessProvider } from "../src/state/PreparednessState";
 
 const storageKey = "@clearpath/preparation/v1";
 const defaultRead = jest.mocked(AsyncStorage.getItem).getMockImplementation()!;
 const defaultWrite = jest.mocked(AsyncStorage.setItem).getMockImplementation()!;
+const originalConfirm = Object.getOwnPropertyDescriptor(window, "confirm");
+const savedContacts = {
+  checked: { water: true },
+  meetingPlace: "Test meeting place",
+  outOfAreaContact: "Test relative",
+  contacts: [
+    { id: "test-family", name: "Test family", phone: "555 0100" },
+    { id: "test-neighbor", name: "Test neighbor", phone: "555 0101" },
+  ],
+};
 const sectionButtons = [
   "Show field guides",
   "Show emergency kit",
@@ -19,12 +29,24 @@ async function preparation() {
   return render(<PreparednessProvider><PrepareScreen /></PreparednessProvider>);
 }
 
+function webConfirmation(accepted: boolean) {
+  jest.replaceProperty(Platform, "OS", "web");
+  const confirm = jest.fn(() => accepted);
+  Object.defineProperty(window, "confirm", { configurable: true, value: confirm });
+  return confirm;
+}
+
 beforeEach(async () => {
   jest.mocked(AsyncStorage.getItem).mockReset().mockImplementation(defaultRead);
   jest.mocked(AsyncStorage.setItem).mockReset().mockImplementation(defaultWrite);
   await AsyncStorage.clear();
   jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  if (originalConfirm) Object.defineProperty(window, "confirm", originalConfirm);
+  else Reflect.deleteProperty(window, "confirm");
 });
 
 test("offline field guides are available before local hydration without rendering the kit", async () => {
@@ -174,6 +196,94 @@ test("saved contact and resource dialers require deliberate section and confirma
   await act(() => resourceChoices.find((choice) => choice.text === "Open dialer")?.onPress?.());
   expect(Linking.openURL).toHaveBeenCalledTimes(1);
   expect(Linking.openURL).toHaveBeenCalledWith("tel:211");
+});
+
+test("native contact removal preserves both contacts on Cancel and saves only the selected removal on Remove", async () => {
+  jest.replaceProperty(Platform, "OS", "android");
+  const retainedCopy = JSON.stringify(savedContacts);
+  await AsyncStorage.setItem(storageKey, retainedCopy);
+  const screen = await preparation();
+  await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
+  const writes = jest.spyOn(AsyncStorage, "setItem"); writes.mockClear();
+  await fireEvent.press(screen.getByRole("button", { name: "Show saved contacts" }));
+
+  await fireEvent.press(screen.getByRole("button", { name: "Remove Test family" }));
+  expect(Alert.alert).toHaveBeenCalledWith("Remove saved contact?", "Test family", expect.any(Array));
+  const cancel = jest.mocked(Alert.alert).mock.calls[0][2]!.find((choice) => choice.text === "Cancel")!;
+  expect(cancel.style).toBe("cancel");
+  await act(() => cancel.onPress?.());
+  expect(screen.getByRole("button", { name: "Call Test family" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Call Test neighbor" })).toBeTruthy();
+  expect(writes).not.toHaveBeenCalled();
+  expect(await AsyncStorage.getItem(storageKey)).toBe(retainedCopy);
+
+  await fireEvent.press(screen.getByRole("button", { name: "Remove Test family" }));
+  const remove = jest.mocked(Alert.alert).mock.calls[1][2]!.find((choice) => choice.text === "Remove")!;
+  expect(remove.style).toBe("destructive");
+  await act(() => remove.onPress?.());
+  expect(screen.queryByRole("button", { name: "Call Test family" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Call Test neighbor" })).toBeTruthy();
+  await waitFor(async () => expect(JSON.parse((await AsyncStorage.getItem(storageKey))!)).toEqual({
+    ...savedContacts, contacts: [savedContacts.contacts[1]],
+  }));
+  expect(writes).toHaveBeenCalledTimes(1);
+  expect(Linking.openURL).not.toHaveBeenCalled();
+});
+
+test.each([false, true])("web contact removal changes and saves contacts only when confirmation is %s", async (accepted) => {
+  const confirm = webConfirmation(accepted);
+  const retainedCopy = JSON.stringify(savedContacts);
+  await AsyncStorage.setItem(storageKey, retainedCopy);
+  const screen = await preparation();
+  await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
+  const writes = jest.spyOn(AsyncStorage, "setItem"); writes.mockClear();
+  await fireEvent.press(screen.getByRole("button", { name: "Show saved contacts" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Remove Test family" }));
+
+  expect(confirm).toHaveBeenCalledTimes(1);
+  expect(confirm).toHaveBeenCalledWith("Remove saved contact?\n\nTest family\n\nOK: Remove");
+  expect(screen.getByRole("button", { name: "Call Test neighbor" })).toBeTruthy();
+  if (accepted) {
+    expect(screen.queryByRole("button", { name: "Call Test family" })).toBeNull();
+    await waitFor(async () => expect(JSON.parse((await AsyncStorage.getItem(storageKey))!)).toEqual({
+      ...savedContacts, contacts: [savedContacts.contacts[1]],
+    }));
+    expect(writes).toHaveBeenCalledTimes(1);
+  } else {
+    expect(screen.getByRole("button", { name: "Call Test family" })).toBeTruthy();
+    expect(writes).not.toHaveBeenCalled();
+    expect(await AsyncStorage.getItem(storageKey)).toBe(retainedCopy);
+  }
+  expect(Alert.alert).not.toHaveBeenCalled();
+  expect(Linking.openURL).not.toHaveBeenCalled();
+});
+
+test.each([false, true])("web saved-contact and resource dialers open only when confirmation is %s", async (accepted) => {
+  const confirm = webConfirmation(accepted);
+  const retainedCopy = JSON.stringify(savedContacts);
+  await AsyncStorage.setItem(storageKey, retainedCopy);
+  const screen = await preparation();
+  await waitFor(() => expect(screen.getByText("LOCAL COPY / SAVED ON THIS PHONE")).toBeTruthy());
+  const writes = jest.spyOn(AsyncStorage, "setItem"); writes.mockClear();
+  await fireEvent.press(screen.getByRole("button", { name: "Show saved contacts" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Call Test family" }));
+  expect(confirm).toHaveBeenNthCalledWith(1,
+    "Call Test family?\n\nThis will open your phone dialer. You must confirm the call on your device.\n\nOK: Open dialer");
+  if (accepted) expect(Linking.openURL).toHaveBeenCalledWith("tel:5550100");
+  else expect(Linking.openURL).not.toHaveBeenCalled();
+
+  await fireEvent.press(screen.getByRole("button", { name: "Show emergency numbers" }));
+  await fireEvent.press(screen.getByRole("button", { name: "2-1-1 Texas — community resources · 211" }));
+  expect(confirm).toHaveBeenNthCalledWith(2,
+    "Call 2-1-1 Texas — community resources?\n\nThis will open your phone dialer. You must confirm the call on your device.\n\nOK: Open dialer");
+  expect(confirm).toHaveBeenCalledTimes(2);
+  if (accepted) {
+    expect(Linking.openURL).toHaveBeenCalledTimes(2);
+    expect(Linking.openURL).toHaveBeenLastCalledWith("tel:211");
+  } else expect(Linking.openURL).not.toHaveBeenCalled();
+  expect(Alert.alert).not.toHaveBeenCalled();
+  expect(writes).not.toHaveBeenCalled();
+  expect(await AsyncStorage.getItem(storageKey)).toBe(retainedCopy);
 });
 
 test("local write failure offers a deliberate retry and saving/saved feedback without changing the plan", async () => {

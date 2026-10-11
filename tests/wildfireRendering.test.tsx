@@ -369,7 +369,8 @@ describe.each(renderers)("%s independent wildfire layer", (renderer) => {
   test("compact perimeters are static even when a selection callback was supplied", async () => {
     const onSelectWildfire = jest.fn();
     const screen = await renderLayer(renderer, { compact: true, onSelectWildfire });
-    const fire = screen.getByTestId(fireId(renderer));
+    const fire = screen.getByTestId(fireId(renderer), { includeHiddenElements: true });
+    if (renderer === "native") expect(screen.queryByTestId(fireId(renderer))).toBeNull();
     expectOutline(renderer, fire.props, "#FFFFFF");
     expect(fire.props.onPress).toBeUndefined();
     if (renderer === "native") expect(fire.props.tappable).toBe(false);

@@ -136,6 +136,7 @@ function NativeMapCanvas({
   return (
     <>
     <View
+      pointerEvents={compact ? "none" : "auto"}
       style={[
         s.container,
         { minHeight: compact ? 180 : 420 },
@@ -144,6 +145,7 @@ function NativeMapCanvas({
     >
       <MapView
         ref={ref}
+        pointerEvents={compact ? "none" : "auto"}
         style={StyleSheet.absoluteFill}
         provider={provider}
         initialRegion={region}
@@ -163,8 +165,8 @@ function NativeMapCanvas({
         showsScale
         showsUserLocation={false}
         toolbarEnabled={false}
-        importantForAccessibility={showStatus ? "no-hide-descendants" : "auto"}
-        accessibilityElementsHidden={showStatus}
+        importantForAccessibility={compact || showStatus ? "no-hide-descendants" : "auto"}
+        accessibilityElementsHidden={compact || showStatus}
         accessibilityLabel={realWildfires.length
           ? `Map of ${pointIsSelection ? "selected point, " : ""}${showWarnings ? "source warning areas, " : ""}${zoneBoundaries.length ? "NWS zone boundaries, " : ""}published wildfire perimeter outlines. Captured perimeters are not current fire edges or evacuation areas.`
           : source !== "demo" && zoneBoundaries.length ? "Map of NWS affected zone outlines. Not warning polygons or measured hazard extent." : pointIsSelection ? "Map of selected point and source warning areas" : "Regional map of source warning areas"}
@@ -204,8 +206,8 @@ function NativeMapCanvas({
                 fillColor={source === "cached" ? "rgba(176,176,176,0.20)" : severe ? "rgba(255,90,0,0.22)" : "rgba(255,212,0,0.16)"}
                 strokeColor={source === "cached" ? "#B0B0B0" : severe ? colors.orange : colors.yellow}
                 strokeWidth={3}
-                tappable
-                onPress={() => onSelectAlert?.(alert)}
+                tappable={!compact && !!onSelectAlert}
+                onPress={!compact && onSelectAlert ? () => onSelectAlert(alert) : undefined}
               />
             ));
           })}
@@ -235,14 +237,14 @@ function NativeMapCanvas({
             pinColor={earthquakeSource === "cached" ? "#B0B0B0" : colors.ink}
             title={`${earthquakeSource === "cached" ? "CACHED / " : "USGS / "}M ${magnitudeLabel(event.magnitude)} · ${event.name}`}
             description={`Observed ${new Date(event.observedAt).toLocaleString()}. Epicenter; not an impact area.`}
-            onPress={() => onSelectEarthquake?.(event)} />
+            onPress={!compact && onSelectEarthquake ? () => onSelectEarthquake(event) : undefined} />
         ))}
         {source !== "demo" && showGauges && rivers.filter((gauge) => pointInRegion(gauge.coordinates, viewport)).map((gauge) => (
           <Marker key={`river-${gauge.id}`} coordinate={gauge.coordinates}
             pinColor={riverSource === "cached" ? "#B0B0B0" : colors.yellow}
             title={`${riverSource === "cached" ? "CACHED / " : "USGS / "}${gauge.name}`}
             description={gauge.gageHeight ? `${isRiverObservationDelayed(gauge.gageHeight) ? "DELAYED / " : ""}${gauge.gageHeight.displayValue} ${gauge.gageHeight.units} gage height. Observed ${new Date(gauge.gageHeight.observedAt).toLocaleString()}; not flood depth.` : "Gage height unavailable."}
-            onPress={() => onSelectRiver?.(gauge)} />
+            onPress={!compact && onSelectRiver ? () => onSelectRiver(gauge) : undefined} />
         ))}
         {source === "demo" && showGauges && (
           <Marker

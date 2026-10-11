@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render } from "@testing-library/react-native";
-import { Platform, processColor } from "react-native";
+import { Platform, Pressable, processColor } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import MapCanvas from "../src/components/MapCanvas";
 import { DEMO_GAUGE, DEMO_LOCATION } from "../src/data/demo";
@@ -209,6 +209,39 @@ test("a compact timeout leaves a status without a nested retry or recenter actio
   expect(nativeMap(screen)).toBeTruthy();
 });
 
+test("a loaded Home preview keeps one map action and no competing native overlay targets", async () => {
+  const openMap = jest.fn();
+  const selectAlert = jest.fn();
+  const selectEarthquake = jest.fn();
+  const selectRiver = jest.fn();
+  const screen = await render(
+    <Pressable accessibilityRole="button" accessibilityLabel="Open interactive map" onPress={openMap}>
+      <MapCanvas point={overlayPoint} alerts={[nearbyArea]} source="live" compact
+        onSelectAlert={selectAlert} showEarthquakes earthquakes={[earthquake]}
+        onSelectEarthquake={selectEarthquake} showGauges rivers={[river]} onSelectRiver={selectRiver} />
+    </Pressable>,
+  );
+  await fireEvent(nativeMap(screen), "mapLoaded");
+  const preview = nativeMap(screen);
+  expect(preview.props.pointerEvents).toBe("none");
+  expect(preview.props.accessibilityElementsHidden).toBe(true);
+  expect(preview.props.importantForAccessibility).toBe("no-hide-descendants");
+  expect(screen.queryByTestId("native-map")).toBeNull();
+  const polygon = screen.getByTestId("map-polygon", { includeHiddenElements: true });
+  expect(polygon.props.tappable).toBe(false);
+  expect(polygon.props.onPress).toBeUndefined();
+  for (const marker of screen.getAllByTestId("map-marker", { includeHiddenElements: true })) {
+    expect(marker.props.onPress).toBeUndefined();
+  }
+  const actions = screen.getAllByRole("button");
+  expect(actions).toHaveLength(1);
+  await fireEvent.press(actions[0]);
+  expect(openMap).toHaveBeenCalledTimes(1);
+  expect(selectAlert).not.toHaveBeenCalled();
+  expect(selectEarthquake).not.toHaveBeenCalled();
+  expect(selectRiver).not.toHaveBeenCalled();
+});
+
 test("coordinate fallback opens only after deliberate selection and keeps supplied areas with their cached provenance", async () => {
   const onSelectAlert = jest.fn();
   const screen = await render(<MapCanvas point={overlayPoint} alerts={[nearbyArea]} source="cached" onSelectAlert={onSelectAlert} />);
@@ -311,6 +344,9 @@ test("official Polygon rings preserve holes and convert longitude-first position
   const screen = await render(<MapCanvas point={overlayPoint} alerts={[nearbyArea]} source="live" onSelectAlert={onSelectAlert} />);
   await fireEvent(nativeMap(screen), "mapLoaded");
   const polygon = screen.getByTestId("map-polygon");
+  expect(nativeMap(screen).props.pointerEvents).toBe("auto");
+  expect(nativeMap(screen).props.accessibilityElementsHidden).toBe(false);
+  expect(polygon.props.tappable).toBe(true);
   expect(polygon.props.coordinates).toEqual([
     { latitude: 29.98, longitude: -99.04 },
     { latitude: 29.98, longitude: -98.97 },
