@@ -10,7 +10,7 @@ The original relevance and prioritization engine remains deliberately unimplemen
 
 The latest completed Android preview is **ready to install**. The [completed version 2 build](https://expo.dev/accounts/lostdens-team/projects/clearpath/builds/2718ca97-bf7e-421f-82e4-7f9ab31cb4af), from commit `808f427`, is downloaded and inspected. Its files are `artifacts/ClearPath-latest.apk` (113,409,801 bytes) and matching `artifacts/ClearPath-preview.json`. This version was installed on the user's moto g stylus - 2025 on October 11; Android reported a successful explicit launch, and the user confirmed Google map tiles on Map.
 
-An [updated version 3 build](https://expo.dev/accounts/lostdens-team/projects/clearpath/builds/b7d53049-6e34-456b-a141-963974d3a840), from tested commit `a67b223`, is queued with persistent Close/Cancel controls in the full-screen views. The verified version 2 files remain the installer default until the newer APK completes and passes artifact inspection.
+An [updated version 4 build](https://expo.dev/accounts/lostdens-team/projects/clearpath/builds/5173ecb1-6835-4785-9d4f-535531adee81), from tested commit `3466b12`, is submitted with full-width bottom-tab/emergency labels and Android font preload, addressing the user's reported **PREPAR** / **GET 9** clipping. It also includes the version 3 persistent Close/Cancel controls. The verified version 2 files remain the installer default until the newer APK completes and passes artifact inspection.
 
 Reconnect the phone with a USB data cable, unlock it, leave **USB debugging** enabled, and approve **Allow USB debugging** if prompted. In this project folder, double-click **Install ClearPath.cmd**. Alternatively, run:
 

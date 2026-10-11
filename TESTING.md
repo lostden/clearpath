@@ -61,6 +61,8 @@ Tab padding now belongs to the button, and its centered label stretches across t
 
 The two focused tab/emergency suites passed **15 tests**; full TypeScript and source/test/config ESLint passed. At **320 × 640**, browser text-range bounds fully fit GET HELP (57.61 pixels) and 911 (44.03) within the 104-pixel button, and PREPARE (63.02) within its 106.67-pixel tab. At **434 × 900**, Prepare navigation succeeded, all three 144.67-pixel tabs and the emergency control remained on screen. Both simulated and live footer variants retained the full labels. These are web layout checks; native font preload and clipped-label recovery still require the rebuilt APK and phone confirmation.
 
+Expo Doctor 1.20.4 passed **21/21 checks** after the font configuration change. Preview build `5173ecb1-6835-4785-9d4f-535531adee81` was submitted from `3466b12514a12c83a39b0f1303da245b11549910`, reusing the preview Maps environment and signing keystore and incrementing Android version code from **3** to **4**. Submission returned **NEW**. A proposed temporary Expo Go USB preview did not run because automatic approval review blocked the port-mapping command; no device network setting was changed by that attempt. The installed version 2 app remains available while the new APK compiles.
+
 ## Automated checks
 
 Run from the project directory with Node 22.13 or later:
