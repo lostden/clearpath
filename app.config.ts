@@ -31,6 +31,33 @@ export default function configure({ config }: ConfigContext): ExpoConfig {
     plugins: [
       ...(config.plugins || []),
       [
+        "expo-font",
+        {
+          android: {
+            fonts: [
+              {
+                fontFamily: "ArchivoBlack",
+                fontDefinitions: [
+                  { path: "./assets/fonts/ArchivoBlack.ttf", weight: 400, style: "normal" },
+                ],
+              },
+              {
+                fontFamily: "RobotoMono",
+                fontDefinitions: [
+                  { path: "./assets/fonts/RobotoMono.ttf", weight: 400, style: "normal" },
+                ],
+              },
+              {
+                fontFamily: "RobotoMonoBold",
+                fontDefinitions: [
+                  { path: "./assets/fonts/RobotoMonoBold.ttf", weight: 400, style: "normal" },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+      [
         "expo-location",
         {
           locationWhenInUsePermission:

@@ -53,6 +53,14 @@ The helper's implicit package MAIN/LAUNCHER launch failed to resolve. `cmd packa
 
 The installer was repaired to resolve the current user's MAIN/LAUNCHER component after install Success, require exactly one strictly validated component belonging to `org.clearpath.student`, and launch it with explicit `-n`. PowerShell 5.1 and 7 parser checks passed. The actual source guard accepted the reported `.MainActivity` response and rejected other packages/metacharacters; the revised exact resolver command returned that same component on the connected phone. No repeat installation was performed, so the revised complete helper path remains unexecuted. Existing checksum/device/install checks and `-NoLaunch` behavior remain intact. [Android intent component syntax](https://developer.android.com/tools/adb#IntentSpec).
 
+### Phone label clipping repair — October 11, 2026
+
+The user reported the installed version 2 phone labels as **PREPAR** and **GET 9**. Read-only device settings showed physical size 1,220 × 2,712, density 450, and font scale 1.0 (approximately 434 logical pixels wide). The tab labels were centered intrinsic-width Text with their own padding; the emergency labels also used intrinsic width, and the control's 72-point minimum left little room for GET HELP. These are layout risks, not proof of the exact native glyph-cutoff cause.
+
+Tab padding now belongs to the button, and its centered label stretches across the available width. The shared emergency control has a 104-point minimum and stretched, nonshrinking labels. Wrapping, automatic height growth, default font scaling, accessibility roles, and existing call-confirmation callbacks are preserved. The Android-only expo-font plugin preloads the existing ArchivoBlack, RobotoMono and RobotoMonoBold aliases before React text mounts; iOS and Expo Go/web runtime loading remain unchanged. Expo configuration introspection passed, including a sentinel-key check preserving Maps flags and EAS metadata without printing key values. No native folders were created.
+
+The two focused tab/emergency suites passed **15 tests**; full TypeScript and source/test/config ESLint passed. At **320 × 640**, browser text-range bounds fully fit GET HELP (57.61 pixels) and 911 (44.03) within the 104-pixel button, and PREPARE (63.02) within its 106.67-pixel tab. At **434 × 900**, Prepare navigation succeeded, all three 144.67-pixel tabs and the emergency control remained on screen. Both simulated and live footer variants retained the full labels. These are web layout checks; native font preload and clipped-label recovery still require the rebuilt APK and phone confirmation.
+
 ## Automated checks
 
 Run from the project directory with Node 22.13 or later:
