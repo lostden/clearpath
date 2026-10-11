@@ -26,7 +26,7 @@ The [2026 Congressional App Challenge rules](https://www.congressionalappchallen
 
 | October 11, 2026 | Codex and parallel Codex agents | Standalone version 2 USB installation, resolved explicit Android launcher recovery, bounded process-only startup diagnostics and setup handoff | Android installation/explicit launch succeeded; user confirmed visible Google map tiles; remaining native feature/offline acceptance pending; overnight automation paused on return |
 
-| October 11, 2026 | Codex and parallel Codex agents | Phone-label clipping repair: full-width tab/emergency text boxes, button-owned padding and Android-only bundled-font preload | User reported clipped version 2 labels; 15 focused tests, TypeScript, lint and config introspection passed; 320/434-pixel browser checks retained complete labels; rebuilt native acceptance pending |
+| October 11, 2026 | Codex and parallel Codex agents | Phone-label clipping repair: full-width tab/emergency text boxes, button-owned padding and Android-only bundled-font preload; version 4 APK inspection and USB helper installation | 15 focused tests, TypeScript, lint, config introspection and Expo Doctor 21/21 passed; 320/434-pixel browser checks retained complete labels; complete helper install/launch passed; user confirmed complete PREPARE and GET HELP / 911 labels and Google map tiles on version 4; broader native/offline acceptance remains pending |
 
 Keep this log current. Record AI-generated snippets adopted into student modules and review suggestions that materially change implementation. Do not label generated tests, algorithms, safety text, or visual design as wholly independent student work.
 
