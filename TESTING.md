@@ -25,11 +25,28 @@ The timestamp regressions were observed failing before repair (15 initial failur
 
 A fresh localhost browser session at **390 × 844** completed **Explore simulated demo → North Texas flood → Read simulated warning → priority explanation → Read Flooding guide**. Simulation provenance, original fixture instructions, source/review date and local links remained visible. Map showed Frisco's fictional warnings and omitted Hunt's river fixture. At **320 × 568**, Home and Prepare DOM measurements reported width 320 with zero overflowing elements; Map page width also matched 320. Screenshots inspected the tactical layout and persistent footer. The viewport was reset and the temporary tab closed. This verifies shared web behavior, not native Apple Maps, native gestures, VoiceOver or native safe areas.
 
-### Current iOS attempt and limits
+### Initial iOS attempt and limits
 
 The available iPhone 16 Pro / iOS 18.6 simulator was booted and a localhost Expo session on port 8083 attempted. Expo downloaded/installed its official client, but opening `exp://127.0.0.1:8083` timed out (simctl code 60); CLI exited 1. The app UI was not accepted or tested. A subsequent Simulator UI inspection stalled and supplied no ClearPath screen evidence. The simulator was shut down afterward, with no device data erased; the pre-existing user Metro on 8081 was left alone. A paired physical iPhone was unavailable to the tools.
 
-**No physical iPhone tests passed in this session.** Current phone startup, Apple Maps/overlays, location and local-notice permissions/delivery, keyboard/safe areas, background/resume, current-version restart persistence, installed-app offline cold start and assistive technology remain unverified. Follow [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md); record actual device/version/date and pass/fail rather than treating exports or mocks as acceptance.
+**No physical iPhone pass was established by that attempt.** The later simulator recovery below supersedes the simulator startup limitation; physical acceptance remains separate.
+
+### Recovered iOS simulator verification — October 13, 2026, 7:22–7:39 p.m. Central
+
+The paired physical iPhone was still reported **unavailable** by `devicectl`. A bounded retry on the same iPhone 16 Pro / iOS 18.6 simulator confirmed boot completion and the already installed official **Expo Go 57.0.9**. It reached Opening project, then a connection failure. `lsof` showed the temporary Metro server bound to **IPv6 ::1:8083**, while Expo Go opened **127.0.0.1:8083**; a host readiness request to that IPv4 address failed immediately. The installed Expo CLI uses localhost as its bind host and converts its launch URL to 127.0.0.1.
+
+Restarting only the owned server with `NODE_OPTIONS=--dns-result-order=ipv4first EXPO_NO_DOTENV=1 npx --no-install expo start --localhost --port 8083` produced an IPv4 listener and successful `packager-status:running`. Reopening the project then rendered **ClearPath 1.1.0**. No application code, dependency or global setting changed. Metro recorded an actual iOS bundle request (1,613 modules); its later process-restart request also completed. Expo Go's usual notification-support warnings appeared; no real notification delivery was exercised.
+
+Through the Simulator's native UI, Codex verified:
+
+- Initial unselected live Home; opt-in North Texas flood; original fixture instructions, urgency explanation and simulation caveats; warning → expanded Flooding guide with its source/date. Repeated navigation from Map warning details reopened the guide.
+- Native **Apple Maps basemap, both fictional warning areas and selected Frisco point** rendered. Map's record list opened warning details. Screenshot: [native simulator map](docs/cac-2026/screenshots/ios-simulator-frisco-map.jpg). Direct polygon hit testing, map pan/zoom and real-device rendering are not certified; coordinate-input attempts were blocked by the UI tool's no-window error, not an observed app failure.
+- Visible portrait footer/tab labels, including GET HELP / 911. Emergency confirmation opened and **Cancel** dismissed it; the dialer was not opened and no call was made.
+- Kit Drinking water toggled to **1/12**, a fictional meeting place and Demo Contact / 202-555-0147 were entered, and local save feedback appeared. After terminating/reopening **Expo Go with Metro online**, the checked item, meeting place and contact were each read back successfully. The app returned to live mode. The test item/value/contact were then restored to their original empty/unchecked state; contact removal used its native confirmation.
+
+Text entry used the simulator's hardware-keyboard path. A software keyboard was observed, but complete keyboard avoidance, larger text, VoiceOver, native GPS/local-notice permissions/delivery, offline cold start and physical background/movement remain unverified. The owned server was stopped and simulator returned to Shutdown without erasing data; user Metro 8081 was not changed.
+
+The user now reports having tested current iPhone source and intends to provide results, but no device/iOS/client version or individual pass/fail results have arrived. **Do not count that general report as a physical pass.** Follow [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md) for the remaining evidence.
 
 ## Historical October 9–11 evidence
 

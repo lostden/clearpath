@@ -8,8 +8,16 @@ The user reports coordinator permission for AI-assisted implementation; no writt
 
 | Person | Actual contribution / files or commit | Decision and explanation | Tests personally written/run | AI assistance |
 | --- | --- | --- | --- | --- |
-| Student 1 — to identify | Not yet documented | To supply from actual work | To supply | Disclose exact scope |
-| Student 2 — to identify | Not yet documented | To supply from actual work | To supply | Disclose exact scope |
+| Student 1 — current user, name pending | Original concept and requirements for government alerts, location warnings, preparedness, maps and disaster information; product direction, implementation review and feedback (confirmed by the user October 13) | Requested October 10 tactical redesign and added official map layers; directed development decisions. Implementation remains Codex-assisted | Individual attribution of earlier Android checks and specific current iPhone results still pending | User explicitly states that extensive Codex implementation must not be described as independently written by them |
+| Student 2 — partner, name pending | Collaboration confirmed by Student 1; specific independently completed work not yet established | Design/coding/debugging/testing tasks need clarification before final narration | Not yet established | No generated code attributed to this student |
+
+### Git/contribution review after the user's clarification
+
+All **27 commits** on the current branch through `e0bce45` were inspected by date, author label and subject alongside the assistance ledger and subsequent implementation. Earlier commits identify Codex or the AI-assisted scaffold. October 13 commits `33d9b50` and `e0bce45` were executed by Codex using the checkout's configured Git identity; their messages and AI_USAGE.md identify the assistance. A human-looking Git author label is not evidence of independent student implementation. No inspected commit establishes a separately student-authored algorithm or test. This does not prove that no student did technical work; it means the record cannot assign such work reliably.
+
+The historical Android version-6 GPS/maps/test-notification confirmations are retained as user reports, without assigning them to a particular teammate. The user now reports testing the iPhone and intends to provide results; device/iOS/client version and individual pass/fail details are still missing. Current simulator checks were performed by Codex, not either student.
+
+Before the final script, clarify each student's exact design/code/debug/test tasks and who performed the reported phone checks. Names, files/commits, decisions, test observations and an honest explanation of AI assistance should support the account; do not fill missing roles with invented accomplishments.
 
 Before narration, each student should be able to trace one real source record through validation, lifecycle, display ordering and UI; explain cached versus live and why future cancellation is rejected; and honestly state what they personally changed or tested. Understanding a generated implementation does not change its authorship.
 

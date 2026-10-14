@@ -6,6 +6,8 @@ Read-only `npm audit --json` now reports **67 findings: 51 high, 16 moderate, ze
 
 The source-path analysis below still matters: the URL decoder is a potentially relevant Router runtime concern; several other traced paths are build/test/signing tools. `--omit=dev` is not a native bundle inventory. Suggested automatic changes include Expo 44, Router 58 and Jest 30; no compatibility-proven SDK 57 remediation was established. No forced fix/override or native upgrade was applied. Typecheck/lint, 924 app tests and both exports pass, which does not resolve security findings. Audit JSON is captured in the session's `/private/tmp/clearpath-cac-audit-final.json` and `clearpath-cac-audit-prod-final.json`; rerun for current advisory data.
 
+During the later October 13 simulator retry, Expo CLI advertised Expo 57.0.28 and five other package updates. They were not installed or established as security remediations. Current source remains on the tested dependency graph; an available update notice is not a compatibility/security verification.
+
 ## Historical October 10 review
 
 This is a scoped review of the SDK 57 dependency graph after the compatible `react-native-svg@15.15.4` addition. It is not a complete security assessment or a native-binary software bill of materials. No package, React version, install-script policy, or lockfile was changed by this review.

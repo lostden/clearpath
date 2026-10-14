@@ -6,7 +6,7 @@
 
 Preferred short workflow: **Home → Explore simulated demo → North Texas flood → Read simulated warning → Why this warning is shown here → Read Flooding guide → KIT / FAMILY PLAN / LOCAL LINKS**. Keep **SIMULATED DEMO** visible. The two Frisco-area warnings, areas and fixed July 4, 2025 clock are invented fixtures, not historical government records. The Frisco map deliberately omits the old Hunt river measurement. Existing Flood, Tornado, No alerts and Outage scenarios remain available.
 
-The explained priority engine is now implemented and AI-assisted; show source classifications and the future-cancellation regression as engineering examples, with honest contribution attribution. Do not claim student-independent implementation, adoption, predictive risk, safe routing or closed-app/cloud alerts. Browser workflow/layout checks passed; native iPhone, permission and installed-app offline-restart evidence remains pending. The earlier walkthrough below is historical and is superseded by the current handoff.
+The explained priority engine is now implemented and AI-assisted; show source classifications and the future-cancellation regression as engineering examples, with honest contribution attribution. Do not claim student-independent implementation, adoption, predictive risk, safe routing or closed-app/cloud alerts. Browser checks and a later native iOS simulator guide/map/online-restart check passed. Physical iPhone, permission and installed-app offline-restart results remain pending. The earlier walkthrough below is historical and is superseded by the current handoff.
 
 ## Historical October 9–11 demonstration plan
 

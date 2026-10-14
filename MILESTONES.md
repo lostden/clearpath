@@ -10,7 +10,7 @@ Tested application commit: `33d9b50b9c8fab1953f28f88235b341b6adce301`. The user 
 | 5 | Explainable pure engine implemented/integrated and reviewed; 41 engine tests plus Home cases. AI-assisted, not independently student-written |
 | 6 | Existing official layers retained; Frisco demo/preset and guide navigation added. Native iPhone maps/permissions still need acceptance |
 | 7 | Targeted disclosures, visible operational diagnostics and source attribution implemented; automated storage/failure checks pass. Physical restart, movement and assistive-technology checks remain |
-| 8 | 46 suites / 924 app tests, 37 server tests, lint/typecheck and iOS/Android JS exports pass; browser workflow verified. **READY AFTER MANUAL PHONE VERIFICATION** for recording, not final submission certification |
+| 8 | 46 suites / 924 app tests, 37 server tests, lint/typecheck and iOS/Android JS exports pass; browser workflow and later limited native iOS simulator workflow/Apple map/online restart persistence verified. **READY AFTER MANUAL PHONE VERIFICATION** for recording, not final submission certification |
 
 Finish physical checks by October 20–21, then record and submit with a buffer. Current handoff and remaining authorship/submission evidence: [VIDEO_READINESS.md](docs/cac-2026/VIDEO_READINESS.md). No new native binary, deployment, remote push or final script was produced.
 

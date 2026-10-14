@@ -8,9 +8,9 @@
 - Tested application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, branch **`codex/cac-2026-readiness`**. Later documentation-only commits may follow; use `git log -1 --oneline` for the checkout HEAD.
 - **924 app tests / 46 suites**, **37 watcher tests**, typecheck/lint and Android/iOS Hermes exports passed. Current browser workflow passed at mobile widths. Details and failures: [TESTING.md](../../TESTING.md).
 - No new native binary. The retained Android version-code-6 APK is **1.0.0**, built from `84aedce302f2adaf91dc48b4354b230d81ce4e4e`; its October 11 phone confirmations do not verify 1.1.0.
-- The iOS simulator launch timed out; no ClearPath iOS screen was accepted. **No current physical-iPhone checks passed.** Use [IPHONE_CHECKLIST.md](IPHONE_CHECKLIST.md).
+- The first simulator launch timed out; a later IPv4 transport retry rendered ClearPath in Expo Go 57.0.9 / iOS 18.6. Main guide navigation, Apple basemap/fixture rendering and saved preparation after online Expo Go process restart passed. **Physical-iPhone pass/fail details still pending**, despite the user's general report of having tested. Use [IPHONE_CHECKLIST.md](IPHONE_CHECKLIST.md).
 
-Current shared-web captures: [Home at 390 × 844](screenshots/home-390.png) and [warning-opened Flooding guide](screenshots/flood-guide-390.png). These are actual browser captures, not native iPhone evidence or product mockups.
+Current captures: browser [Home at 390 × 844](screenshots/home-390.png) and [warning-opened Flooding guide](screenshots/flood-guide-390.png), plus [native Apple Maps in the iOS simulator](screenshots/ios-simulator-frisco-map.jpg). Each is an actual capture from the named environment; none is physical-phone evidence or a product mockup.
 
 ## Truthful feature inventory
 
@@ -24,9 +24,9 @@ Automated verification means source behavior under the stated tests, not native-
 | Warning lifecycle/freshness | Future-issued messages rejected before cancellation/replacement; bounded skew; exact expiry; cached original timestamps; rollback recovery timers | Validation depends on the device clock; no guaranteed emergency delivery |
 | Explainable ordering | Pure urgency → severity → certainty convention, newer issuance/stable identity ties, unknown/conflict explanations and original objects; 41 engine tests plus Home tests | Display order, not prediction. AI-assisted code, not student-independent authorship |
 | Warning→guide | Exact supported event mapping to existing flood/tornado/hurricane/winter/fire-weather guides; unknown → general Prepare; repeat requests preserve drafts | General guidance follows original instructions; no generated incident advice |
-| Regional map | Separate Texas/U.S. NWS polygons/record list, missing geometry retained, optional explicit linked-zone viewer; web/Android schematic fallback | Region/zone is not point applicability or measured hazard extent. Native Apple Maps pending; its path does not expose Google's tile-failure fallback |
+| Regional map | Separate Texas/U.S. NWS polygons/record list, missing geometry retained, optional explicit linked-zone viewer; web/Android schematic fallback | Apple basemap/Frisco fixtures rendered in simulator; direct map gestures and physical rendering pending. Region/zone is not point applicability or measured hazard extent. Apple does not expose Google's tile-failure fallback |
 | USGS/NIFC layers | Past-day global earthquakes; up to 12 nearby Texas stream stations/observations; optional bounded published wildfire outlines with separate dates | No earthquake prediction, flood-depth/stage inference, current fire edge, complete coverage or route safety. Regional copies are RAM only |
-| Preparation | Five bundled guides, 12-item kit, family meeting/out-of-area plan, user contacts and emergency-number confirmations; source/review dates visible | Loaded offline guidance and mock storage tests verified; current physical restart/offline cold start pending |
+| Preparation | Five bundled guides, 12-item kit, family meeting/out-of-area plan, user contacts and emergency-number confirmations; source/review dates visible | Native simulator kit/meeting/contact restored after online Expo Go process restart. Physical restart and independent offline cold start pending |
 | Frisco resources | Official City/NWS Fort Worth/TDEM/Collin links checked Oct 13; Census coordinate documented | Websites need connectivity. No official partnership, automatic enrollment or whole-city monitoring |
 | Training | Five isolated scenarios. Explore starts fictional North Texas flood; old Flood/Tornado/No alerts/Outage retained; Frisco omits Hunt river fixture | Persistent SIMULATED DEMO; fixed July 4, 2025 clock is fictional, not historical NWS data |
 | Feed settings/errors | Manual/automatic request controls and gates; secondary disclosures; GPS/storage failures remain visible with controls closed | Foreground only; manual mode does not poll. Native/assistive-technology acceptance pending |
@@ -53,6 +53,8 @@ Before recording, load current source on iPhone, verify the checklist's core wor
 | `src/data/demo.ts` → `getDemoSnapshot`, `getDemoLocation` | Separate fixture namespace/point and live-cache isolation | `tests/demo.test.ts`, `tests/demo-controls.test.tsx`, `tests/map-screen.test.tsx` |
 
 Use at most two implementation examples in the video: explained ordering and future-Cancel/source isolation. State that Codex assisted this implementation and describe only evidenced student design/review/test/code work. Do not narrate generated solutions as independently solved by either presenter. Main app: **TypeScript, React Native, Expo SDK 57, React 19.2, Expo Router**; optional inactive watcher: JavaScript/Node. AI is a development aid here, not a runtime alert interpreter.
+
+Student 1 has now confirmed the original concept/requirements, development direction, tactical redesign/map requests and review/feedback. The Git/contribution review does not establish independently student-written code or identify who performed earlier Android confirmations. Student 2's concrete tasks and the promised detailed physical-iPhone results remain to clarify before narration. See STUDENT_CONTRIBUTIONS.md.
 
 ## Revised strict assessment
 
@@ -98,7 +100,7 @@ Keep most footage on the functioning app. Split narration between the two actual
 ## Remaining recording and submission gates
 
 - Complete the core [phone checklist](IPHONE_CHECKLIST.md); a failed launch, unusable guide route or lost saved values must be repaired before filming that behavior. Optional map/GPS/notice segments need their own acceptance.
-- Fill the contribution ledger and retain the coordinator's actual permission scope if available; disclosure remains necessary.
+- Complete Student 2's contribution record and individual test attribution; Student 1's confirmed product/review role is now recorded. Retain the coordinator's actual permission scope if available; disclosure remains necessary.
 - Confirm team/district/age eligibility and registration. For two students, at least one must live or attend school in the hosting district. One entry each.
 - Final video: participant names, purpose/audience, tools/languages and functioning app, **1–3 minutes**, public YouTube/Vimeo. Written answers and requested app/source access still pending. [2026 rules](https://www.congressionalappchallenge.us/wp-content/uploads/2026/05/2026-CAC-Rules.pdf).
 - Plan to **October 26 noon EDT / 11 a.m. Central** in the rules PDF. The [registration page](https://www.congressionalappchallenge.us/students/student-registration/) shows a later time; use the earlier deadline unless the organizer clarifies. Target implementation/device acceptance October 20–21 and submit before the final day.

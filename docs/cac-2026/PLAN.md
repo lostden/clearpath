@@ -37,6 +37,6 @@
 - [x] Working branch created: `codex/cac-2026-readiness`; master preserved.
 - [x] Tasks 1–6 implemented and focused checks pass in application commit `33d9b50b9c8fab1953f28f88235b341b6adce301` (1.1.0).
 - [x] Whole-change review completed; clock-admission timers and hidden Home diagnostics repaired/rechecked. Typecheck/lint, 46 suites / 924 app tests, 37 server tests and both native JS exports pass.
-- [x] Current evidence, limitations and recording handoff saved in VIDEO_READINESS.md and IPHONE_CHECKLIST.md. Fresh browser workflow/narrow-layout checks pass; simulator launch timed out and physical acceptance remains pending.
+- [x] Current evidence, limitations and recording handoff saved in VIDEO_READINESS.md and IPHONE_CHECKLIST.md. Browser workflow/narrow-layout checks pass. Initial simulator failure was followed by a successful IPv4 retry verifying native guide flow, Apple map/fixtures and online Expo Go restart persistence; specific physical acceptance results remain pending.
 
 Physical verification may remain pending with status **READY AFTER MANUAL PHONE VERIFICATION**, exactly as authorized by the brief. Do not certify device behavior or contest compliance without evidence.

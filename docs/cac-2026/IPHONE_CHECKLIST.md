@@ -1,6 +1,6 @@
 # Physical iPhone acceptance — ClearPath 1.1.0
 
-Tested source: `33d9b50b9c8fab1953f28f88235b341b6adce301`, branch `codex/cac-2026-readiness`. **Every physical row below is pending.** Allow about 30–45 minutes. Preserve existing saved data. Record iPhone model, iOS/Expo Go version, date, source commit, pass/fail and a short failure description. Do not expose precise home coordinates, real contacts, keys or notifications in public recordings.
+Tested source: `33d9b50b9c8fab1953f28f88235b341b6adce301`, branch `codex/cac-2026-readiness`. **Every physical row below awaits specific results.** The user reports having tested and plans to provide details; no individual physical pass is recorded yet. A later Codex simulator run verified startup, the main guide workflow, Apple basemap/fixture rendering and online Expo Go restart persistence; see TESTING.md. Those are separate from physical acceptance. Allow about 30–45 minutes. Preserve existing saved data. Record iPhone model, iOS/Expo Go version, date, source commit, pass/fail and a short failure description. Do not expose precise home coordinates, real contacts, keys or notifications in public recordings.
 
 ## Start the current source
 
