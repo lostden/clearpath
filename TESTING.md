@@ -13,6 +13,7 @@ Application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, branch `codex
 | `EXPO_NO_DOTENV=1 npx --no-install expo export --platform android --platform ios --output-dir /private/tmp/clearpath-cac-native-final` | Exit 0; Android **3.6 MB**, iOS **3.3 MB**, **37 assets**. Hermes JS bundling, not native compilation. Existing NO_COLOR/FORCE_COLOR environment warnings appeared |
 | Current `getActiveAlerts` adapter, public Frisco Census point | Real NWS request completed **2026-10-13 23:59:54 UTC**, parsed zero active warnings; availability is time-specific, not a safety claim |
 | `npm audit --json` / `npm audit --json --omit=dev` | Exit 1 for remaining findings: **67 (51 high / 16 moderate)** full; **61 (45 high / 16 moderate)** omit-dev; zero critical. No dependency versions changed. See DEPENDENCY_REVIEW.md |
+| Later online `CI=1 EXPO_NO_DOTENV=1 npx --no-install expo install --check` | Exit 1; six latest SDK 57 patch recommendations. Official package diffs/decoder chain reviewed read-only; tested graph retained. See DEPENDENCY_REVIEW.md for versions, rationale and remaining maintenance |
 | `git diff --check` | Exit 0 before implementation commit |
 
 Session logs are `/private/tmp/clearpath-cac-tests-final.log`, `clearpath-cac-server-final.log`, `clearpath-cac-export-final.log` and the audit JSON named in DEPENDENCY_REVIEW.md. Temporary files are supplementary; this record preserves the results. Online Expo Doctor was not rerun in this increment; earlier 21/21 is historical. No compatibility upgrade was applied.

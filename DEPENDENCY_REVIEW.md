@@ -6,7 +6,24 @@ Read-only `npm audit --json` now reports **67 findings: 51 high, 16 moderate, ze
 
 The source-path analysis below still matters: the URL decoder is a potentially relevant Router runtime concern; several other traced paths are build/test/signing tools. `--omit=dev` is not a native bundle inventory. Suggested automatic changes include Expo 44, Router 58 and Jest 30; no compatibility-proven SDK 57 remediation was established. No forced fix/override or native upgrade was applied. Typecheck/lint, 924 app tests and both exports pass, which does not resolve security findings. Audit JSON is captured in the session's `/private/tmp/clearpath-cac-audit-final.json` and `clearpath-cac-audit-prod-final.json`; rerun for current advisory data.
 
-During the later October 13 simulator retry, Expo CLI advertised Expo 57.0.28 and five other package updates. They were not installed or established as security remediations. Current source remains on the tested dependency graph; an available update notice is not a compatibility/security verification.
+During the later October 13 simulator retry, Expo CLI advertised Expo 57.0.28 and five other package updates. They were not installed at that checkpoint. The subsequent read-only review below records the actual alignment check and patch contents.
+
+### Online SDK 57 patch review — October 13, 2026
+
+`CI=1 EXPO_NO_DOTENV=1 npx --no-install expo install --check` **exited 1**, recommending these latest SDK 57 patch versions for best compatibility. This is a current recommendation warning; do not describe the check as passing or substitute the earlier offline/historical result.
+
+| Package | Installed | Recommended |
+| --- | --- | --- |
+| `@expo/ui` | 57.0.22 | ~57.0.23 |
+| `expo` | 57.0.27 | ~57.0.28 |
+| `expo-location` | 57.0.20 | ~57.0.21 |
+| `expo-router` | 57.0.25 | ~57.0.26 |
+| `expo-splash-screen` | 57.0.9 | ~57.0.10 |
+| `jest-expo` | 57.0.5 | ~57.0.6 |
+
+Official published package contents were compared with read-only `npm diff --diff=<installed> --diff=<recommended>` calls, also tracing Expo's CLI/modules-core dependencies. Router's package has no JavaScript changes; registry metadata still selects `query-string@^7.1.3` → `decode-uri-component@^0.2.2`, so this Router patch does not establish remediation of that advisory. Location/Splash changelogs state no user-facing changes. CLI fixes TypeScript config-directory/path resolution; jest-expo corrects its Babel caller identity. Expo UI/modules-core include hosted-view/layout/keyboard and UI control fixes/features. Searches found no direct `@expo/ui`, `RNHostView` or `matchContents` use in ClearPath source/tests or its headless Router UI path. These observations do not prove the patch set is risk-free or irrelevant to every indirect path.
+
+**Decision:** retain the already tested 1.1.0 dependency graph for this recording candidate. No current ClearPath failure or fix for the five audit roots was established by this patch review; updating would require a new regression/native-verification increment. The latest-patch recommendation remains an explicit maintenance item, not a resolved check. No package was installed, no lockfile changed and no claim of current package freshness is made. Future deliberate updates should use Expo's installer and rerun the full checks and relevant native acceptance. [Expo dependency alignment guidance](https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/).
 
 ## Historical October 10 review
 
