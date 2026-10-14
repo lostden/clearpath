@@ -1,5 +1,21 @@
 # Milestone ledger
 
+## Current status — October 13, 2026 / source 1.1.0
+
+Tested application commit: `33d9b50b9c8fab1953f28f88235b341b6adce301`. The user authorized AI-assisted implementation of the formerly blank module. Historical student-boundary language below describes the earlier plan, not the current source.
+
+| Milestone | Current evidence and remaining work |
+| --- | --- |
+| 1–4 | Existing foundation retained; future NWS issuance/cancellation and rollback freshness repaired with regressions |
+| 5 | Explainable pure engine implemented/integrated and reviewed; 41 engine tests plus Home cases. AI-assisted, not independently student-written |
+| 6 | Existing official layers retained; Frisco demo/preset and guide navigation added. Native iPhone maps/permissions still need acceptance |
+| 7 | Targeted disclosures, visible operational diagnostics and source attribution implemented; automated storage/failure checks pass. Physical restart, movement and assistive-technology checks remain |
+| 8 | 46 suites / 924 app tests, 37 server tests, lint/typecheck and iOS/Android JS exports pass; browser workflow verified. **READY AFTER MANUAL PHONE VERIFICATION** for recording, not final submission certification |
+
+Finish physical checks by October 20–21, then record and submit with a buffer. Current handoff and remaining authorship/submission evidence: [VIDEO_READINESS.md](docs/cac-2026/VIDEO_READINESS.md). No new native binary, deployment, remote push or final script was produced.
+
+## Historical October 9–11 checkpoint and schedule
+
 The development session built support increments for milestones 1–4. On October 10 the user explicitly authorized the tactical redesign and expanded official map coverage, including supporting work from milestone 6. The original student implementation at milestone 5 remains deliberately blank. Supporting cache, demo, or map behavior does not mark later milestones complete. Validation results are recorded in TESTING.md.
 
 | Milestone | Objective and dependencies | Status at the student checkpoint |

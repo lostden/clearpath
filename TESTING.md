@@ -1,5 +1,40 @@
 # ClearPath verification record
 
+## Current verification — October 13, 2026 / source 1.1.0
+
+Application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, branch `codex/cac-2026-readiness`, starting from clean `11520e30f4448da0585e8bfc3c79f1e70da54477`. This source was not packaged into a new native binary. The older Android evidence below applies only to its named builds.
+
+| Executed check | Result |
+| --- | --- |
+| `npm run typecheck` | Exit 0 |
+| `EXPO_NO_DOTENV=1 npm run lint -- --no-cache` | Exit 0 |
+| `npm test -- --cacheDirectory=/private/tmp/clearpath-cac-jest` | Exit 0; **46 suites / 924 tests**, no Jest console warnings |
+| `node --test server/watcher.test.mjs` | Exit 0; **37/37**, mocked external services and local loopback HTTP; no live push/enrollment |
+| `EXPO_NO_DOTENV=1 npx --no-install expo export --platform android --platform ios --output-dir /private/tmp/clearpath-cac-native-final` | Exit 0; Android **3.6 MB**, iOS **3.3 MB**, **37 assets**. Hermes JS bundling, not native compilation. Existing NO_COLOR/FORCE_COLOR environment warnings appeared |
+| Current `getActiveAlerts` adapter, public Frisco Census point | Real NWS request completed **2026-10-13 23:59:54 UTC**, parsed zero active warnings; availability is time-specific, not a safety claim |
+| `npm audit --json` / `npm audit --json --omit=dev` | Exit 1 for remaining findings: **67 (51 high / 16 moderate)** full; **61 (45 high / 16 moderate)** omit-dev; zero critical. No dependency versions changed. See DEPENDENCY_REVIEW.md |
+| `git diff --check` | Exit 0 before implementation commit |
+
+Session logs are `/private/tmp/clearpath-cac-tests-final.log`, `clearpath-cac-server-final.log`, `clearpath-cac-export-final.log` and the audit JSON named in DEPENDENCY_REVIEW.md. Temporary files are supplementary; this record preserves the results. Online Expo Doctor was not rerun in this increment; earlier 21/21 is historical. No compatibility upgrade was applied.
+
+New regressions cover future-issued Alert/Update/Cancel before replacement, malformed/time-zone/exact-skew boundaries, future onset, cached cancellation isolation and point/regional clock rollback. Manual-feed rollback recovery is timed without another fetch or timestamp rewrite. The pure priority suite has **41 tests** covering frozen/shuffled inputs, all classifications/unknowns, conflicting copies, lifecycle/ties, source isolation and provenance. Home tests exercise real ordering/instructions/details. Guide tests exercise bounded mapping, unknown fallback, repeated same-guide navigation and retained drafts. Frisco fixtures/preset/resources, old scenario retention, live/demo point/cache isolation and absence of the Hunt river in Frisco are covered. A contract test obtains the **real watcher JSON status** through its implementation and validates it on the mobile side.
+
+The timestamp regressions were observed failing before repair (15 initial failures). Independent review subsequently found a missing clock-admission timer; point and regional manual-mode recovery cases now pass. Review also reproduced Home hiding GPS/preference failures inside collapsed settings. The added real-Home regression failed before repair and passes after `FeedSettingsStatus` moved diagnostics outside controls. Final focused Home run: **15/15**; reviewer rechecked and found no remaining material issue. These repairs were included in the full 924-test run.
+
+### Current shared UI runtime evidence
+
+A fresh localhost browser session at **390 × 844** completed **Explore simulated demo → North Texas flood → Read simulated warning → priority explanation → Read Flooding guide**. Simulation provenance, original fixture instructions, source/review date and local links remained visible. Map showed Frisco's fictional warnings and omitted Hunt's river fixture. At **320 × 568**, Home and Prepare DOM measurements reported width 320 with zero overflowing elements; Map page width also matched 320. Screenshots inspected the tactical layout and persistent footer. The viewport was reset and the temporary tab closed. This verifies shared web behavior, not native Apple Maps, native gestures, VoiceOver or native safe areas.
+
+### Current iOS attempt and limits
+
+The available iPhone 16 Pro / iOS 18.6 simulator was booted and a localhost Expo session on port 8083 attempted. Expo downloaded/installed its official client, but opening `exp://127.0.0.1:8083` timed out (simctl code 60); CLI exited 1. The app UI was not accepted or tested. A subsequent Simulator UI inspection stalled and supplied no ClearPath screen evidence. The simulator was shut down afterward, with no device data erased; the pre-existing user Metro on 8081 was left alone. A paired physical iPhone was unavailable to the tools.
+
+**No physical iPhone tests passed in this session.** Current phone startup, Apple Maps/overlays, location and local-notice permissions/delivery, keyboard/safe areas, background/resume, current-version restart persistence, installed-app offline cold start and assistive technology remain unverified. Follow [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md); record actual device/version/date and pass/fail rather than treating exports or mocks as acceptance.
+
+## Historical October 9–11 evidence
+
+Eight historical `artifacts/*-preview.jpg` links below refer to earlier local, ignored captures that are absent from this Mac checkout. Their dated records are preserved, but those image files could not be re-inspected here. Current browser captures are saved with the CAC handoff.
+
 This record distinguishes executed checks from pending native verification. Android Expo Go startup and the map-loading failure UI were confirmed on a physical phone on October 10, 2026. The current home screen was confirmed after restoring USB transport on October 11. Standalone versions 2 and 4 subsequently installed and launched, with user-confirmed Google map tiles. On version 4 the user also confirmed complete PREPARE and GET HELP / 911 labels, demo toggles/details and live feed displays/details. Version 5 installed/launched successfully and the user confirmed its actual Home test notification in Android's notification shade; both version 5 GPS controls remained waiting. Version 6's GPS repair is downloaded, statically inspected, selected by latest-APK metadata and installed/launched successfully, with user-confirmed single-point GPS, two-minute screen-awake foreground continuity, app-local test notification and Google tiles. Longer-duration following, physical movement/position accuracy, real NWS-event/cloud notification delivery, broader overlay geometry/native accessibility checks, offline cold start, iOS startup, and native Maestro execution remain pending.
 
 ## Android setup — October 11, 2026

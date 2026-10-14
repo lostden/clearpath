@@ -1,5 +1,15 @@
 # Demonstration
 
+## Current recording checkpoint — source 1.1.0, October 13
+
+**READY AFTER MANUAL PHONE VERIFICATION.** Use tested application commit `33d9b50b9c8fab1953f28f88235b341b6adce301`, not the older 1.0.0 Android APK. The final script is intentionally deferred. Follow [VIDEO_READINESS.md](docs/cac-2026/VIDEO_READINESS.md) and [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md).
+
+Preferred short workflow: **Home → Explore simulated demo → North Texas flood → Read simulated warning → Why this warning is shown here → Read Flooding guide → KIT / FAMILY PLAN / LOCAL LINKS**. Keep **SIMULATED DEMO** visible. The two Frisco-area warnings, areas and fixed July 4, 2025 clock are invented fixtures, not historical government records. The Frisco map deliberately omits the old Hunt river measurement. Existing Flood, Tornado, No alerts and Outage scenarios remain available.
+
+The explained priority engine is now implemented and AI-assisted; show source classifications and the future-cancellation regression as engineering examples, with honest contribution attribution. Do not claim student-independent implementation, adoption, predictive risk, safe routing or closed-app/cloud alerts. Browser workflow/layout checks passed; native iPhone, permission and installed-app offline-restart evidence remains pending. The earlier walkthrough below is historical and is superseded by the current handoff.
+
+## Historical October 9–11 demonstration plan
+
 The demonstration must show a functioning native app on a phone. Use clearly simulated scenarios when real warnings are absent; never imply that fictional events are live. The [2026 competition rules](https://www.congressionalappchallenge.us/wp-content/uploads/2026/05/2026-CAC-Rules.pdf) request a 1–3 minute demonstration video with participant names, app name/purpose/audience, tools, and functionality. Keep the final video within three minutes.
 
 ## Preparation

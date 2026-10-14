@@ -1,0 +1,37 @@
+# Physical iPhone acceptance — ClearPath 1.1.0
+
+Tested source: `33d9b50b9c8fab1953f28f88235b341b6adce301`, branch `codex/cac-2026-readiness`. **Every physical row below is pending.** Allow about 30–45 minutes. Preserve existing saved data. Record iPhone model, iOS/Expo Go version, date, source commit, pass/fail and a short failure description. Do not expose precise home coordinates, real contacts, keys or notifications in public recordings.
+
+## Start the current source
+
+1. On the Mac, open this checkout and confirm `git branch --show-current` and `git log -1 --oneline`. The tested application commit above may have later documentation-only commits.
+2. Run `npm start -- --lan`. If Metro already owns the port, reuse its current QR code for this checkout instead of starting a conflicting server. Keep the Mac awake and terminal open.
+3. Put iPhone and Mac on the same reachable Wi-Fi. Use an Expo Go compatible with SDK 57. Scan the terminal QR with Camera, open Expo Go, and allow local-network access when requested. [Expo development workflow](https://docs.expo.dev/get-started/start-developing/).
+4. Wait for ClearPath. Pass only when Home, Map and Prepare render without a red error or indefinite splash. If launch fails, retain the exact visible message and Metro error, plus iOS/Expo Go versions. The failed simulator attempt is not proof of a phone defect.
+
+## Execute and record
+
+| Test | Exact actions and pass condition | Result |
+| --- | --- | --- |
+| Startup/navigation | Tap HOME → MAP → PREPARE → HOME. Scroll each. Full tab labels, GET HELP / 911 and source/demo strip fit above the home indicator and below the notch. | Pending |
+| Frisco manual point | Home location row → Frisco, Texas · Census reference point. Home returns with that label, correct point and live/cached/unavailable source. A zero-alert response is valid; it must never say the whole city is safe. | Pending |
+| Main recording workflow | Home → Explore simulated demo. Confirm North Texas flood, Frisco training point and persistent SIMULATED DEMO. Read simulated warning → Why this warning is shown here. Confirm urgency/severity/certainty and simulation caveat. Read Flooding guide opens expanded Flooding under Prepare; source/date remain accessible. | Pending |
+| All warnings / repeated guide | Return Home; open additional Severe Thunderstorm Warning and close it. Reopen flood detail → guide twice, changing Prepare section between requests. Both requests reopen Flooding; no warning disappears because of rank. | Pending |
+| Native map | In North Texas demo tap MAP. Apple Maps tiles and both fictional areas/selected point render. Pan, zoom, select a warning and dismiss details using Close. No Hunt/Guadalupe gauge appears in this scenario. If Apple tiles fail, record the failure and omit native-map footage pending diagnosis. The explicit tile-failure fallback is exposed for Google Maps, not this Apple Maps path. | Pending |
+| Live layers | Exit demo → MAP. Inspect separate weather, earthquake and river labels/times; enable wildfire only if needed. Layer switches/record details work without claiming personal applicability, flood depth, a current fire edge or complete coverage. Missing readings stay unavailable. | Pending |
+| Local sources | PREPARE → LOCAL LINKS → Open City of Frisco emergency preparedness. Official page opens; return to app. Check NWS Fort Worth/Dallas, TDEM and Collin County buttons; do not enroll or submit forms. | Pending |
+| Keyboard/drafts | FAMILY PLAN: enter a harmless meeting place. CONTACTS → Add emergency contact: use fictional Demo Contact / 202-555-0147. Reach Save/Cancel above the keyboard; switch sections and return before saving to check draft retention. No clipped labels or trapped keyboard. | Pending |
+| Persistence after restart | KIT: check one item; FAMILY PLAN: enter Demo meeting point; save fictional contact. Wait for SAVED ON THIS PHONE. Close/reopen the project with Metro reachable. Verify values and selected live point restore; saved GPS is a prior reading, not a new fix. | Pending |
+| Foreground GPS | Exit demo. Home → Choose location → Use foreground GPS. With permission granted, return with GPS point / single reading. On denial/services-off, clear feedback and manual Frisco/coordinate choice stay usable. Cancel a pending request; late results must not change the point. Restore permissions/settings after testing. | Pending |
+| Local notification | In live mode with automatic updates: Feed settings and GPS alerts → TEST NOTIFICATION. Grant OS permission if desired. Only TEST / NO EMERGENCY should display. On denial, an explicit error remains visible even with settings closed. A successful test does not verify real alert delivery or closed-app push. | Pending |
+| GPS follow/resume | With permission and automatic feeds, ENABLE GPS + ALERTS. Confirm ON / GPS FOLLOW / APP OPEN after a fresh fix. Keep awake two minutes, background and return; no crash and source/status remain accurate. Manual Frisco selection stops following. Demo/manual feeds pause it. Close settings and confirm any error/paused diagnostic remains visible. | Pending |
+| Offline loaded session | After a successful live fetch, enable airplane mode with Wi-Fi off. Existing copy becomes cached/unverified without a new retrieval time. Prepare guides, kit and saved plan/contact remain usable in the loaded session. External links/tiles can fail. Restore connectivity and refresh when allowed. | Pending |
+| Independent offline cold start | **Requires a current installed binary with embedded JS**, not this Expo Go session or the older Android APK. With internet/Metro absent, force-close/reopen and verify guides plus saved values. Until performed, omit the cold-start claim from video/submission. No paid build is authorized by this checklist. | Pending |
+| Accessibility/layout | Test larger text and VoiceOver: tabs, disclosure expanded/collapsed state, warning list, Close, kit checkboxes and input labels read correctly. Buttons remain reachable without overlap. Test portrait and brief rotation/resume. Restore preferences afterward. | Pending |
+| Emergency confirmation | Tap GET HELP / 911, inspect the confirmation and **Cancel**. Do not place a test call. Contact call/removal controls also require deliberate confirmation; use only fictional test records. | Pending |
+
+## Recording gate
+
+Phone startup, main warning→guide workflow, layout/modal dismissal and the persistence behavior shown in footage must pass. Apple Maps, GPS or notification segments require their own passing rows if included. If independent offline startup remains untested, demonstrate bundled guidance in an already loaded offline session and say exactly that. Do not show a failed native feature as working. Report reproducible failures before recording; no additional feature development is required solely to raise the feature count.
+
+Evidence template: `date | device/iOS/client | source commit | row | pass/fail | observed result | private evidence reference`. Add results to TESTING.md and PROGRESS.md without replacing the earlier Android history.

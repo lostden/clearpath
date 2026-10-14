@@ -1,5 +1,13 @@
 # Dependency review — October 10, 2026
 
+## Current recheck — October 13, 2026
+
+Read-only `npm audit --json` now reports **67 findings: 51 high, 16 moderate, zero critical**; `npm audit --json --omit=dev` reports **61: 45 high, 16 moderate**. Both exit 1 because findings remain. The full count differs from the earlier 65; the five underlying advisory packages are still `braces`, `node-forge`, `decode-uri-component`, `sprintf-js` and `uuid`. No dependency versions changed in 1.1.0; the lockfile diff changes only the root app version. Do not attribute count movement to a package change without evidence.
+
+The source-path analysis below still matters: the URL decoder is a potentially relevant Router runtime concern; several other traced paths are build/test/signing tools. `--omit=dev` is not a native bundle inventory. Suggested automatic changes include Expo 44, Router 58 and Jest 30; no compatibility-proven SDK 57 remediation was established. No forced fix/override or native upgrade was applied. Typecheck/lint, 924 app tests and both exports pass, which does not resolve security findings. Audit JSON is captured in the session's `/private/tmp/clearpath-cac-audit-final.json` and `clearpath-cac-audit-prod-final.json`; rerun for current advisory data.
+
+## Historical October 10 review
+
 This is a scoped review of the SDK 57 dependency graph after the compatible `react-native-svg@15.15.4` addition. It is not a complete security assessment or a native-binary software bill of materials. No package, React version, install-script policy, or lockfile was changed by this review.
 
 ## Executed audit and comparison

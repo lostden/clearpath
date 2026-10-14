@@ -1,5 +1,22 @@
 # Student contributions
 
+## Current attribution — October 13, 2026
+
+Version 1.1.0's priority engine is implemented with Codex assistance at the user's explicit authorization. `src/student/` is a historical path, not evidence of independent student code. AI-generated work includes the timestamp fix/clock timers, ordering and explanations, guide routing, Frisco resources/demo, UI disclosures/diagnostics, cloud contract correction and their tests. See AI_USAGE.md and tested commit `33d9b50b9c8fab1953f28f88235b341b6adce301`.
+
+The user reports coordinator permission for AI-assisted implementation; no written organizer evidence is stored here and no blanket waiver is assumed. Student product requirements and historical feedback are documented. Each person's substantial coding, technical understanding and testing contribution still needs an evidence-backed entry. This is an evidence gap, not a claim that the students lack ability or did no work. Do not describe generated fixes as challenges the students independently solved.
+
+| Person | Actual contribution / files or commit | Decision and explanation | Tests personally written/run | AI assistance |
+| --- | --- | --- | --- | --- |
+| Student 1 — to identify | Not yet documented | To supply from actual work | To supply | Disclose exact scope |
+| Student 2 — to identify | Not yet documented | To supply from actual work | To supply | Disclose exact scope |
+
+Before narration, each student should be able to trace one real source record through validation, lifecycle, display ordering and UI; explain cached versus live and why future cancellation is rejected; and honestly state what they personally changed or tested. Understanding a generated implementation does not change its authorship.
+
+## Historical original student boundary — October 9–11
+
+The exercise and pending ledger below are retained verbatim as earlier context. They do not describe the now-implemented engine or require pretending that it was student-written.
+
 This ledger distinguishes the student's project vision from original code and AI-generated support. The student supplied ClearPath's purpose, Texas flooding focus, product constraints, and requested contribution boundary. No independently student-written algorithm has been supplied or verified at this checkpoint. Do not claim otherwise in the submission.
 
 ## Authorship ledger

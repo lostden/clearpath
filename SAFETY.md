@@ -18,6 +18,10 @@ An observation detail opened from an unverified copy retains that provenance aft
 
 Show agency classifications and original instructions without rewriting them into unverified personalized advice. Display ordering organizes text; it is not a danger probability. Offer every applicable warning, not only the first card. If normalization rejects malformed records, that limitation must not silently become an assurance of complete coverage.
 
+Version 1.1.0 explicitly admits at most **60 seconds of future issuance skew**. An implausibly future Actual/Public Alert, Update or Cancel makes a fresh collection unverifiable before it can replace current warnings. Cached display applies the same admission rule before reference resolution. Future onset is separate and allowed. Negative snapshot age is unverified; clock recovery does not refresh a stored timestamp. This is a client validation policy, not proof of an accurate phone clock.
+
+Home explains its urgency/severity/certainty display convention, including unknown classifications, stable ties and cached/demo provenance. It does not filter by predicted physical danger. Regional records cannot establish point applicability. Guide shortcuts open existing general preparation after the original instructions; unsupported events open general Prepare. Frisco's verified Census reference coordinate represents only a selected point. The new North Texas scenario is invented, with a frozen fixture clock and persistent simulation labels.
+
 ## Geography, rivers, and routes
 
 An official warning polygon describes its reported coverage, not the extent of every physical hazard. Draw only supplied/verified geometry. A missing polygon must remain explicit. A selected city's center is a point, not coverage of the whole city.

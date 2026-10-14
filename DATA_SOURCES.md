@@ -1,6 +1,12 @@
 # Data sources
 
-Sources reviewed October 9–10, 2026. The October 10 regional weather, earthquake, and river integrations were explicitly requested by the user. A documentation review is not evidence that a mobile integration succeeded. Executed requests and tests belong in TESTING.md; successful native tiles/overlays remain unverified.
+Feed/source reviews from October 9–10 are retained below. October 13 adds the Frisco reference/resources and timestamp policy. A documentation review is not evidence that a mobile integration succeeded. Executed requests, historical Android confirmations and current native limits belong in TESTING.md.
+
+## Frisco preset and local resources — checked October 13, 2026
+
+Frisco uses the Census TIGERweb ACS25 incorporated-place reference point: GEOID **4827684**, `INTPTLAT=+33.1554240`, `INTPTLON=-096.8225927`. [Official Census Texas table](https://tigerweb.geo.census.gov/tigerwebmain/Files/acs26/tigerweb_acs26_incplace_2025_acs25_tx.html). This is a public internal reference point, not City Hall, a precise resident location or citywide warning coverage. Existing Kerrville/Austin/San Antonio/Houston/Dallas/Galveston presets retain their approximate center coordinates and valid point-only behavior; they were not recertified as Census points in this increment.
+
+Prepare → **LOCAL LINKS** exposes [Frisco Emergency Preparedness](https://www.friscotexas.gov/324/Emergency-Preparedness), [NWS Fort Worth/Dallas](https://www.weather.gov/fwd/), [TDEM preparedness](https://tdem.texas.gov/prepare) and [Collin County Emergency Management](https://www.collincountytx.gov/Services/Engineering/Fire-Marshal/Emergency-Management). These are references, not live emergency status or automatic enrollment. Frisco also extends into Denton County; follow the authority for the user's address. Source metadata lives in `src/data/localResources.ts`. Link-check date does not imply a new review of all bundled guidance; its existing **2026-10-09** date is retained.
 
 ## Feed update control
 
@@ -14,7 +20,7 @@ The boolean preference is stored locally. Its read completes before feed request
 
 Use `https://api.weather.gov/alerts/active?point={latitude},{longitude}` with a unique User-Agent and `Accept: application/geo+json`. The API is free, cache-oriented, and subject to limits. [API service](https://www.weather.gov/documentation/services-web-api).
 
-Home uses that selected-point query. Map independently uses `alerts/active?area=TX` for Texas or `alerts/active?status=actual` for U.S. regional coverage. A regional warning may not apply to the selected point; it cannot replace Home's point-query result or establish the student's future geographic relevance rules. Only supplied polygons are drawn, and warnings without geometry remain in the regional list. [NWS OpenAPI](https://api.weather.gov/openapi.json).
+Home uses that selected-point query. Map independently uses `alerts/active?area=TX` for Texas or `alerts/active?status=actual` for U.S. coverage. A regional record cannot replace Home's point response or supply point-priority evidence. Only supplied polygons are drawn; records without geometry remain listed. [NWS OpenAPI](https://api.weather.gov/openapi.json).
 
 NWS recommends alert requests no more often than every 30 seconds. ClearPath refreshes in the foreground every minute and gates manual requests for the same point for at least 30 seconds; Retry-After can extend the delay. Network/timeout/429/5xx failures receive at most two retries with minimum 30/60-second backoff. Requests have a timeout and cancellation. A response becomes cached after a failed verification, loss of connectivity, or 90 seconds without a new successful response. These policies do not guarantee alert-delivery latency. [Alerts service](https://www.weather.gov/documentation/services-web-alerts).
 
@@ -23,6 +29,8 @@ Map's regional observer also shares a 30-second request gate across Texas/U.S. c
 Retain identity, agency, event, headline, description, instructions, classifications, sent/onset/expiration times, source link, and supplied geometry. Missing instructions mean no specific instruction was supplied; do not fill the gap with an invented imperative. Some alerts use zones/counties instead of polygons, so missing polygon geometry is not absence of an alert. [NWS geolocation guide](https://www.weather.gov/media/documentation/docs/NWS_Geolocation.pdf).
 
 The successful retrieval time belongs to the client snapshot; the alert's issuance/expiration times belong to its source. Expiration must be evaluated again as time passes and after restart. A failed refresh cannot turn a previous response into current verified data. Response parsing cannot guarantee complete coverage of every local emergency; NWS is not a universal wildfire/evacuation feed.
+
+Version 1.1.0 rejects a fresh collection containing Actual/Public issuance over 60 seconds ahead of the supplied clock before resolving updates/cancellations. Future onset is allowed separately. Cached display applies admission before reference resolution, and a negative retrieval age cannot be live. This app policy is tested at exact boundaries and after clock rollback; it is not an NWS guarantee about a user's clock.
 
 ### Optional linked zone outlines
 
@@ -69,7 +77,7 @@ USGS continuous sensors often sample at 15-minute intervals, but collection/tran
 
 A gauge measures a station, not conditions at the user's precise point. Gage height is relative to the station's reference, not floodwater depth at a road/home. Flood-stage labels require verified station-specific official thresholds and datum interpretation; no flood-stage or trend inference is implemented. Streamflow does not establish passable roads or evacuation-route safety.
 
-Both USGS layers distinguish source observation/event time, source feed-generation time where supplied, and successful app retrieval time. Retained data becomes cached after errors, lost connectivity, or the app freshness boundary; retrieval time is never advanced by a failed request. A detail opened from cached/unavailable data cannot gain a verified label solely from reconnecting. A retained live selection becomes cached if its source, copy times or selected record no longer match the current layer. Earthquakes use a 90-second snapshot/feed-generation boundary and rivers a ten-minute snapshot boundary. Those source states describe verification freshness, not personalized hazard severity. The original milestone 5 student engine remains unimplemented.
+Both USGS layers distinguish source observation/event time, feed-generation time where supplied and app retrieval time. Retained data becomes cached after errors, lost connectivity or aging; failed requests never advance timestamps. Cached details cannot become verified solely on reconnect. Live selections become cached if source/copy/record no longer match. Earthquakes use a 90-second snapshot/feed-generation boundary and rivers ten minutes. These states describe verification freshness, not personalized hazard severity. The 1.1.0 ordering engine applies only to Home's NWS warnings.
 
 ## Roads and navigation
 
