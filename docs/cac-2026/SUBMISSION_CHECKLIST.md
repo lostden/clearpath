@@ -8,6 +8,8 @@ Confirm middle/high-school enrollment on October 26, at least half the team livi
 
 The registration page instead lists 9 p.m. ET. Plan to the earlier PDF time and submit with a buffer; do not depend on an extension. [Official registration page](https://www.congressionalappchallenge.us/students/student-registration/). Internal target: finished cut and portal review October 22–23, submission by October 24 if possible.
 
+**Hosting district verified October 14:** the official 2026 participating list marks **TX04 (Pat Fallon)** as participating. This verifies the district is hosting; it does not verify either student's residence/school eligibility or team registration. [Official participating districts](https://www.congressionalappchallenge.us/students/participating-districts/).
+
 ## Current audit
 
 | Item | Evidence / present status | Remaining action |
@@ -15,10 +17,10 @@ The registration page instead lists 9 p.m. ET. Plan to the earlier PDF time and 
 | Application and functioning workflow | 924 app tests / 37 watcher tests, typecheck/lint, JS exports; simulator evidence; four core phone checks reported PASS | Freeze source for footage; repair any actual new failure |
 | Current phone tests | Shiven is now identified as operator. Startup/tabs, warning→guide, map pan/zoom and saved preparation reopening passed by user report | Model and exact client/version metadata still incomplete; rehearse additional scene details |
 | Team names / reported roles | Manas and Shiven supplied in that order; Shiven confirmed phone tester. Concept/product/review, AI-assisted baseline features and reported learning areas are recorded in STUDENT_CONTRIBUTIONS.md | Confirm name-to-role mapping and full names as required by the portal; do not publish private identity fields in Git |
-| District / student eligibility | Target TX-04 supplied by user; individual eligibility has not been verified here | Use the official portal/district lookup with your own residence/school information; confirm hosting district and enrollment |
+| District / student eligibility | TX-04 hosting verified against the official 2026 list October 14; individual eligibility has not been verified here | Use the official portal/district lookup with your own residence/school information; confirm team district requirement and enrollment |
 | Registration / team profile | No verified registration or invitation completion | Each student completes required personal steps; verify both members are attached to the same team entry |
 | AI scope and personal understanding | Extensive Codex implementation/tests documented; user reports coordinator permission | Retain actual permission/scope privately if available. Each presenter must explain their real work and the implementation; do not certify an exception or invent student code |
-| Narration / storyboard | Draft package prepared from repository and user reports | Both students review their own claims and rehearse aloud |
+| Narration / storyboard | Draft package prepared from repository and user reports; user confirms it has not been rehearsed yet | Both students review their own claims and rehearse aloud with a stopwatch |
 | Finished video / measured duration | No finished or reviewed export exists | Film, edit and inspect actual 1080p file; target 2:40 |
 | Public access / URL | No uploaded film or verified public link | Human publishes after review, then checks signed out on another device |
 | Written application answers | Evidence-based drafts below, including the students' reported learning areas | Students revise in their own words, add a real example if available and match actual portal fields/limits |
