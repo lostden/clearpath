@@ -1,6 +1,6 @@
 # CAC 2026 checkpoint
 
-Updated October 13, 2026. Branch **`codex/cac-2026-readiness`**. Tested application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, source **1.1.0**; starting master commit `11520e30f4448da0585e8bfc3c79f1e70da54477` preserved. Documentation-only handoff changes follow the application commit; resolve checkout HEAD with `git log -1 --oneline`.
+Updated October 14, 2026. Branch **`codex/cac-2026-readiness`**. Tested application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, source **1.1.0**; starting master commit `11520e30f4448da0585e8bfc3c79f1e70da54477` preserved. Documentation-only handoff changes follow the application commit; resolve checkout HEAD with `git log -1 --oneline`.
 
 ## Authorization and status
 
@@ -28,13 +28,13 @@ User authorized ordinary implementation, tests, documentation and local commits,
 
 ## Unverified / limitations
 
-- Initial simulator launch failed; later retry isolated IPv6 localhost binding versus IPv4 Expo Go URL. A process-local `NODE_OPTIONS=--dns-result-order=ipv4first` test-server restart corrected transport and allowed the native checks above. Temporary server stopped and simulator shut down without erasure; user Metro 8081 left alone. Physical iPhone remains unavailable to tools. The user reports testing and will provide details, so **no individual physical pass is recorded yet**.
+- Initial simulator launch failed; later retry isolated IPv6 localhost binding versus IPv4 Expo Go URL. A process-local `NODE_OPTIONS=--dns-result-order=ipv4first` test-server restart corrected transport and allowed the native checks above. Temporary server stopped and simulator shut down without erasure; user Metro 8081 left alone. Subsequent physical-device access reached iPhone Mirroring, but connection repeatedly reported **iPhone in Use**, then timed out; the phone must be locked before control is available. Existing Metro 8081 was separately confirmed running from this checkout via its status endpoint. The user received four core manual checks (startup, warning→guide, map, saved-data restart); **no individual physical pass is recorded yet**.
 - Physical iPhone maps/permissions/GPS/local notification, background/resume, keyboard/safe areas/VoiceOver, current-version persistence and installed-app offline cold restart need recorded acceptance. Simulator map gestures and full software-keyboard behavior also remain unverified. Existing Android version-code-6 APK is 1.0.0 and lacks this increment.
 - Real NWS-event delivery, closed-app monitoring/cloud push, integrated road closures, shelter occupancy, evacuation/safe-route prediction remain absent or unverified. Regional layers use RAM only.
 - Student 1 confirms concept, requirements, product/technical direction, redesign/map requests and implementation review/feedback. Git review through `e0bce45` does not establish independently student-written code; configured author labels on Codex-executed commits are not proof. Student 2's specific work and who performed earlier Android tests remain unknown. See STUDENT_CONTRIBUTIONS.md. Local feedback, coordinator permission scope, eligibility/registration, final video and submission remain evidence/user work.
 
 ## Next three actions
 
-1. Obtain the promised physical iPhone results for current 1.1.0: device/iOS/client/date, individual pass/fail and remaining checklist rows. Record them in TESTING.md; fix any reproducible core-workflow defect before recording.
+1. Resume physical iPhone acceptance when the user locks the phone for Mirroring or supplies results from the four core manual checks. Capture device/iOS/client/date, individual pass/fail and remaining checklist rows for current 1.1.0. Record results in TESTING.md; fix any reproducible core-workflow defect before recording.
 2. Complete Student 2's specific contributions and individual test attribution; retain coordinator permission evidence if available. Student 1's confirmed product/review role is recorded. A small observed family/student usability session remains useful if time permits.
 3. After phone acceptance, choose footage from VIDEO_READINESS.md, then prepare the final script/recording plan with truthful roles. Target device acceptance October 20–21; submit before **October 26 noon EDT / 11 a.m. Central**, the earlier rules-PDF time despite later registration-page wording.
