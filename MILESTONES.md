@@ -12,7 +12,7 @@ Tested application commit: `33d9b50b9c8fab1953f28f88235b341b6adce301`. The user 
 | 7 | Targeted disclosures, visible operational diagnostics and source attribution implemented; automated storage/failure checks pass. User reports kit/meeting/contact restoration after closing/reopening Expo Go with Metro available. Independent offline cold start, movement and assistive-technology checks remain |
 | 8 | 46 suites / 924 app tests, 37 server tests, lint/typecheck and iOS/Android JS exports pass; browser and limited iOS simulator checks verified. Four core physical iPhone passes reported October 14. **READY TO RECORD accepted core app workflows**, with incomplete device metadata and remaining contribution/video/submission work |
 
-Finish physical checks by October 20–21, then record and submit with a buffer. Current handoff and remaining authorship/submission evidence: [VIDEO_READINESS.md](docs/cac-2026/VIDEO_READINESS.md). No new native binary, deployment, remote push or final script was produced.
+After the user's video-stage delegation, the Manas/Shiven script, storyboard/filming plan and submission checklist/draft answers are prepared. Shiven's four core phone tests are attributed; additional filmed details need rehearsal. See [VIDEO_PRODUCTION.md](docs/cac-2026/VIDEO_PRODUCTION.md) and the [submission audit](docs/cac-2026/SUBMISSION_CHECKLIST.md). Actual film/export, public access, eligibility/registration and submission remain unverified. No new native binary, deployment or remote push was produced.
 
 ## Historical October 9–11 checkpoint and schedule
 

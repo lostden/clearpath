@@ -1,6 +1,6 @@
 # ClearPath video-readiness handoff
 
-**Status: READY TO RECORD the accepted core app workflows.** Updated October 14, 2026 after the user's four physical-phone passes. Device/client metadata remain incomplete; additional feature checks and contribution limits remain below. This is an implementation/recording checkpoint, not certification that the submission or video is complete. No final narration/script has been written.
+**Status: READY TO RECORD the accepted core app workflows.** Updated October 14, 2026 after Shiven's four reported physical-phone passes and the user's delegation of video-stage ordering. The [two-person script](VIDEO_SCRIPT.md), [exact storyboard/filming plan](VIDEO_PRODUCTION.md) and [submission checklist/draft answers](SUBMISSION_CHECKLIST.md) are now prepared. Device/client metadata remain incomplete; additional feature checks and contribution limits remain below. Actual footage, rehearsal/export duration, public access and submission have not been verified.
 
 ## Exact source and evidence
 
@@ -8,7 +8,7 @@
 - Tested application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, branch **`codex/cac-2026-readiness`**. Later documentation-only commits may follow; use `git log -1 --oneline` for the checkout HEAD.
 - **924 app tests / 46 suites**, **37 watcher tests**, typecheck/lint and Android/iOS Hermes exports passed. Current browser workflow passed at mobile widths. Details and failures: [TESTING.md](../../TESTING.md).
 - No new native binary. The retained Android version-code-6 APK is **1.0.0**, built from `84aedce302f2adaf91dc48b4354b230d81ce4e4e`; its October 11 phone confirmations do not verify 1.1.0.
-- The first simulator launch timed out; a later IPv4 transport retry rendered ClearPath in Expo Go 57.0.9 / iOS 18.6. Main guide navigation, Apple basemap/fixture rendering and saved preparation after online Expo Go process restart passed. On October 14 the user separately reported **PASS** for physical startup/tabs, North Texas warning→Flooding guide, map tiles/two fictional areas/zoom/drag and kit/meeting/contact restoration after closing/reopening Expo Go with Metro available. These physical results are user-reported, not independently observed by Codex. Reported versions “57.0.27 or 57.0.28 and 26.6.1” need exact identification; model/operator remain unconfirmed. Additional steps remain in [IPHONE_CHECKLIST.md](IPHONE_CHECKLIST.md).
+- The first simulator launch timed out; a later IPv4 transport retry rendered ClearPath in Expo Go 57.0.9 / iOS 18.6. Main guide navigation, Apple basemap/fixture rendering and saved preparation after online Expo Go process restart passed. On October 14 the user separately reported **PASS** for physical startup/tabs, North Texas warning→Flooding guide, map tiles/two fictional areas/zoom/drag and kit/meeting/contact restoration after closing/reopening Expo Go with Metro available, then explicitly identified **Shiven** as tester. These physical results are user-reported, not independently observed by Codex. Reported versions “57.0.27 or 57.0.28 and 26.6.1” need exact identification; model remains unconfirmed. Additional steps remain in [IPHONE_CHECKLIST.md](IPHONE_CHECKLIST.md).
 
 Current captures: browser [Home at 390 × 844](screenshots/home-390.png) and [warning-opened Flooding guide](screenshots/flood-guide-390.png), plus [native Apple Maps in the iOS simulator](screenshots/ios-simulator-frisco-map.jpg). Each is an actual capture from the named environment; none is physical-phone evidence or a product mockup.
 
@@ -54,7 +54,7 @@ Before recording, load current source on iPhone, use the accepted core workflow 
 
 Use at most two implementation examples in the video: explained ordering and future-Cancel/source isolation. State that Codex assisted this implementation and describe only evidenced student design/review/test/code work. Do not narrate generated solutions as independently solved by either presenter. Main app: **TypeScript, React Native, Expo SDK 57, React 19.2, Expo Router**; optional inactive watcher: JavaScript/Node. AI is a development aid here, not a runtime alert interpreter.
 
-Student 1 has confirmed the original concept/requirements, development direction, tactical redesign/map requests and review/feedback, and reported four core iPhone passes. Student 1 identifies Student 2's pre-audit work as **AI-assisted implementation of the demo, map and checklist**. These reported roles can be described honestly in the later video. The Git/contribution review does not establish independently student-written code, individual debugging challenges or who performed the Android/iPhone checks. Presenter names and personal technical examples still need confirmation before adding those claims. See STUDENT_CONTRIBUTIONS.md.
+The user supplied **Manas, Shiven** in Student 1/2 order and explicitly identified Shiven as phone tester. The script maps Manas to original concept/requirements, product direction and review, and Shiven to earlier **AI-assisted demo/map/checklist implementation** plus the four iPhone checks. Their reported learning areas are mobile frameworks/feature building (Manas) and testing/debugging/shipping/backend (Shiven). Confirm the role mapping before filming. Git/contribution records do not establish independently student-written code, a specific personal debugging incident or earlier Android-test attribution. See STUDENT_CONTRIBUTIONS.md; the script discloses Codex assistance and explains the actual repair without claiming independent student authorship.
 
 ## Revised strict assessment
 
@@ -72,7 +72,7 @@ These are engineering judgments, not official judge scores or estimates of winni
 | Local TX-04 relevance | 7.5 | Verified Frisco point/resources and North Texas scenario; no local pilot or emergency-management partnership |
 | User usefulness | 7.5 | Official instructions connected to practical preparation; usefulness not yet measured with users |
 | Demonstration potential | 8.5 | One understandable mobile workflow now fits a short demonstration |
-| Student technical ownership | 2 (evidence) | Concept/review and partner's AI-assisted feature role reported; independent code, individual debugging/test attribution and demonstrated understanding remain unverified. This rates the record, not student ability |
+| Student technical ownership | 3 (evidence) | Named product/review and AI-assisted feature roles, Shiven's four phone tests and learning areas reported; independent code/debugging and demonstrated understanding remain unverified. This rates the record, not student ability |
 | Overall competition readiness | 6.5 | Core phone footage accepted by user report; precise contribution evidence, final video and submission remain outstanding |
 
 Against the published CAC dimensions, idea quality is about **6**, implementation **7.5**, and code engineering **8**; demonstrated student programming excellence remains unverified. The published criteria concern idea, implementation and coding skill. [2026 rules](https://www.congressionalappchallenge.us/wp-content/uploads/2026/05/2026-CAC-Rules.pdf).
@@ -83,7 +83,9 @@ The prior Stage A review examined accessible winner-video transcripts and sample
 
 No additional feature is necessary solely for recording. Highest-value remaining work: an honest two-person contribution account, remaining checks for any extra footage and a small observed usability session with consenting family/student testers. Record actual tasks, confusion and fixes; do not invent endorsements, adoption or emergency effectiveness. Optional cosmetic work should wait unless a reproducible phone issue appears.
 
-## Suggested 2:40 structure — no script
+## Original suggested structure — superseded by the exact filming plan
+
+The earlier outline below is retained for context. Use VIDEO_PRODUCTION.md and VIDEO_SCRIPT.md for the current ten-scene, 343-word plan (160 planned seconds; Manas 171 words, Shiven 172). Actual rehearsal and exported duration remain unmeasured.
 
 | Time | Focus / footage |
 | --- | --- |
@@ -95,12 +97,12 @@ No additional feature is necessary solely for recording. Highest-value remaining
 | 2:10–2:30 | iPhone: saved preparation or a real NWS point response; show only phone-verified behavior |
 | 2:30–2:40 | What was learned, real testing evidence if obtained, practical purpose |
 
-Keep most footage on the functioning app. Split narration between the two actual presenters after their contributions are documented. Use 1080p final output, readable portrait footage on a clean landscape canvas, brief captions for SIMULATED and source limits, and a runtime buffer below three minutes. Exact narration/recording-export/upload instructions belong to the later video stage.
+Keep most footage on the functioning app. The prepared package splits narration between Manas and Shiven and includes 1080p recording/export/upload instructions. Review names/roles and rehearse before filming; the script's planned runtime does not prove the finished film's duration.
 
 ## Remaining recording and submission gates
 
-- The four supplied core [phone checks](IPHONE_CHECKLIST.md) passed by user report October 14. Capture only those accepted behaviors plus separately checked additions. Basic demo map tiles/areas/pan/zoom are included; remaining detail/GPS/notice/offline/accessibility segments need their own acceptance. Fill in device/client/operator metadata when available.
-- Reported contribution roles are recorded: Student 1 concept/product/review; Student 2 AI-assisted demo/map/checklist development. Confirm names and any individual coding/debugging/test claims before final narration. Retain the coordinator's actual permission scope if available; disclosure remains necessary.
+- The four supplied core [phone checks](IPHONE_CHECKLIST.md) passed by user report October 14, with Shiven identified as tester. Capture only those accepted behaviors plus separately checked additions. Rehearse the additional explanation/source/local-link views in the filming plan. Remaining GPS/notice/offline/accessibility segments are omitted; device/client metadata stay incomplete.
+- Manas/Shiven roles and learning areas are recorded. Confirm the supplied name-to-role mapping and any additional individual coding/debugging/test claims before filming. Retain the coordinator's actual permission scope if available; disclosure remains necessary.
 - Confirm team/district/age eligibility and registration. For two students, at least one must live or attend school in the hosting district. One entry each.
 - Final video: participant names, purpose/audience, tools/languages and functioning app, **1–3 minutes**, public YouTube/Vimeo. Written answers and requested app/source access still pending. [2026 rules](https://www.congressionalappchallenge.us/wp-content/uploads/2026/05/2026-CAC-Rules.pdf).
 - Plan to **October 26 noon EDT / 11 a.m. Central** in the rules PDF. The [registration page](https://www.congressionalappchallenge.us/students/student-registration/) shows a later time; use the earlier deadline unless the organizer clarifies. Target implementation/device acceptance October 20–21 and submit before the final day.

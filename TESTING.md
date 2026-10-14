@@ -51,7 +51,7 @@ At the October 13 checkpoint, the user reported having tested but had not provid
 
 ### User-reported physical iPhone acceptance — October 14, 2026
 
-After receiving the four exact checks below, the user replied: **“for the checks you gave me above all tests pass.”** Record these as user-reported physical passes, not tests independently observed by Codex. The request covered current ClearPath 1.1.0 from this checkout; application source remains `33d9b50b9c8fab1953f28f88235b341b6adce301`, with documentation-only commits afterward. The existing Metro on port 8081 was confirmed running from this checkout. In response to the device/version question, the user supplied **“57.0.27 or 57.0.28 and 26.6.1.”** Preserve that uncertainty: exact client patch/version identification, device model, execution time and individual test operator remain unconfirmed; October 14 is the report date. Do not substitute the simulator's model/iOS/Expo Go metadata for this physical report.
+After receiving the four exact checks below, the user replied: **“for the checks you gave me above all tests pass.”** Record these as user-reported physical passes, not tests independently observed by Codex. The request covered current ClearPath 1.1.0 from this checkout; application source remains `33d9b50b9c8fab1953f28f88235b341b6adce301`, with documentation-only commits afterward. The existing Metro on port 8081 was confirmed running from this checkout. In response to the device/version question, the user supplied **“57.0.27 or 57.0.28 and 26.6.1.”** Preserve that uncertainty: exact client patch/version identification, device model and execution time remain unconfirmed; October 14 is the report date. A subsequent reply explicitly identifies **Shiven** as the operator of these four phone checks. Do not substitute the simulator's model/iOS/Expo Go metadata for this physical report.
 
 | Check supplied to the user | Reported result |
 | --- | --- |
@@ -61,6 +61,10 @@ After receiving the four exact checks below, the user replied: **“for the chec
 | Check one kit item, enter Demo meeting point and save Demo Contact / 202-555-0147; wait for SAVED ON THIS PHONE, fully close Expo Go, reopen with Metro running and read back all three | **PASS — user report** |
 
 These results support recording those core app workflows. They do not establish independent offline cold startup, selected-point restoration, native GPS/notification permission or delivery, background-follow behavior, all map record/geometry interactions, complete keyboard/safe-area/VoiceOver acceptance or every row of the longer checklist. The user was instructed to preserve existing data; cleanup of fictional test values has not been separately confirmed. Codex's iPhone Mirroring attempt reached “iPhone in Use” and timed out; it did not independently observe these physical tests. See [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md) for remaining checks.
+
+### Video-package verification — October 14, 2026
+
+Application source/config/dependencies remain unchanged from the tested 1.1.0 application commit. The exact code-footage command `npm test -- --runTestsByPath tests/priority.test.ts tests/alerts.test.ts tests/nws.test.ts --cacheDirectory=/private/tmp/clearpath-cac-video-jest` passed **3 suites / 74 tests**. This focused run is separate from the historical full 924-test result. The script has **343 spoken words**, Manas 171 / Shiven 172, and ten contiguous scenes totaling 160 planned seconds. Counts and continuity are document checks; actual spoken/edited runtime, footage, 1080p export and public access have not been measured or verified. Official recording/export/upload references were consulted; no footage was recorded or published by Codex.
 
 ## Historical October 9–11 evidence
 

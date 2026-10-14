@@ -6,6 +6,8 @@ Current source is **1.1.0**, tested application commit `33d9b50b9c8fab1953f28f88
 
 Typecheck/lint, **924 app tests**, **37 watcher tests** and both native JavaScript exports passed October 13. Mobile-width browser checks and a later **iOS simulator** run verified the main workflow, Apple basemap/fixture rendering and saved preparation after an online Expo Go restart. On October 14 the user reported **four core physical iPhone checks PASS**: startup/tabs, North Texas warning→Flooding guide, demo map tiles/areas/zoom/drag, and kit/meeting/contact restoration after reopening Expo Go with Metro available. Device/client metadata and broader native checks remain incomplete. No 1.1.0 native binary was built; the older Android APK below does not contain these changes. Evidence and limits are preserved in [TESTING.md](TESTING.md).
 
+The video package now includes a [343-word Manas/Shiven script](docs/cac-2026/VIDEO_SCRIPT.md), [timestamped storyboard and filming/editing plan](docs/cac-2026/VIDEO_PRODUCTION.md), and [submission audit/draft answers](docs/cac-2026/SUBMISSION_CHECKLIST.md). Shiven is identified as the four-check iPhone tester. Target edit is 2:40; actual footage, export duration, public access and submission remain unverified.
+
 ## Run on a phone
 
 ### Current source on Mac and iPhone

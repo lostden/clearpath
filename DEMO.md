@@ -2,7 +2,7 @@
 
 ## Current recording checkpoint — source 1.1.0, October 14
 
-**READY TO RECORD the accepted core app workflows**, based on the user's four physical iPhone passes. Use tested application commit `33d9b50b9c8fab1953f28f88235b341b6adce301`, not the older 1.0.0 Android APK. Reported roles are documented (Student 1 product/review, Student 2 AI-assisted demo/map/checklist development); final narration belongs to the later video stage. Follow [VIDEO_READINESS.md](docs/cac-2026/VIDEO_READINESS.md) and [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md).
+**READY TO RECORD the accepted core app workflows**, based on Shiven's four reported physical iPhone passes. Use tested application commit `33d9b50b9c8fab1953f28f88235b341b6adce301`, not the older 1.0.0 Android APK. The user delegated video-stage ordering and supplied names/learning areas. Use the [Manas/Shiven script](docs/cac-2026/VIDEO_SCRIPT.md), [exact storyboard and filming plan](docs/cac-2026/VIDEO_PRODUCTION.md), and [submission checklist/draft answers](docs/cac-2026/SUBMISSION_CHECKLIST.md). Actual footage/export, public access and submission remain unverified. The earlier readiness handoff and [additional phone checks](docs/cac-2026/IPHONE_CHECKLIST.md) retain their evidence limits.
 
 Preferred short workflow: **Home → Explore simulated demo → North Texas flood → Read simulated warning → Why this warning is shown here → Read Flooding guide → KIT / FAMILY PLAN / LOCAL LINKS**. Keep **SIMULATED DEMO** visible. The two Frisco-area warnings, areas and fixed July 4, 2025 clock are invented fixtures, not historical government records. The Frisco map deliberately omits the old Hunt river measurement. Existing Flood, Tornado, No alerts and Outage scenarios remain available.
 
