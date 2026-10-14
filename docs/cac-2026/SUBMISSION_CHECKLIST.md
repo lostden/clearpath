@@ -1,6 +1,6 @@
 # ClearPath — submission checklist and draft answers
 
-Updated October 14, 2026. This is a **pre-submission audit**, not a claim that a film, registration or entry has been completed. Core app footage is accepted based on Shiven's four reported iPhone passes. App source: 1.1.0 / 33d9b50b9c8fab1953f28f88235b341b6adce301. [Script](VIDEO_SCRIPT.md) · [filming plan](VIDEO_PRODUCTION.md) · [full verification record](../../TESTING.md)
+Updated October 14, 2026. This is a **pre-submission audit**, not a claim that a film or entry has been completed. The user confirms both students joined the same CAC team registration and at least one meets the TX-04 residence/school requirement. Core app footage is accepted based on Shiven's four reported iPhone passes. App source: 1.1.0 / 33d9b50b9c8fab1953f28f88235b341b6adce301. [Script](VIDEO_SCRIPT.md) · [filming plan](VIDEO_PRODUCTION.md) · [full verification record](../../TESTING.md)
 
 ## Official requirements to check
 
@@ -17,8 +17,8 @@ The registration page instead lists 9 p.m. ET. Plan to the earlier PDF time and 
 | Application and functioning workflow | 924 app tests / 37 watcher tests, typecheck/lint, JS exports; simulator evidence; four core phone checks reported PASS | Freeze source for footage; repair any actual new failure |
 | Current phone tests | Shiven is now identified as operator. Startup/tabs, warning→guide, map pan/zoom and saved preparation reopening passed by user report | Model and exact client/version metadata still incomplete; rehearse additional scene details |
 | Team names / reported roles | Manas and Shiven supplied in that order; Shiven confirmed phone tester. Concept/product/review, AI-assisted baseline features and reported learning areas are recorded in STUDENT_CONTRIBUTIONS.md | Confirm name-to-role mapping and full names as required by the portal; do not publish private identity fields in Git |
-| District / student eligibility | TX-04 hosting verified against the official 2026 list October 14; individual eligibility has not been verified here | Use the official portal/district lookup with your own residence/school information; confirm team district requirement and enrollment |
-| Registration / team profile | No verified registration or invitation completion | Each student completes required personal steps; verify both members are attached to the same team entry |
+| District / student eligibility | TX-04 hosting verified against the official 2026 list October 14; user confirms at least one of the two students lives/attends school in TX-04 | Students review remaining eligibility answers, including enrollment and one-entry/project-date requirements, in the actual portal |
+| Registration / team profile | **Confirmed by user October 14:** both Manas and Shiven joined the same CAC team registration | Preserve the team entry and review actual portal fields before final submission; Codex has not inspected the private portal |
 | AI scope and personal understanding | Extensive Codex implementation/tests documented; user reports coordinator permission | Retain actual permission/scope privately if available. Each presenter must explain their real work and the implementation; do not certify an exception or invent student code |
 | Narration / storyboard | Draft package prepared from repository and user reports; user confirms it has not been rehearsed yet | Both students review their own claims and rehearse aloud with a stopwatch |
 | Finished video / measured duration | No finished or reviewed export exists | Film, edit and inspect actual 1080p file; target 2:40 |
@@ -124,5 +124,5 @@ Do not paste an unverified source URL, permission statement or actual personal c
 - [ ] Requested app/source access is accurate for 1.1.0; external tools, content/licenses and AI use disclosed.
 - [ ] Students complete submission and retain the receipt, URL, final export, exact application commit and final answers privately before the earlier planned deadline.
 
-**Current result: video package ready to rehearse; final film, access, registration, eligibility and actual submission remain unverified.** The overall goal is still incomplete.
+**Current result: team registration and the two-person district requirement are confirmed by the user; video package ready to rehearse. Final film, access, remaining eligibility answers and actual submission remain unverified.** The overall goal is still incomplete.
 
