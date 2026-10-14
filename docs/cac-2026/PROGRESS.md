@@ -14,6 +14,7 @@ User authorized ordinary implementation, tests, documentation and local commits,
 - Verified Frisco Census reference preset and four official local/regional links; isolated fictional North Texas demo added, four old scenarios retained, legacy Hunt river omitted in Frisco.
 - Secondary settings/coverage/privacy disclosures; operational errors/status remain visible outside controls. AI-assisted attribution explicit.
 - Inactive cloud ISO status contract fixed with real watcher-output regression; nested worktrees excluded from Jest discovery. No dependency versions changed.
+- Local source-review ZIP prepared from snapshot `15af3af55cf7ee6c378a70f8a512a3f74d400706`: 202 tracked files verified against Git blobs, 2,443,310 bytes; licenses/AI/test records included, ignored credentials/dependencies excluded. Hash, local artifact links and reviewer setup are in [SOURCE_HANDOFF.md](SOURCE_HANDOFF.md). No upload or fresh-copy runtime claim.
 
 ## Executed verification
 

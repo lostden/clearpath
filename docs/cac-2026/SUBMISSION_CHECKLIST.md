@@ -24,7 +24,7 @@ The registration page instead lists 9 p.m. ET. Plan to the earlier PDF time and 
 | Finished video / measured duration | No finished or reviewed export exists | Film, edit and inspect actual 1080p file; target 2:40 |
 | Public access / URL | No uploaded film or verified public link | Human publishes after review, then checks signed out on another device |
 | Written application answers | Evidence-based drafts below, including the students' reported learning areas | Students revise in their own words, add a real example if available and match actual portal fields/limits |
-| Source, dependencies and licenses | DATA_SOURCES.md, AI_USAGE.md and contribution history preserved | Provide only requested access; exclude .env, keys, signing materials, private contacts/location and raw personal footage |
+| Source, dependencies and licenses | DATA_SOURCES.md, AI_USAGE.md and contribution history preserved; local source ZIP prepared and all 202 files verified against snapshot 15af3af | Use [SOURCE_HANDOFF.md](SOURCE_HANDOFF.md) for artifact/hash/setup; provide only requested reviewed access; exclude private material from later additions |
 | Final portal review / receipt | No entry submitted | Review the actual portal with both teammates, submit, retain confirmation privately |
 
 Core acceptance does not cover independent offline startup, current iPhone GPS/notifications, background monitoring, complete accessibility or actual emergency delivery. The cut omits those claims. Security/dependency findings remain in DEPENDENCY_REVIEW.md; no successful upgrade or blanket security certification is implied.
@@ -32,6 +32,8 @@ Core acceptance does not cover independent offline startup, current iPhone GPS/n
 ## App/source access for review
 
 Keep the tested branch and commit available. A judge can see the functioning app through the public demonstration and, if asked, an appropriate source/access handoff. Do not upload the older Android APK as though it contains 1.1.0. No current independent iOS binary exists; Expo Go requires a compatible client and reachable development transport for launch. If direct app access is requested, describe that setup honestly and agree an accessible method before promising one.
+
+A local [source-review bundle](SOURCE_HANDOFF.md) is ready: 202 tracked files, verified against the archived Git snapshot, with source/test/license/AI records. It has not been uploaded, shared or runtime-tested from a fresh extraction. The helper document gives its hash and reproducible setup.
 
 A public repository or app-store release is not assumed here. Before sharing a source archive, inspect tracked files for secrets and personal test data and preserve licenses/source references. Never send private signing materials. Do not change account permissions or deploy a service merely to finish the form.
 
