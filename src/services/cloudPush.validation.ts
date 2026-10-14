@@ -19,8 +19,6 @@ export const expoToken = (value: unknown): value is string =>
   typeof value === "string" && /^(?:ExponentPushToken|ExpoPushToken)\[[A-Za-z0-9_-]{8,200}\]$/.test(value);
 const code = (value: unknown): value is string | null => value === null ||
   (typeof value === "string" && /^[a-z][a-z-]{0,63}$/.test(value));
-const clock = (value: unknown): value is number | null => value === null ||
-  (typeof value === "number" && Number.isSafeInteger(value) && value >= 0);
 
 export function httpsOrigin(value: unknown): string | null {
   if (typeof value !== "string" || value.length > 256 || value !== value.trim()) return null;
@@ -60,7 +58,7 @@ export function readServerStatus(value: unknown): CloudPushStatus {
   if (!record(value) || Object.keys(value).length !== keys.length || keys.some((key) => !(key in value)) ||
     typeof value.enabled !== "boolean" || (value.baseline !== "pending" && value.baseline !== "ready") ||
     typeof value.locationFresh !== "boolean" || !validTimestamp(value.locationObservedAt) ||
-    !clock(value.lastCheckAt) || !code(value.lastError) || !code(value.lastDelivery) ||
+    !(value.lastCheckAt === null || validTimestamp(value.lastCheckAt)) || !code(value.lastError) || !code(value.lastDelivery) ||
     typeof value.pendingReceipts !== "number" || !Number.isSafeInteger(value.pendingReceipts) ||
     value.pendingReceipts < 0 || value.pendingReceipts > 100) {
     throw new CloudPushError("invalid-response", "Cloud alert status could not be verified.");

@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Pressable, View, StyleSheet, Text } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { ActionButton, Body, Heading, Panel, Screen, SectionTitle, SourceBadge, openLink } from "@/ui/components";
+import { ActionButton, Body, Disclosure, Heading, Panel, Screen, SectionTitle, SourceBadge, openLink } from "@/ui/components";
 import { useAlerts } from "@/hooks/useAlerts";
 import { useRegionalAlerts } from "@/hooks/useRegionalAlerts";
 import { useDisasterLayers } from "@/hooks/useDisasterLayers";
@@ -9,7 +9,7 @@ import { useWildfireLayer } from "@/hooks/useWildfireLayer";
 import MapCanvas from "@/components/MapCanvas";
 import { AlertDetail, detailSource, type AlertSelection } from "@/components/AlertDetail";
 import { HazardDetail, hazardDetailSource, type HazardSelection } from "@/components/HazardDetail";
-import { DEMO_DATE_LABEL, DEMO_GAUGE } from "@/data/demo";
+import { DEMO_DATE_LABEL, DEMO_GAUGE, getDemoScenarioDescription, isFriscoDemoLocation } from "@/data/demo";
 import { colors, typography } from "@/ui/tokens";
 import { isRiverObservationDelayed, type OfficialEarthquake, type RiverGauge } from "@/services/usgsTypes";
 import { ZoneAreaDetail } from "@/components/ZoneAreaDetail";
@@ -32,6 +32,8 @@ function FeedStamp({ label, source, fetchedAt, generatedAt, loading }: { label: 
 export default function MapScreen() {
   const feed = useAlerts();
   const demo = feed.source === "demo";
+  const friscoDemo = demo && isFriscoDemoLocation(feed.selectedLocation);
+  const hasDemoRiver = demo && !friscoDemo;
   const { automatic, ready } = useFeedPreferences();
   const [focused, setFocused] = useState(false);
   useFocusEffect(useCallback(() => { setFocused(true); return () => setFocused(false); }, []));
@@ -81,14 +83,14 @@ export default function MapScreen() {
       <Heading>Hazard map</Heading>
       <Body>{feed.selectedLocation?.label || `${coverage === "TX" ? "Texas" : "U.S."} overview · set your location on Home`}</Body>
       {point && <Text style={s.metadata}>{point.latitude.toFixed(4)}, {point.longitude.toFixed(4)} / SELECTED POINT</Text>}
-      {demo ? <><SourceBadge source="demo" /><Text style={s.stampTitle}>{DEMO_DATE_LABEL} / FROZEN SCENE</Text><Body>Hill Country flood exercise. Warning areas and readings are fictional.</Body></> : <View style={s.coverage}>
+      {demo ? <><SourceBadge source="demo" /><Text style={s.stampTitle}>{friscoDemo ? "NORTH TEXAS / FROZEN TRAINING CLOCK" : `${DEMO_DATE_LABEL} / FROZEN SCENE`}</Text><Body>{getDemoScenarioDescription(friscoDemo ? "frisco" : feed.offline ? "offline" : feed.alerts.some((alert) => alert.id === "demo:tornado") ? "tornado" : feed.alerts.length ? "flood" : "normal")}</Body></> : <View style={s.coverage}>
         {(["TX", "US"] as const).map((value) => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: coverage === value }} accessibilityLabel={value === "TX" ? "Texas weather coverage" : "U.S. weather coverage"} onPress={() => { setCoverage(value); setWarningLimit(8); setZoneSelection(null); }} style={[s.coverageButton, coverage === value && s.active]}><Text style={[s.label, coverage === value && s.darkText]}>{value === "TX" ? "TEXAS" : "U.S."}</Text></Pressable>)}
       </View>}
       {feed.offline && <Body>{demo ? "SIMULATED OUTAGE / map tiles require a connection." : "OFFLINE / retained layers are unverified. Map tiles may be unavailable."}</Body>}
-      <MapCanvas key={`${demo}-${coverage}`} point={point ?? (coverage === "TX" ? { latitude: 31.1, longitude: -100 } : { latitude: 39, longitude: -98 })} pointIsSelection={!!point} initialSpan={point ? 0.18 : coverage === "TX" ? 14 : 55} alerts={alerts} source={warningSource} showWarnings={warnings} showGauges={gauges} showEarthquakes={earthquakes} earthquakes={layers.earthquakes.items} rivers={layers.rivers.items} earthquakeSource={layers.earthquakes.source} riverSource={layers.rivers.source} wildfirePerimeters={demo || !wildfires ? [] : wildfireLayer.items} wildfireSource={wildfireLayer.source} showWildfires={!demo && wildfires} onSelectWildfire={selectWildfire} onSelectAlert={selectAlert} onSelectEarthquake={selectEarthquake} onSelectRiver={selectRiver} />
+      <MapCanvas key={`${demo}-${coverage}`} point={point ?? (coverage === "TX" ? { latitude: 31.1, longitude: -100 } : { latitude: 39, longitude: -98 })} pointIsSelection={!!point} initialSpan={point ? 0.18 : coverage === "TX" ? 14 : 55} alerts={alerts} source={warningSource} showWarnings={warnings} showGauges={gauges && (!demo || hasDemoRiver)} showEarthquakes={earthquakes} earthquakes={layers.earthquakes.items} rivers={layers.rivers.items} earthquakeSource={layers.earthquakes.source} riverSource={layers.rivers.source} wildfirePerimeters={demo || !wildfires ? [] : wildfireLayer.items} wildfireSource={wildfireLayer.source} showWildfires={!demo && wildfires} onSelectWildfire={selectWildfire} onSelectAlert={selectAlert} onSelectEarthquake={selectEarthquake} onSelectRiver={selectRiver} />
       <View style={s.legend}>
         {warnings && <><Text style={[s.legendText, { color: colors.orange }]}>▰ SEVERE AREA</Text><Text style={[s.legendText, { color: colors.yellow }]}>▰ OTHER AREA</Text></>}
-        {gauges && <Text style={[s.legendText, { color: colors.yellow }]}>R / RIVER STATION</Text>}
+        {gauges && (!demo || hasDemoRiver) && <Text style={[s.legendText, { color: colors.yellow }]}>R / RIVER STATION</Text>}
         {!demo && earthquakes && <Text style={s.legendText}>E / EPICENTER</Text>}
         {!demo && wildfires && <Text style={s.legendText}>OUTLINE / PUBLISHED WILDFIRE PERIMETER</Text>}
         {!demo && <Text style={[s.legendText, { color: "#B0B0B0" }]}>GRAY = CACHED</Text>}
@@ -96,7 +98,7 @@ export default function MapScreen() {
       <Panel>
         <SectionTitle>Layers</SectionTitle>
         <LayerToggle title="Warning areas" value={warnings} onChange={setWarnings} />
-        <LayerToggle title={demo ? "Simulated observation" : "River observations"} value={gauges} onChange={setGauges} />
+        {(!demo || hasDemoRiver) && <LayerToggle title={demo ? "Simulated observation" : "River observations"} value={gauges} onChange={setGauges} />}
         {!demo && <LayerToggle title="Earthquakes" value={earthquakes} onChange={setEarthquakes} />}
         {!demo && <LayerToggle title="Wildfire perimeters" value={wildfires} onChange={(value) => { setWildfires(value); if (!value) setWildfireSelection(null); }} />}
         {!demo && <Body>Wildfire perimeters: optional download, off by default.</Body>}
@@ -114,8 +116,8 @@ export default function MapScreen() {
         </Pressable>)}
         {alerts.length > warningLimit && <ActionButton title="Show more regional alerts" secondary onPress={() => setWarningLimit((limit) => limit + 20)} />}
       </>}
-      {gauges && (demo ? <Panel><SectionTitle>SIMULATED / RIVER</SectionTitle><Heading>{DEMO_GAUGE.gageHeight} ft</Heading><Body>Gage height · {DEMO_GAUGE.streamflow.toLocaleString()} ft³/s streamflow</Body><Body>Simulated observation: {new Date(DEMO_GAUGE.observedAt).toLocaleString()}</Body><Body>{DEMO_GAUGE.description}</Body></Panel> : <>
-        <SectionTitle>USGS / Nearby rivers</SectionTitle><FeedStamp label="RIVERS" source={layers.rivers.source} fetchedAt={layers.rivers.fetchedAt} loading={layers.rivers.loading} /><Body>{layers.rivers.coverage}</Body>
+      {gauges && (!demo || hasDemoRiver) && (demo ? <Panel><SectionTitle>SIMULATED / RIVER</SectionTitle><Heading>{DEMO_GAUGE.gageHeight} ft</Heading><Body>Gage height · {DEMO_GAUGE.streamflow.toLocaleString()} ft³/s streamflow</Body><Body>Simulated observation: {new Date(DEMO_GAUGE.observedAt).toLocaleString()}</Body><Body>{DEMO_GAUGE.description}</Body></Panel> : <>
+        <SectionTitle>USGS / Nearby rivers</SectionTitle><FeedStamp label="RIVERS" source={layers.rivers.source} fetchedAt={layers.rivers.fetchedAt} loading={layers.rivers.loading} /><Disclosure title="About river observations"><Body>{layers.rivers.coverage}</Body><Body>Nearby stations can be in another drainage area. Station readings do not establish conditions at your selected point.</Body></Disclosure>
         <ActionButton title={layers.rivers.refreshing ? "Updating rivers" : "Refresh river observations"} disabled={!layers.rivers.canRefresh} secondary onPress={() => void layers.rivers.refresh()} />
         {!point && <Body>SET LOCATION / needed for nearby river stations.</Body>}
         {layers.rivers.error && <Body>River readings could not be verified. Retained readings may have changed.</Body>}
@@ -124,7 +126,7 @@ export default function MapScreen() {
         <Body>Gage height is not flood depth. Observations can be delayed and provisional.</Body>
       </>)}
       {!demo && earthquakes && <>
-        <SectionTitle>USGS / Earthquakes</SectionTitle><FeedStamp label="EARTHQUAKES" source={layers.earthquakes.source} fetchedAt={layers.earthquakes.fetchedAt} generatedAt={layers.earthquakes.generatedAt} loading={layers.earthquakes.loading} /><Body>{layers.earthquakes.coverage}</Body>
+        <SectionTitle>USGS / Earthquakes</SectionTitle><FeedStamp label="EARTHQUAKES" source={layers.earthquakes.source} fetchedAt={layers.earthquakes.fetchedAt} generatedAt={layers.earthquakes.generatedAt} loading={layers.earthquakes.loading} /><Disclosure title="About earthquake observations"><Body>{layers.earthquakes.coverage}</Body><Body>Epicenters mark reported events. They do not show a local impact or damage area.</Body></Disclosure>
         <ActionButton title={layers.earthquakes.refreshing ? "Updating earthquakes" : "Refresh earthquakes"} disabled={!layers.earthquakes.canRefresh} secondary onPress={() => void layers.earthquakes.refresh()} />
         {layers.earthquakes.error && <Body>Earthquake reports could not be verified.</Body>}
         {layers.earthquakes.items.slice(0, 6).map((item) => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Read earthquake ${item.name}`} onPress={() => selectEarthquake(item)} style={s.record}><Text style={s.recordTitle}>M {magnitudeLabel(item.magnitude)} / {item.name}</Text><Text style={s.metadata}>{new Date(item.observedAt).toLocaleString()}</Text></Pressable>)}

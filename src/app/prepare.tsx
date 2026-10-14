@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import {
   Pressable,
   StyleSheet,
@@ -9,6 +10,7 @@ import {
 import {
   ActionButton,
   Body,
+  Disclosure,
   Heading,
   Panel,
   Screen,
@@ -19,9 +21,14 @@ import {
 } from "@/ui/components";
 import {
   checklistItems,
+  checklistSource,
+  familyPlanSource,
   importantNumbers,
+  preparednessReviewedOn,
   safetyGuides,
 } from "@/data/preparedness";
+import { localResources, localResourcesReviewedOn } from "@/data/localResources";
+import { guideFromParam } from "@/domain/preparednessNavigation";
 import { usePreparation } from "@/state/PreparednessState";
 import { colors, typography } from "@/ui/tokens";
 const sections = [
@@ -30,12 +37,35 @@ const sections = [
   { id: "plan", label: "FAMILY PLAN", action: "Show family plan" },
   { id: "contacts", label: "CONTACTS", action: "Show saved contacts" },
   { id: "numbers", label: "CALL NUMBERS", action: "Show emergency numbers" },
+  { id: "resources", label: "LOCAL LINKS", action: "Show local resources" },
 ] as const;
 type PreparationSection = (typeof sections)[number]["id"];
+type PreparationView = {
+  requestedGuide: string | null;
+  request: string | undefined;
+  section: PreparationSection;
+  guide: string | null;
+};
 export default function PrepareScreen() {
+  const params = useLocalSearchParams<{ guide?: string | string[]; guideRequest?: string }>();
+  const requestedGuide = guideFromParam(params.guide);
   const { saved, ready, saveStatus, storageError, canRetrySave, retrySave, update, toggle } = usePreparation();
-  const [section, setSection] = useState<PreparationSection>("guides");
-  const [guide, setGuide] = useState<string | null>(null);
+  const requestedId = requestedGuide?.id ?? null;
+  const [view, setView] = useState<PreparationView>(() => ({
+    requestedGuide: requestedId, request: params.guideRequest,
+    section: "guides", guide: requestedId,
+  }));
+  // Local section choices belong to one navigation request. A new warning
+  // request displays its guide immediately without an effect or losing drafts.
+  const currentRequest = view.requestedGuide === requestedId && view.request === params.guideRequest;
+  const section = currentRequest ? view.section : "guides";
+  const guide = currentRequest ? view.guide : requestedId;
+  function setSection(section: PreparationSection) {
+    setView({ requestedGuide: requestedId, request: params.guideRequest, section, guide });
+  }
+  function setGuide(guide: string | null) {
+    setView({ requestedGuide: requestedId, request: params.guideRequest, section, guide });
+  }
   const [showContact, setShowContact] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -161,6 +191,12 @@ export default function PrepareScreen() {
           </Pressable>
         ))}
       </View>
+      <Disclosure title="Kit source and review">
+        <Body>{checklistSource.name}</Body>
+        <Body>Reviewed {preparednessReviewedOn}</Body>
+        <Body>Opening the official source requires a connection.</Body>
+        <ActionButton title="Open kit source" secondary onPress={() => void openLink(checklistSource.url)} />
+      </Disclosure>
       </>}
       {section === "guides" && <>
       <SectionTitle>02 / FIELD GUIDANCE</SectionTitle>
@@ -181,6 +217,7 @@ export default function PrepareScreen() {
             {guide === item.id && (
               <View style={s.guideContent}>
                 <Body>{item.body}</Body>
+                <Body>Reviewed {preparednessReviewedOn}</Body>
                 <ActionButton
                   title={`Open ${item.sourceName} source`}
                   secondary
@@ -234,6 +271,12 @@ export default function PrepareScreen() {
           multiline
         />
       </Panel>
+      <Disclosure title="Family plan source and review">
+        <Body>{familyPlanSource.name}</Body>
+        <Body>Reviewed {preparednessReviewedOn}</Body>
+        <Body>Opening the official source requires a connection.</Body>
+        <ActionButton title="Open family plan source" secondary onPress={() => void openLink(familyPlanSource.url)} />
+      </Disclosure>
       </>}
       {section === "contacts" && <>
       <SectionTitle>04 / SAVED CONTACTS</SectionTitle>
@@ -340,7 +383,19 @@ export default function PrepareScreen() {
           />
         ))}
       </>}
-      <SectionTitle>LOCAL STORAGE / PRIVACY</SectionTitle>
+      {section === "resources" && <>
+        <SectionTitle>06 / FRISCO & REGIONAL RESOURCES</SectionTitle>
+        <Body>Links are references, not current emergency status. Opening a website requires a connection. Follow the official authority for your location.</Body>
+        <Body>Links checked {localResourcesReviewedOn}</Body>
+        {localResources.map((resource) => (
+          <Panel key={resource.url}>
+            <SectionTitle>{resource.title}</SectionTitle>
+            <Body>{resource.description}</Body>
+            <ActionButton title={`Open ${resource.title}`} secondary onPress={() => void openLink(resource.url)} />
+          </Panel>
+        ))}
+      </>}
+      <Disclosure title="Local storage and privacy">
       <Body>
         ClearPath has no account or analytics. Foreground GPS is optional.
         Home warning requests send your selected coordinates directly to the
@@ -367,6 +422,7 @@ export default function PrepareScreen() {
         demo coordinates are labeled as training only. Sharing does not
         recheck your position.
       </Body>
+      </Disclosure>
       <Body>
         ClearPath does not monitor in the background or replace emergency
         services and official instructions.

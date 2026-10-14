@@ -64,7 +64,7 @@ beforeEach(async () => {
     setLocation: jest.fn((selected, origin) => { app = { ...app, location: selected, locationRevision: app.locationRevision + (origin === "follow" ? 0 : 1) }; }),
   };
   feed = {
-    source: "unavailable", alerts: [], snapshot: null, selectedLocation: null,
+    source: "unavailable", displayTime: Date.parse("2026-10-13T12:00:00Z"), alerts: [], snapshot: null, selectedLocation: null,
     isLoading: false, isRefreshing: false, error: null, offline: false, expiredCount: 0,
     refresh: jest.fn().mockResolvedValue(undefined), canRefresh: false, storageError: null,
   };

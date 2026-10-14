@@ -1,4 +1,8 @@
-import { coordinatesFor, currentAlerts } from "../domain/alerts";
+import {
+  coordinatesFor,
+  currentAlerts,
+  hasPlausibleIssuance,
+} from "../domain/alerts";
 import type {
   AlertGeometry,
   Coordinates,
@@ -202,6 +206,13 @@ export function normalizeNwsCollection(
       feature.properties.scope !== "Public"
     )
       continue;
+    // A future-issued public message makes the whole result unverifiable.
+    // Reject it before replacements so a future Cancel cannot look like a
+    // successful empty response, while valid future onset stays usable.
+    if (!hasPlausibleIssuance(alert, now)) {
+      malformed += 1;
+      continue;
+    }
     alerts.push(alert);
   }
   // Until the UI has a partial-verification state, any unparseable warning makes

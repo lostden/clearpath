@@ -8,7 +8,7 @@ export interface ChecklistItem {
 }
 
 export interface SafetyGuide {
-  id: string;
+  id: "flood" | "tornado" | "hurricane" | "winter" | "wildfire";
   title: string;
   body: string;
   sourceName: string;

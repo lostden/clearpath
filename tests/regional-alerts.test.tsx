@@ -6,9 +6,9 @@ import {
   useRegionalAlerts,
   type RegionalAlertsState,
 } from "../src/hooks/useRegionalAlerts";
-import { getRegionalAlerts, type WeatherCoverage } from "../src/data/nws";
+import { getRegionalAlerts, normalizeNwsCollection, type WeatherCoverage } from "../src/data/nws";
 import { ClearPathDataError } from "../src/data/http";
-import { officialAlert, TEST_NOW } from "./fixtures/alerts";
+import { nwsCollection, nwsFeature, officialAlert, TEST_NOW } from "./fixtures/alerts";
 
 const mockNetwork = { isConnected: true, isInternetReachable: true };
 jest.mock("@react-native-community/netinfo", () => ({
@@ -86,6 +86,46 @@ const polygon = officialAlert({
     type: "Polygon",
     coordinates: [[[-99.1, 30.1], [-98.9, 30.1], [-99, 29.9], [-99.1, 30.1]]],
   },
+});
+
+test.each([1, 120_000])("a %i ms phone-clock rollback cannot keep a regional snapshot live", async (rollback) => {
+  fetchAlerts.mockResolvedValue([polygon]);
+  await mount({ enabled: true, coverage: "TX", automatic: false });
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  const fetchedAt = state.fetchedAt!;
+  await act(() => {
+    jest.setSystemTime(Date.parse(fetchedAt) - rollback);
+    notifyAppState("active");
+  });
+  expect(state.source).toBe("cached");
+  expect(state.fetchedAt).toBe(fetchedAt);
+  expect(state.alerts).toEqual([polygon]);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("a future cancellation fails regional verification without clearing or retimestamping a prior warning", async () => {
+  fetchAlerts.mockResolvedValueOnce([polygon]).mockImplementationOnce(async () =>
+    normalizeNwsCollection(nwsCollection(
+      { ...nwsFeature(), geometry: polygon.geometry },
+      nwsFeature({
+        id: "urn:future-cancel",
+        messageType: "Cancel",
+        sent: new Date(Date.now() + 120_000).toISOString(),
+        references: [{ identifier: polygon.id }],
+      }),
+    )),
+  );
+  await mount({ enabled: true, coverage: "TX", automatic: false });
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  const fetchedAt = state.fetchedAt;
+  await advance(30_000);
+  await act(() => state.refresh());
+  expect(state.error).toBeInstanceOf(ClearPathDataError);
+  expect(state.source).toBe("cached");
+  expect(state.alerts).toEqual([polygon]);
+  expect(state.fetchedAt).toBe(fetchedAt);
 });
 
 test("manual regional updates do not fetch on mount, coverage change, foreground resume, or reconnect", async () => {
@@ -464,6 +504,25 @@ test("two immediate regional manual presses share the pending request", async ()
   expect(fetchAlerts).toHaveBeenCalledTimes(1);
   await act(async () => { finish([]); await Promise.all([first, second]); });
   expect(state.canRefresh).toBe(false);
+});
+
+test("manual regional display admits warnings and rechecks verification at clock recovery boundaries without another fetch", async () => {
+  const alert = officialAlert({ sent: new Date(TEST_NOW).toISOString() });
+  fetchAlerts.mockResolvedValue([alert]);
+  await mount({ enabled: true, coverage: "TX", automatic: false });
+  await act(() => state.refresh());
+  const fetchedAt = state.fetchedAt!;
+  await act(() => { jest.setSystemTime(TEST_NOW - 120_000); notifyAppState("active"); });
+  await advance(0);
+  expect(state.alerts).toEqual([]);
+  expect(state.source).toBe("cached");
+  await advance(60_000);
+  expect(state.alerts).toEqual([alert]);
+  expect(state.source).toBe("cached");
+  await advance(Date.parse(fetchedAt) - Date.now());
+  expect(state.source).toBe("live");
+  expect(state.fetchedAt).toBe(fetchedAt);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
 });
 
 test("disabling regional coverage cancels a scheduled slot before any download starts", async () => {

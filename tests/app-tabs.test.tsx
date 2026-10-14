@@ -45,7 +45,7 @@ beforeEach(() => {
   showConfirmation = jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
   openDialer = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
   feed = {
-    source: "unavailable", alerts: [], snapshot: null, selectedLocation: null,
+    source: "unavailable", displayTime: Date.parse("2026-10-13T12:00:00Z"), alerts: [], snapshot: null, selectedLocation: null,
     isLoading: false, isRefreshing: false, error: null, offline: false,
     expiredCount: 0, refresh: jest.fn().mockResolvedValue(undefined), canRefresh: false, storageError: null,
   };

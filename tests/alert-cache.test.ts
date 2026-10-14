@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { readAlertCache, writeAlertCache } from "../src/data/alertCache";
 import { getDemoSnapshot } from "../src/data/demo";
-import { locationKey } from "../src/domain/alerts";
+import { currentAlerts, locationKey } from "../src/domain/alerts";
 import type { AlertSnapshot } from "../src/domain/types";
 import { officialAlert } from "./fixtures/officialAlert";
 
@@ -24,6 +24,23 @@ describe("official alert persistence", () => {
     const restored = await readAlertCache(point);
     expect(restored).toEqual({ ...liveSnapshot, source: "cached" });
     expect(restored?.source).not.toBe("live");
+  });
+
+  test("a restored future cancellation cannot suppress a current cached warning", async () => {
+    await writeAlertCache({
+      ...liveSnapshot,
+      alerts: [officialAlert, {
+        ...officialAlert,
+        id: "urn:future-cancel",
+        messageType: "Cancel",
+        sent: "2026-10-09T18:07:00Z",
+        references: [officialAlert.id],
+      }],
+    });
+    const restored = await readAlertCache(point);
+    expect(restored?.source).toBe("cached");
+    expect(restored?.fetchedAt).toBe("2026-10-09T18:05:00Z");
+    expect(currentAlerts(restored!.alerts, Date.parse("2026-10-09T18:05:00Z"))).toEqual([officialAlert]);
   });
 
   test("never returns warnings cached for a different selected point", async () => {

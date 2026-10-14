@@ -39,3 +39,9 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Emergency data and continuity
+
+- Preserve official instructions, source timestamps, selected-point/regional separation, and simulated/live cache isolation. Display ordering is not a personal danger prediction; never infer safe routes, flood depth, or evacuation orders.
+- Keep AI assistance and student authorship accurate. Automated checks and old device confirmations do not establish current physical-phone acceptance.
+- Resume competition work from `docs/cac-2026/PROGRESS.md`; update that concise checkpoint after meaningful milestones. Historical evidence remains in `TESTING.md`, `AI_USAGE.md`, and `STUDENT_CONTRIBUTIONS.md`.

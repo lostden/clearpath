@@ -4,11 +4,13 @@ import { useAlerts } from "../src/hooks/useAlerts";
 import { useAppState } from "../src/state/AppState";
 import type { MapCanvasProps } from "../src/components/MapCanvas";
 import type { SelectedLocation } from "../src/domain/types";
-import { DEMO_LOCATION, getDemoSnapshot } from "../src/data/demo";
+import { DEMO_LOCATION, DEMO_TIMESTAMP, getDemoSnapshot } from "../src/data/demo";
+import { officialAlert, TEST_NOW } from "./fixtures/alerts";
 
 jest.mock("expo-router", () => ({ router: { navigate: jest.fn() } }));
 jest.mock("../src/hooks/useAlerts", () => ({ useAlerts: jest.fn() }));
 jest.mock("../src/state/AppState", () => ({ useAppState: jest.fn() }));
+jest.mock("../src/state/FeedPreferences", () => ({ useFeedPreferences: () => ({ automatic: true, ready: true, storageError: null, setAutomatic: jest.fn() }) }));
 jest.mock("../src/components/FeedUpdateControl", () => ({ FeedUpdateControl: () => null }));
 jest.mock("../src/components/DemoControls", () => ({ DemoControls: () => null }));
 jest.mock("../src/components/SituationPanel", () => {
@@ -67,7 +69,7 @@ let settings: ReturnType<typeof useAppState>;
 
 beforeEach(() => {
   feed = {
-    source: "unavailable", alerts: [], snapshot: null, selectedLocation: null,
+    source: "unavailable", displayTime: TEST_NOW, alerts: [], snapshot: null, selectedLocation: null,
     isLoading: false, isRefreshing: false, error: null, offline: false,
     expiredCount: 0, refresh: jest.fn().mockResolvedValue(undefined),
     canRefresh: false, storageError: null,
@@ -156,7 +158,7 @@ test("demo uses its simulated point and snapshot while saved-location restoratio
   const snapshot = getDemoSnapshot("flood");
   settings = { ...settings, mode: "demo" };
   feed = {
-    ...feed, source: "demo", selectedLocation: DEMO_LOCATION,
+    ...feed, source: "demo", displayTime: DEMO_TIMESTAMP, selectedLocation: DEMO_LOCATION,
     alerts: snapshot.alerts, snapshot,
   };
   const screen = await render(<HomeScreen />);
@@ -174,11 +176,13 @@ test("demo uses its simulated point and snapshot while saved-location restoratio
 });
 
 test.each(["live", "cached", "demo"] as const)("%s warning reaches the situation before sharing while preserving its source copy and point details", async (source) => {
-  const snapshot = getDemoSnapshot("flood");
+  const snapshot = source === "demo" ? getDemoSnapshot("flood") : {
+    ...getDemoSnapshot("flood", TEST_NOW), alerts: [officialAlert({ id: "home-1" }), officialAlert({ id: "home-2", urgency: "Expected" })],
+  };
   const selectedLocation = source === "demo" ? DEMO_LOCATION : savedGps;
   const alerts = snapshot.alerts;
   feed = {
-    ...feed, source, selectedLocation, alerts,
+    ...feed, source, displayTime: source === "demo" ? DEMO_TIMESTAMP : TEST_NOW, selectedLocation, alerts,
     snapshot: { ...snapshot, source, locationKey: `${selectedLocation.coordinates.latitude},${selectedLocation.coordinates.longitude}` },
   };
   settings = { ...settings, locationReady: true };
@@ -207,4 +211,15 @@ test("compacting Home retains offline, location and persistence error cues befor
   expect(screen.getByText("Current alerts cannot be verified. Preparedness and saved contacts remain available.")).toBeTruthy();
   expect(screen.getByTestId("situation-panel").props.source).toBe("cached");
   expect(screen.getByRole("button", { name: "Choose GPS or manual location" })).toBeEnabled();
+});
+
+test("secondary feed and GPS settings open explicitly while location and warnings remain available", async () => {
+  settings = { ...settings, locationReady: true };
+  const screen = await render(<HomeScreen />);
+  expect(screen.queryByText("03 / LOCATION ALERTS")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Feed settings and GPS alerts" }));
+  expect(screen.getByText("03 / LOCATION ALERTS")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Choose location" })).toBeEnabled();
+  await fireEvent.press(screen.getByRole("button", { name: "Feed settings and GPS alerts" }));
+  expect(screen.queryByText("03 / LOCATION ALERTS")).toBeNull();
 });

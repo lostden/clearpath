@@ -4,7 +4,7 @@ import { useNetInfo } from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClearPathDataError } from "@/data/http";
 import { getRegionalAlerts, type WeatherCoverage } from "@/data/nws";
-import { currentAlerts } from "@/domain/alerts";
+import { currentAlerts, MAX_ISSUANCE_SKEW_MS } from "@/domain/alerts";
 import type { OfficialAlert } from "@/domain/types";
 import {
   alertRetryDelay,
@@ -124,11 +124,14 @@ export function useRegionalAlerts({
 
   const snapshot = query.data?.coverage === coverage ? query.data : null;
   const error = query.failureReason ?? query.error;
+  // A rolled-back phone clock cannot establish current verification.
+  const snapshotAge = snapshot ? now - Date.parse(snapshot.fetchedAt) : NaN;
   const verified =
     snapshot !== null &&
     requestAllowed &&
     !error &&
-    now - Date.parse(snapshot.fetchedAt) < VERIFIED_AGE;
+    snapshotAge >= 0 &&
+    snapshotAge < VERIFIED_AGE;
   const source = snapshot ? (verified ? "live" : "cached") : "unavailable";
 
   useEffect(() => {
@@ -138,8 +141,8 @@ export function useRegionalAlerts({
   useEffect(() => {
     const clock = Date.now();
     const boundaries = [
-      ...(snapshot?.alerts.map((alert) => Date.parse(alert.expires)) ?? []),
-      ...(snapshot ? [Date.parse(snapshot.fetchedAt) + VERIFIED_AGE] : []),
+      ...(snapshot?.alerts.flatMap((alert) => [Date.parse(alert.expires), Date.parse(alert.sent) - MAX_ISSUANCE_SKEW_MS]) ?? []),
+      ...(snapshot ? [Date.parse(snapshot.fetchedAt), Date.parse(snapshot.fetchedAt) + VERIFIED_AGE] : []),
       nextAllowed,
     ].filter(Number.isFinite);
     if (boundaries.some((deadline) => deadline > now && deadline <= clock)) {
@@ -150,7 +153,7 @@ export function useRegionalAlerts({
     if (!deadlines.length) return;
     const timer = setTimeout(
       () => setNow(Date.now()),
-      Math.max(1, Math.min(...deadlines) - clock),
+      Math.min(2_147_483_647, Math.max(1, Math.min(...deadlines) - clock)),
     );
     return () => clearTimeout(timer);
   }, [nextAllowed, now, snapshot]);

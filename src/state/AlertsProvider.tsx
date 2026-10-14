@@ -11,10 +11,10 @@ import { AppState as NativeAppState } from "react-native";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { readAlertCache, writeAlertCache } from "@/data/alertCache";
-import { DEMO_LOCATION, DEMO_TIMESTAMP, getDemoSnapshot } from "@/data/demo";
+import { DEMO_TIMESTAMP, getDemoLocation, getDemoSnapshot } from "@/data/demo";
 import { ClearPathDataError } from "@/data/http";
 import { getActiveAlerts } from "@/data/nws";
-import { currentAlerts, locationKey } from "@/domain/alerts";
+import { currentAlerts, locationKey, MAX_ISSUANCE_SKEW_MS } from "@/domain/alerts";
 import type {
   AlertSnapshot,
   OfficialAlert,
@@ -30,6 +30,8 @@ const MAX_VERIFIED_AGE = 90_000;
 
 export type AlertsState = {
   source: AlertSnapshot["source"] | "unavailable";
+  /** Shared explicit display clock, frozen for demo and boundary-driven for real copies. */
+  displayTime: number;
   alerts: OfficialAlert[];
   snapshot: AlertSnapshot | null;
   selectedLocation: SelectedLocation | null;
@@ -86,7 +88,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
   const nextAllowed = useFeedDeadline(client, "nws", gateKey);
   const isCurrent = useRequestContext(requestAllowed, gateKey, automatic);
   const availability = useRef({ enabled, pointKey });
-  const selectedLocation = mode === "demo" ? DEMO_LOCATION : location;
+  const selectedLocation = mode === "demo" ? getDemoLocation(scenario) : location;
   const demo = useMemo(
     () => (mode === "demo" ? getDemoSnapshot(scenario) : null),
     [mode, scenario],
@@ -200,12 +202,17 @@ export function AlertsProvider({ children }: PropsWithChildren) {
   const savedSnapshot = cached?.locationKey === pointKey ? cached : null;
   const knownSnapshot = liveSnapshot ?? savedSnapshot;
   const verificationError = query.failureReason ?? query.error;
+  // A rolled-back phone clock cannot establish current verification.
+  const snapshotAge = knownSnapshot
+    ? now - Date.parse(knownSnapshot.fetchedAt)
+    : NaN;
   const verified =
     knownSnapshot !== null &&
     knownSnapshot.source === "live" &&
     !offline &&
     !verificationError &&
-    now - Date.parse(knownSnapshot.fetchedAt) < MAX_VERIFIED_AGE;
+    snapshotAge >= 0 &&
+    snapshotAge < MAX_VERIFIED_AGE;
   const source =
     mode === "demo"
       ? "demo"
@@ -267,9 +274,9 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     if (mode !== "live") return;
     const clock = Date.now();
     const boundaries = [
-      ...(snapshot?.alerts.map((alert) => Date.parse(alert.expires)) ?? []),
+      ...(snapshot?.alerts.flatMap((alert) => [Date.parse(alert.expires), Date.parse(alert.sent) - MAX_ISSUANCE_SKEW_MS]) ?? []),
       ...(mode === "live" && knownSnapshot
-        ? [Date.parse(knownSnapshot.fetchedAt) + MAX_VERIFIED_AGE]
+        ? [Date.parse(knownSnapshot.fetchedAt), Date.parse(knownSnapshot.fetchedAt) + MAX_VERIFIED_AGE]
         : []),
       nextAllowed,
     ].filter(Number.isFinite);
@@ -283,7 +290,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
     if (deadlines.length === 0) return;
     const timer = setTimeout(
       () => setNow(Date.now()),
-      Math.max(1, Math.min(...deadlines) - clock),
+      Math.min(2_147_483_647, Math.max(1, Math.min(...deadlines) - clock)),
     );
     return () => clearTimeout(timer);
   }, [knownSnapshot, mode, nextAllowed, now, snapshot]);
@@ -293,6 +300,7 @@ export function AlertsProvider({ children }: PropsWithChildren) {
   const alerts = snapshot ? currentAlerts(snapshot.alerts, displayNow) : [];
   const value: AlertsState = {
     source,
+    displayTime: displayNow,
     alerts,
     snapshot,
     selectedLocation,

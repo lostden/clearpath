@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -11,6 +11,7 @@ import {
   ActionButton,
   Brand,
   Body,
+  Disclosure,
   Panel,
   Screen,
   SectionTitle,
@@ -30,8 +31,19 @@ import { useAppState } from "@/state/AppState";
 import { ShareLocation } from "@/components/ShareLocation";
 import { FeedUpdateControl } from "@/components/FeedUpdateControl";
 import { LocationAlertControls } from "@/components/LocationAlertControls";
+import { FeedSettingsStatus } from "@/components/FeedSettingsStatus";
+import { prioritizeWarnings } from "@/student/priority";
 export default function HomeScreen() {
   const feed = useAlerts();
+  const ordered = useMemo(() => feed.selectedLocation ? prioritizeWarnings(feed.alerts, {
+    point: feed.selectedLocation.coordinates,
+    now: feed.displayTime,
+    source: feed.source,
+    applicability: feed.source === "demo" || feed.source === "unavailable" ? "unverified" : "nws-point",
+  }) : [], [feed.alerts, feed.displayTime, feed.selectedLocation, feed.source]);
+  const sorted = ordered.map((item) => item.alert);
+  const displayAlerts = sorted.length === feed.alerts.length && sorted.every((alert, index) => alert === feed.alerts[index]) ? feed.alerts : sorted;
+  const explanations = new Map(ordered.map((item) => [item.alert.id, item.explanation]));
   const { locationError, locationReady } = useAppState();
   const restoringLocation = feed.source !== "demo" && !locationReady && !feed.selectedLocation;
   const [showLocation, setShowLocation] = useState(false);
@@ -113,7 +125,8 @@ export default function HomeScreen() {
         )}
         {feed.selectedLocation ? (
           <SituationPanel
-            alerts={feed.alerts}
+            alerts={displayAlerts}
+            priorityExplanations={explanations}
             source={feed.source}
             loading={feed.isLoading}
             error={!!feed.error}
@@ -122,6 +135,7 @@ export default function HomeScreen() {
                 alert,
                 source: feed.source,
                 fetchedAt: feed.snapshot?.fetchedAt ?? null,
+                priorityExplanation: explanations.get(alert.id),
               })
             }
           />
@@ -162,9 +176,9 @@ export default function HomeScreen() {
             this display.
           </Body>
         )}
+        <FeedSettingsStatus />
         <ShareLocation selectedLocation={feed.selectedLocation} source={feed.source} />
         <View style={s.divider} />
-        {feed.source !== "demo" && <FeedUpdateControl />}
         <SectionTitle>02 / HAZARD MAP</SectionTitle>
         {feed.selectedLocation && (
           <Pressable
@@ -175,7 +189,7 @@ export default function HomeScreen() {
             <MapCanvas
               compact
               point={feed.selectedLocation.coordinates}
-              alerts={feed.alerts}
+              alerts={displayAlerts}
               source={feed.source}
             />
           </Pressable>
@@ -192,8 +206,11 @@ export default function HomeScreen() {
           <Text style={s.linkText}>GET RESOURCES →</Text>
         </Pressable>
         <View style={s.divider} />
-        <SectionTitle>03 / LOCATION ALERTS</SectionTitle>
-        <LocationAlertControls />
+        <Disclosure title="Feed settings and GPS alerts">
+          {feed.source !== "demo" && <FeedUpdateControl />}
+          <SectionTitle>03 / LOCATION ALERTS</SectionTitle>
+          <LocationAlertControls />
+        </Disclosure>
         <SectionTitle>04 / TRAINING DEMO</SectionTitle>
         <DemoControls />
         <Body>
@@ -209,6 +226,7 @@ export default function HomeScreen() {
           feed.snapshot?.fetchedAt ?? null,
         )}
         fetchedAt={selectedAlert?.fetchedAt}
+        priorityExplanation={selectedAlert?.priorityExplanation}
         onClose={() => setSelectedAlert(null)}
       />
       <LocationPicker

@@ -24,6 +24,14 @@ beforeEach(async () => {
   await AsyncStorage.clear();
 });
 
+test("the Frisco preset selects its public Census reference point without GPS or citywide coverage", async () => {
+  const screen = await render(<AppProvider><LocationPicker visible onClose={() => {}} /><SelectedPoint /></AppProvider>);
+  await fireEvent.press(screen.getByRole("button", { name: "Select Frisco, Texas · Census reference point" }));
+  expect(screen.getByTestId("selected-point")).toHaveTextContent("live:Frisco, Texas · Census reference point");
+  expect(screen.getByTestId("selected-coordinates")).toHaveTextContent(JSON.stringify({ latitude: 33.155424, longitude: -96.8225927 }));
+  expect(gps).not.toHaveBeenCalled();
+});
+
 test("opening the selector does not ask permission before deliberate GPS interaction", async () => {
   const screen = await render(
     <AppProvider>

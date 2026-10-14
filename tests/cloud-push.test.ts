@@ -13,7 +13,7 @@ const configured = (background = true) => ({
   extra: { cloudPushEnabled: true, cloudPushEndpoint: "https://alerts.example.org", cloudPushFcmConfigured: true, cloudPushBackgroundLocationEnabled: background, eas: { projectId: CLOUD_PROJECT_ID } },
 });
 const input = () => ({ point: POINT, locationObservedAt: new Date(Date.now()).toISOString() });
-const status = () => ({ enabled: true, baseline: "ready", locationFresh: true, locationObservedAt: ISO, lastCheckAt: NOW, lastError: null, lastDelivery: "provider-accepted", pendingReceipts: 0 });
+const status = () => ({ enabled: true, baseline: "ready", locationFresh: true, locationObservedAt: ISO, lastCheckAt: ISO, lastError: null, lastDelivery: "provider-accepted", pendingReceipts: 0 });
 const gps = (time = Date.now(), point = POINT): ExpoLocation.LocationObject => ({
   timestamp: time, mocked: false, coords: { ...point, altitude: null, accuracy: 10, altitudeAccuracy: null, heading: null, speed: null },
 });

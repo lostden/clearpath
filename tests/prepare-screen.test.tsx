@@ -4,6 +4,9 @@ import { Alert, Linking, Platform } from "react-native";
 import PrepareScreen from "../src/app/prepare";
 import { PreparednessProvider } from "../src/state/PreparednessState";
 
+let mockPreparationParams: { guide?: string | string[]; guideRequest?: string } = {};
+jest.mock("expo-router", () => ({ useLocalSearchParams: () => mockPreparationParams }));
+
 const storageKey = "@clearpath/preparation/v1";
 const defaultRead = jest.mocked(AsyncStorage.getItem).getMockImplementation()!;
 const defaultWrite = jest.mocked(AsyncStorage.setItem).getMockImplementation()!;
@@ -37,11 +40,74 @@ function webConfirmation(accepted: boolean) {
 }
 
 beforeEach(async () => {
+  mockPreparationParams = {};
   jest.mocked(AsyncStorage.getItem).mockReset().mockImplementation(defaultRead);
   jest.mocked(AsyncStorage.setItem).mockReset().mockImplementation(defaultWrite);
   await AsyncStorage.clear();
   jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
+});
+
+test("warning guide params expand the bundled guide and a new request reopens it after section changes", async () => {
+  mockPreparationParams = { guide: "tornado", guideRequest: "first" };
+  const screen = await preparation();
+  expect(screen.getByRole("button", { name: "Read Tornadoes" }).props.accessibilityState.expanded).toBe(true);
+  expect(screen.getByText(/During a tornado warning, move to a basement/)).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Show emergency kit" }));
+  expect(screen.queryByText(/During a tornado warning, move to a basement/)).toBeNull();
+  mockPreparationParams = { guide: "tornado", guideRequest: "second" };
+  await screen.rerender(<PreparednessProvider><PrepareScreen /></PreparednessProvider>);
+  expect(screen.getByRole("button", { name: "Read Tornadoes" }).props.accessibilityState.expanded).toBe(true);
+  expect(screen.getByText(/During a tornado warning, move to a basement/)).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: "Drinking water" })).toBeNull();
+});
+
+test.each(["unsupported", ["flood", "tornado"]])("invalid guide param %s leaves general field guides available", async (guide) => {
+  mockPreparationParams = { guide, guideRequest: "invalid" };
+  const screen = await preparation();
+  expect(screen.getByRole("header", { name: "02 / FIELD GUIDANCE" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Read Flooding" }).props.accessibilityState.expanded).toBe(false);
+  expect(screen.queryByText(/Do not walk or drive into floodwater/)).toBeNull();
+});
+
+test("kit and family plan sources disclose review date and open only the selected official reference", async () => {
+  const screen = await preparation();
+  await fireEvent.press(screen.getByRole("button", { name: "Show emergency kit" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Kit source and review" }));
+  expect(screen.getByText("Reviewed 2026-10-09")).toBeTruthy();
+  expect(Linking.openURL).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByRole("button", { name: "Open kit source" }));
+  expect(Linking.openURL).toHaveBeenLastCalledWith("https://www.ready.gov/sites/default/files/documents/files/checklist3.pdf");
+  await fireEvent.press(screen.getByRole("button", { name: "Show family plan" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Family plan source and review" }));
+  expect(screen.getByText("Reviewed 2026-10-09")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Open family plan source" }));
+  expect(Linking.openURL).toHaveBeenLastCalledWith("https://www.weather.gov/media/afc/Hydro/FloodSafety/family-emergency-communication-plan.pdf");
+});
+
+test("Frisco and regional resources open their official websites only after a deliberate action", async () => {
+  const screen = await preparation();
+  await fireEvent.press(screen.getByRole("button", { name: "Show local resources" }));
+  expect(screen.getByText(/Links are references, not current emergency status/)).toBeTruthy();
+  expect(Linking.openURL).not.toHaveBeenCalled();
+  for (const [name, url] of [
+    ["Open City of Frisco emergency preparedness", "https://www.friscotexas.gov/324/Emergency-Preparedness"],
+    ["Open NWS Fort Worth/Dallas", "https://www.weather.gov/fwd/"],
+    ["Open Texas preparedness resources", "https://tdem.texas.gov/prepare"],
+    ["Open Collin County emergency management", "https://www.collincountytx.gov/Services/Engineering/Fire-Marshal/Emergency-Management"],
+  ]) {
+    await fireEvent.press(screen.getByRole("button", { name }));
+    expect(Linking.openURL).toHaveBeenLastCalledWith(url);
+  }
+});
+
+test("privacy details disclose on demand while the emergency-service limitation stays visible", async () => {
+  const screen = await preparation();
+  expect(screen.queryByText(/ClearPath has no account or analytics/)).toBeNull();
+  expect(screen.getByText(/ClearPath does not monitor in the background/)).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Local storage and privacy" }));
+  expect(screen.getByText(/ClearPath has no account or analytics/)).toBeTruthy();
+  expect(screen.getByText(/The app does not encrypt this storage/)).toBeTruthy();
 });
 
 afterEach(() => {
@@ -62,6 +128,7 @@ test("offline field guides are available before local hydration without renderin
   }
   await fireEvent.press(screen.getByRole("button", { name: "Read Flooding" }));
   expect(screen.getByText(/Do not walk or drive into floodwater/)).toBeTruthy();
+  expect(screen.getByText("Reviewed 2026-10-09")).toBeTruthy();
   expect(Linking.openURL).not.toHaveBeenCalled();
   expect(Alert.alert).not.toHaveBeenCalled();
   await act(() => finishRead(null));

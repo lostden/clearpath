@@ -1,5 +1,13 @@
 import type { Coordinates, OfficialAlert, SelectedLocation } from "./types";
 
+export const MAX_ISSUANCE_SKEW_MS = 60_000;
+
+/** Allow one minute of provider/device clock skew in issuance, independently of future onset. */
+export function hasPlausibleIssuance(alert: OfficialAlert, now: number): boolean {
+  const sent = Date.parse(alert.sent);
+  return Number.isFinite(sent) && sent <= now + MAX_ISSUANCE_SKEW_MS;
+}
+
 export function validCoordinates(value: unknown): value is Coordinates {
   if (typeof value !== "object" || value === null) return false;
   const point = value as Record<string, unknown>;
@@ -72,7 +80,10 @@ export function currentAlerts(
   alerts: readonly OfficialAlert[],
   now = Date.now(),
 ): OfficialAlert[] {
-  return uniqueAlerts(alerts).filter((alert) => {
+  // Validate issuance before duplicate/replacement processing: a future update
+  // or cancellation in old cached data must not erase a currently valid warning.
+  const issued = alerts.filter((alert) => hasPlausibleIssuance(alert, now));
+  return uniqueAlerts(issued).filter((alert) => {
     const expires = Date.parse(alert.expires);
     return Number.isFinite(expires) && expires > now;
   });

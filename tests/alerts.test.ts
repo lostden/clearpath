@@ -71,6 +71,34 @@ describe("display baseline", () => {
     });
     expect(uniqueAlerts([latest, cancellation])).toEqual([latest]);
   });
+
+  test.each(["Alert", "Update", "Cancel"] as const)(
+    "a future-issued %s cannot remove a current warning from cached data",
+    (messageType) => {
+      const original = officialAlert();
+      const future = officialAlert({
+        id: messageType === "Alert" ? original.id : "urn:future",
+        messageType,
+        sent: "2026-10-09T19:02:00Z",
+        sourceUrl: "https://api.weather.gov/alerts/urn:future",
+        references: [original.id, original.sourceUrl!],
+      });
+      expect(currentAlerts([original, future], TEST_NOW)).toEqual([original]);
+      expect(currentAlerts([future, original], TEST_NOW)).toEqual([original]);
+    },
+  );
+
+  test("future issuance is bounded independently of a valid future onset", () => {
+    const allowed = officialAlert({
+      sent: "2026-10-09T14:01:00-05:00",
+      onset: "2026-10-09T19:30:00Z",
+    });
+    expect(currentAlerts([allowed], TEST_NOW)).toEqual([allowed]);
+    expect(currentAlerts([{
+      ...allowed,
+      sent: "2026-10-09T19:01:00.001Z",
+    }], TEST_NOW)).toEqual([]);
+  });
 });
 
 describe("location identity", () => {

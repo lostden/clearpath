@@ -3,6 +3,14 @@ import { validCoordinates } from "@/domain/alerts";
 import type { SelectedLocation } from "@/domain/types";
 export const texasLocations: SelectedLocation[] = [
   {
+    // Census TIGERweb ACS25, geography as of 2025-01-01; Frisco GEOID 4827684.
+    // INTPTLAT/INTPTLON is a public reference point, not citywide coverage.
+    // https://tigerweb.geo.census.gov/tigerwebmain/Files/acs26/tigerweb_acs26_incplace_2025_acs25_tx.html
+    label: "Frisco, Texas · Census reference point",
+    coordinates: { latitude: 33.155424, longitude: -96.8225927 },
+    kind: "manual",
+  },
+  {
     label: "Kerrville, Texas · city center",
     coordinates: { latitude: 30.0474, longitude: -99.1403 },
     kind: "manual",

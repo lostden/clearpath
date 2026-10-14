@@ -15,10 +15,11 @@ import {
   type AlertsState,
 } from "../src/state/AlertsProvider";
 import { AppProvider, useAppState } from "../src/state/AppState";
-import { getActiveAlerts } from "../src/data/nws";
+import { getActiveAlerts, normalizeNwsCollection } from "../src/data/nws";
 import { readAlertCache, writeAlertCache } from "../src/data/alertCache";
 import { ClearPathDataError } from "../src/data/http";
-import { officialAlert, TEST_NOW } from "./fixtures/alerts";
+import { DEMO_LOCATION, FRISCO_DEMO_LOCATION } from "../src/data/demo";
+import { nwsCollection, nwsFeature, officialAlert, TEST_NOW } from "./fixtures/alerts";
 import type { SelectedLocation } from "../src/domain/types";
 
 const mockNetwork = { isConnected: true, isInternetReachable: true };
@@ -27,7 +28,10 @@ jest.mock("../src/state/FeedPreferences", () => ({ useFeedPreferences: () => moc
 jest.mock("@react-native-community/netinfo", () => ({
   useNetInfo: () => mockNetwork,
 }));
-jest.mock("../src/data/nws", () => ({ getActiveAlerts: jest.fn() }));
+jest.mock("../src/data/nws", () => ({
+  ...jest.requireActual("../src/data/nws"),
+  getActiveAlerts: jest.fn(),
+}));
 jest.mock("../src/data/alertCache", () => ({
   readAlertCache: jest.fn(),
   writeAlertCache: jest.fn(),
@@ -121,6 +125,55 @@ afterEach(async () => {
   client?.clear();
   jest.restoreAllMocks();
   jest.useRealTimers();
+});
+
+test.each([1, 120_000])("a %i ms phone-clock rollback cannot keep a point snapshot live", async (rollback) => {
+  mockPreferences.automatic = false;
+  const warning = officialAlert();
+  fetchAlerts.mockResolvedValue([warning]);
+  await mount();
+  await selectLive();
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  const fetchedAt = state.snapshot!.fetchedAt;
+  await act(() => {
+    jest.setSystemTime(Date.parse(fetchedAt) - rollback);
+    notifyAppState("active");
+  });
+  expect(state.source).toBe("cached");
+  expect(state.snapshot?.source).toBe("cached");
+  expect(state.snapshot?.fetchedAt).toBe(fetchedAt);
+  expect(state.alerts).toEqual([warning]);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("a future cancellation fails point verification without clearing or retimestamping a prior warning", async () => {
+  mockPreferences.automatic = false;
+  const warning = officialAlert();
+  fetchAlerts.mockResolvedValueOnce([warning]).mockImplementationOnce(async () =>
+    normalizeNwsCollection(nwsCollection(
+      nwsFeature(),
+      nwsFeature({
+        id: "urn:future-cancel",
+        messageType: "Cancel",
+        sent: new Date(Date.now() + 120_000).toISOString(),
+        references: [{ identifier: warning.id }],
+      }),
+    )),
+  );
+  await mount();
+  await selectLive();
+  await act(() => state.refresh());
+  await waitFor(() => expect(state.source).toBe("live"));
+  await waitFor(() => expect(writeCache).toHaveBeenCalledTimes(1));
+  const fetchedAt = state.snapshot!.fetchedAt;
+  await advance(30_000);
+  await act(() => state.refresh());
+  expect(state.error).toBeInstanceOf(ClearPathDataError);
+  expect(state.source).toBe("cached");
+  expect(state.alerts).toEqual([warning]);
+  expect(state.snapshot?.fetchedAt).toBe(fetchedAt);
+  expect(writeCache).toHaveBeenCalledTimes(1);
 });
 
 test("manual mode waits for a press and never polls, resumes, reconnects, or retries automatically", async () => {
@@ -268,6 +321,47 @@ test("demo mode never reads or writes the real cache and shares one feed across 
   await selectLive();
   await waitFor(() => expect(state.source).toBe("live"));
   expect(fetchAlerts).toHaveBeenCalledTimes(1);
+});
+
+test("the Frisco demo switches point and snapshot together without fetching or entering the official cache", async () => {
+  await mount();
+  await act(() => {
+    settings.setLocation(point);
+    settings.setScenario("frisco");
+  });
+  expect(state.source).toBe("demo");
+  expect(state.selectedLocation).toEqual(FRISCO_DEMO_LOCATION);
+  expect(state.snapshot?.locationKey).toBe("33.155424,-96.8225927");
+  expect(state.alerts.map((alert) => alert.id)).toEqual(["demo:frisco-flash-flood", "demo:frisco-thunderstorm"]);
+  expect(settings.location).toEqual(point);
+  await act(() => state.refresh());
+  await advance(24 * 60 * 60_000);
+  expect(state.alerts).toHaveLength(2);
+  expect(state.snapshot?.fetchedAt).toBe("2025-07-04T10:15:00.000Z");
+  expect(fetchAlerts).not.toHaveBeenCalled();
+  expect(readCache).not.toHaveBeenCalled();
+  expect(writeCache).not.toHaveBeenCalled();
+
+  await act(() => settings.setScenario("tornado"));
+  expect(state.selectedLocation).toEqual(DEMO_LOCATION);
+  expect(state.snapshot?.locationKey).toBe("30.0699,-99.3328");
+  expect(state.alerts.map((alert) => alert.id)).toEqual(["demo:tornado"]);
+});
+
+test("leaving the Frisco demo restores the saved live point without requesting its invented scene coordinates", async () => {
+  await mount();
+  await act(() => {
+    settings.setLocation(point);
+    settings.setScenario("frisco");
+  });
+  expect(state.selectedLocation?.coordinates).toEqual({ latitude: 33.155424, longitude: -96.8225927 });
+  await act(() => settings.setMode("live"));
+  await waitFor(() => expect(state.source).toBe("live"));
+  expect(state.selectedLocation).toEqual(point);
+  expect(state.snapshot?.locationKey).toBe("30,-99");
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
+  expect(fetchAlerts.mock.calls[0][0]).toEqual(point);
+  expect(state.alerts).toEqual([]);
 });
 
 test("historical demo warnings and expired counts use the frozen presentation clock", async () => {
@@ -705,6 +799,25 @@ test("two immediate Home manual presses share the pending request", async () => 
   expect(fetchAlerts).toHaveBeenCalledTimes(1);
   await act(async () => { finish([]); await Promise.all([first, second]); });
   expect(state.canRefresh).toBe(false);
+});
+
+test("manual Home admits warnings and rechecks verification at clock recovery boundaries without another fetch", async () => {
+  mockPreferences.automatic = false;
+  const alert = officialAlert({ sent: new Date(TEST_NOW).toISOString() });
+  fetchAlerts.mockResolvedValue([alert]);
+  await mount(); await selectLive(); await act(() => state.refresh());
+  const fetchedAt = state.snapshot!.fetchedAt;
+  await act(() => { jest.setSystemTime(TEST_NOW - 120_000); notifyAppState("active"); });
+  await advance(0);
+  expect(state.alerts).toEqual([]);
+  expect(state.source).toBe("cached");
+  await advance(60_000);
+  expect(state.alerts).toEqual([alert]);
+  expect(state.source).toBe("cached");
+  await advance(Date.parse(fetchedAt) - Date.now());
+  expect(state.source).toBe("live");
+  expect(state.snapshot!.fetchedAt).toBe(fetchedAt);
+  expect(fetchAlerts).toHaveBeenCalledTimes(1);
 });
 
 test("Home cancels a delayed reconnect slot when the user switches to demo", async () => {

@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, within } from "@testing-library/react-native";
 import { Linking } from "react-native";
+import { router } from "expo-router";
 import {
   AlertDetail,
   detailSource,
@@ -8,7 +9,47 @@ import {
 import { officialAlert } from "./fixtures/officialAlert";
 import { TEST_NOW } from "./fixtures/alerts";
 
+jest.mock("expo-router", () => ({ router: { navigate: jest.fn() } }));
+
+test.each([
+  ["Flash Flood Warning", "Read Flooding guide", "flood"],
+  ["Severe Thunderstorm Warning", "Open general preparedness", ""],
+])("%s dismisses its warning before opening the appropriate bundled preparation", async (event, action, guide) => {
+  let closed = false;
+  jest.mocked(router.navigate).mockImplementation(() => {
+    expect(closed).toBe(true);
+  });
+  const screen = await render(<AlertDetail alert={{ ...officialAlert, event }} source="cached" onClose={() => { closed = true; }} />);
+  await fireEvent.press(screen.getByRole("button", { name: action }));
+  expect(router.navigate).toHaveBeenCalledWith({
+    pathname: "/prepare",
+    params: { guide, guideRequest: expect.any(String) },
+  });
+});
+
+test("repeated warning actions issue distinct guide requests even within the same millisecond", async () => {
+  const screen = await render(<AlertDetail alert={officialAlert} source="demo" onClose={() => {}} />);
+  const action = screen.getByRole("button", { name: "Read Flooding guide" });
+  await fireEvent.press(action);
+  await fireEvent.press(action);
+  const first = jest.mocked(router.navigate).mock.calls[0][0];
+  const second = jest.mocked(router.navigate).mock.calls[1][0];
+  expect(first).not.toEqual(second);
+});
+
+test("display-order explanation is secondary and preserves original official instructions", async () => {
+  const explanation = "Shown earlier because this warning is in the selected-point NWS response. This is display order, not personal danger.";
+  const screen = await render(<AlertDetail alert={officialAlert} source="live" priorityExplanation={explanation} onClose={() => {}} />);
+  expect(screen.queryByText(explanation)).toBeNull();
+  expect(screen.getByText(officialAlert.instruction!)).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Why this warning is shown here" }));
+  expect(screen.getByText(explanation)).toBeTruthy();
+  expect(screen.getByText(officialAlert.instruction!)).toBeTruthy();
+  expect(screen.getByText(officialAlert.description)).toBeTruthy();
+});
+
 beforeEach(() => {
+  jest.mocked(router.navigate).mockReset();
   // Keep the fixed warning fixture current, and run expiration callbacks only
   // through explicit timer advancement inside act.
   jest.useFakeTimers({ now: TEST_NOW });

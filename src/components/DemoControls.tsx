@@ -3,7 +3,9 @@ import { useAppState } from "@/state/AppState";
 import type { DemoScenario } from "@/domain/types";
 import { ActionButton, Body } from "@/ui/components";
 import { colors, typography } from "@/ui/tokens";
+import { getDemoScenarioDescription } from "@/data/demo";
 const scenarios: { id: DemoScenario; label: string }[] = [
+  { id: "frisco", label: "North Texas flood" },
   { id: "flood", label: "Flood" },
   { id: "tornado", label: "Tornado" },
   { id: "normal", label: "No alerts" },
@@ -15,6 +17,7 @@ export function DemoControls() {
     <View style={s.container}>
       <Text style={s.label}>SIMULATION / SCENARIO</Text>
       <Body>Local fixtures. No current emergency is represented.</Body>
+      <Body>{getDemoScenarioDescription(scenario)}</Body>
       <View style={s.options}>
         {scenarios.map((option) => (
           <Pressable
@@ -51,7 +54,7 @@ export function DemoControls() {
       </Body>
       <ActionButton
         title="Explore simulated demo"
-        onPress={() => setMode("demo")}
+        onPress={() => { setScenario("frisco"); setMode("demo"); }}
         secondary
       />
     </View>

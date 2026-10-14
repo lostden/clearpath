@@ -1,10 +1,12 @@
 import { Modal, StyleSheet, Text, View } from "react-native";
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { OfficialAlert } from "@/domain/types";
 import {
   ActionButton,
   Body,
+  Disclosure,
   Heading,
   Panel,
   Screen,
@@ -14,10 +16,16 @@ import {
 } from "@/ui/components";
 import { colors, typography } from "@/ui/tokens";
 import { DEMO_TIMESTAMP } from "@/data/demo";
+import { guideForEvent } from "@/domain/preparednessNavigation";
+
+// Each action must reopen its guide even if Prepare remains mounted on a
+// different section, including repeated actions within one clock tick.
+let guideRequest = 0;
 export type AlertSelection = {
   alert: OfficialAlert;
   source: "live" | "cached" | "demo" | "unavailable";
   fetchedAt: string | null;
+  priorityExplanation?: string;
 };
 export function detailSource(
   selection: AlertSelection | null,
@@ -38,12 +46,14 @@ export function AlertDetail({
   onClose,
   fetchedAt,
   onViewZoneAreas,
+  priorityExplanation,
 }: {
   alert: OfficialAlert | null;
   source: AlertSelection["source"];
   onClose: () => void;
   fetchedAt?: string | null;
   onViewZoneAreas?: () => void;
+  priorityExplanation?: string;
 }) {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -55,6 +65,17 @@ export function AlertDetail({
     return () => clearTimeout(timer);
   }, [alert, source]);
   const displayTime = source === "demo" ? DEMO_TIMESTAMP : now;
+  const preparationGuide = alert ? guideForEvent(alert.event) : null;
+  function openPreparation() {
+    onClose();
+    router.navigate({
+      pathname: "/prepare",
+      params: {
+        guide: preparationGuide?.id ?? "",
+        guideRequest: String(++guideRequest),
+      },
+    });
+  }
   return (
     <Modal
       visible={!!alert}
@@ -90,6 +111,15 @@ export function AlertDetail({
                 "No instructions were supplied with this warning."}
             </Body>
           </Panel>
+          <ActionButton
+            title={preparationGuide ? `Read ${preparationGuide.title} guide` : "Open general preparedness"}
+            secondary
+            onPress={openPreparation}
+          />
+          <Body>Bundled general guidance. Follow the original official instructions above.</Body>
+          {priorityExplanation && <Disclosure key={alert.id} title="Why this warning is shown here">
+            <Body>{priorityExplanation}</Body>
+          </Disclosure>}
           <SectionTitle>{source === "demo" ? "SIMULATED WARNING TEXT" : "Full warning text"}</SectionTitle>
           <Body>{alert.description}</Body>
           <SectionTitle>ISSUANCE / TIMES</SectionTitle>

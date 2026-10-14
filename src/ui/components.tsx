@@ -1,4 +1,4 @@
-import { type PropsWithChildren, type ReactNode } from "react";
+import { useState, type PropsWithChildren, type ReactNode } from "react";
 import {
   Alert,
   Linking,
@@ -89,6 +89,20 @@ export function SectionTitle({ children }: PropsWithChildren) {
 }
 export function Panel({ children }: PropsWithChildren) {
   return <View style={styles.panel}>{children}</View>;
+}
+
+/** Secondary information only. Keep warnings, source state and errors outside. */
+export function Disclosure({ title, children }: PropsWithChildren<{ title: string }>) {
+  const [expanded, setExpanded] = useState(false);
+  return <View style={styles.disclosure}>
+    <Pressable accessibilityRole="button" accessibilityLabel={title}
+      accessibilityState={{ expanded }} aria-expanded={expanded}
+      onPress={() => setExpanded((value) => !value)} style={styles.disclosureButton}>
+      <Text style={styles.disclosureTitle}>{title}</Text>
+      <Text accessibilityElementsHidden style={styles.disclosureSymbol}>{expanded ? "−" : "+"}</Text>
+    </Pressable>
+    {expanded && <View style={styles.disclosureContent}>{children}</View>}
+  </View>;
 }
 export function ActionButton({
   title,
@@ -252,6 +266,11 @@ export const styles = StyleSheet.create({
     borderRadius: 0,
     gap: 12,
   },
+  disclosure: { borderWidth: 2, borderColor: colors.line, backgroundColor: colors.surface },
+  disclosureButton: { minHeight: 56, padding: 14, flexDirection: "row", alignItems: "center", gap: 12 },
+  disclosureTitle: { flex: 1, color: colors.ink, fontFamily: typography.bodyStrong, fontSize: 16, lineHeight: 24 },
+  disclosureSymbol: { color: colors.orange, fontFamily: typography.bodyStrong, fontSize: 24, lineHeight: 30 },
+  disclosureContent: { padding: 14, paddingTop: 0, gap: 12 },
   badge: {
     alignSelf: "flex-start",
     paddingHorizontal: 8,

@@ -63,4 +63,4 @@ export type AlertSnapshot = {
   locationKey: string;
 };
 
-export type DemoScenario = "flood" | "tornado" | "normal" | "offline";
+export type DemoScenario = "flood" | "tornado" | "normal" | "offline" | "frisco";

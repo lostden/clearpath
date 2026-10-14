@@ -118,6 +118,69 @@ describe("NWS adapter", () => {
     ).toEqual([]);
   });
 
+  test.each(["Alert", "Update", "Cancel"])(
+    "rejects an Actual/Public %s issued two minutes ahead before it can replace a warning",
+    (messageType) => {
+      const future = nwsFeature({
+        id: messageType === "Alert" ? "urn:test:1" : "urn:future",
+        messageType,
+        sent: "2026-10-09T19:02:00Z",
+        references: [{ identifier: "urn:test:1" }],
+      });
+      expect(() =>
+        normalizeNwsCollection(nwsCollection(nwsFeature(), future), TEST_NOW),
+      ).toThrow(/could not be verified/);
+      expect(() =>
+        normalizeNwsCollection(nwsCollection(future), TEST_NOW),
+      ).toThrow(/could not be verified/);
+    },
+  );
+
+  test.each(["2026-10-09T19:01:00Z", "2026-10-09T14:01:00-05:00"])(
+    "allows exactly one minute of issuance skew using the timestamp's timezone: %s",
+    (sent) => {
+      const [alert] = normalizeNwsCollection(
+        nwsCollection(nwsFeature({ sent, onset: "2026-10-09T19:30:00Z" })),
+        TEST_NOW,
+      );
+      expect(alert.sent).toBe(sent);
+      expect(alert.onset).toBe("2026-10-09T19:30:00Z");
+    },
+  );
+
+  test("rejects issuance one millisecond beyond the allowed skew", () => {
+    expect(() => normalizeNwsCollection(
+      nwsCollection(nwsFeature({ sent: "2026-10-09T19:01:00.001Z" })),
+      TEST_NOW,
+    )).toThrow(/could not be verified/);
+  });
+
+  test("valid future onset warnings remain current and non-public future cancellations are excluded", () => {
+    expect(normalizeNwsCollection(nwsCollection(
+      nwsFeature({ onset: "2026-10-09T19:30:00Z" }),
+      nwsFeature({
+        id: "urn:test-cancel",
+        status: "Test",
+        messageType: "Cancel",
+        sent: "2026-10-09T19:02:00Z",
+        references: [{ identifier: "urn:test:1" }],
+      }),
+    ), TEST_NOW)).toEqual([officialAlert({ onset: "2026-10-09T19:30:00Z" })]);
+  });
+
+  test.each(["Update", "Cancel"])("valid %s messages inside the issuance skew still replace referenced warnings", (messageType) => {
+    const result = normalizeNwsCollection(nwsCollection(
+      nwsFeature(),
+      nwsFeature({
+        id: "urn:replacement",
+        messageType,
+        sent: "2026-10-09T19:01:00Z",
+        references: [{ identifier: "urn:test:1" }],
+      }),
+    ), TEST_NOW);
+    expect(result.map((alert) => alert.id)).toEqual(messageType === "Cancel" ? [] : ["urn:replacement"]);
+  });
+
   test("preserves closed official polygons and never invents malformed geometry", () => {
     const geometry = {
       type: "Polygon",

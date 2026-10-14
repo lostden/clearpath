@@ -3,6 +3,7 @@ module.exports = {
   preset: "jest-expo",
   setupFilesAfterEnv: ["<rootDir>/tests/setup.js"],
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
+  modulePathIgnorePatterns: ["<rootDir>/.kilo/", "<rootDir>/.worktrees/"],
   testMatch: ["<rootDir>/tests/**/*.test.[jt]s?(x)"],
   clearMocks: true,
   collectCoverageFrom: [

@@ -19,7 +19,8 @@ export type CloudPushStatus = {
   baseline: "ready" | "pending";
   locationFresh: boolean;
   locationObservedAt: string;
-  lastCheckAt: number | null;
+  /** ISO timestamp returned by the watcher; null before its first successful check. */
+  lastCheckAt: string | null;
   lastError: string | null;
   lastDelivery: string | null;
   pendingReceipts: number;

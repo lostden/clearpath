@@ -13,6 +13,30 @@ export const DEMO_LOCATION: SelectedLocation = {
   kind: "manual",
 };
 
+/** Public Census reference coordinate; every scene value below is invented. */
+export const FRISCO_DEMO_LOCATION: SelectedLocation = {
+  label: "Frisco · North Texas training point",
+  coordinates: { latitude: 33.155424, longitude: -96.8225927 },
+  kind: "manual",
+};
+
+export function getDemoLocation(scenario: DemoScenario): SelectedLocation {
+  return scenario === "frisco" ? FRISCO_DEMO_LOCATION : DEMO_LOCATION;
+}
+
+export function isFriscoDemoLocation(location: SelectedLocation | null): boolean {
+  return !!location && location.coordinates.latitude === FRISCO_DEMO_LOCATION.coordinates.latitude &&
+    location.coordinates.longitude === FRISCO_DEMO_LOCATION.coordinates.longitude;
+}
+
+export function getDemoScenarioDescription(scenario: DemoScenario): string {
+  if (scenario === "frisco") return "Invented North Texas training scenario. Warning text and areas are fictional, not a historical event or current emergency.";
+  if (scenario === "tornado") return "Fictional tornado exercise. Warning text and areas are invented.";
+  if (scenario === "normal") return "No-alert training exercise. An empty result does not establish safety.";
+  if (scenario === "offline") return "Simulated Hill Country outage. Retained warnings and readings are fictional.";
+  return "Hill Country flood exercise. Warning areas and readings are fictional.";
+}
+
 /** Frozen presentation clock. Live/cached official warnings use the real clock. */
 export const DEMO_TIMESTAMP = Date.parse("2025-07-04T05:15:00-05:00");
 export const DEMO_DATE_LABEL = "JUL 04 2025 / 05:15 CDT";
@@ -133,10 +157,31 @@ export function getDemoSnapshot(
       geometry: null,
     });
   }
+  if (scenario === "frisco") {
+    const training = {
+      ...flood,
+      id: "demo:frisco-flash-flood",
+      headline: "SIMULATED: Flash flooding near the Frisco training point",
+      description: "SIMULATED DEMO — Invented North Texas training scenario, not a historical event or current emergency. The warning text, classifications, times and shaded area are fictional. Use Live Mode for official warnings.",
+      geometry: {
+        type: "Polygon" as const,
+        coordinates: [[[-96.87, 33.19], [-96.81, 33.20], [-96.77, 33.16], [-96.79, 33.13], [-96.85, 33.12], [-96.87, 33.19]]] as [number, number][][],
+      },
+    };
+    alerts = [training, {
+      ...training, id: "demo:frisco-thunderstorm", event: "Severe Thunderstorm Warning",
+      headline: "SIMULATED: Severe weather in the North Texas exercise",
+      urgency: "Expected", certainty: "Likely", sent: minutes(now, -20),
+      instruction: "SIMULATED example instruction: Read the issuing agency instructions and review your household preparation plan.",
+      geometry: {
+        type: "Polygon", coordinates: [[[-96.89, 33.21], [-96.76, 33.21], [-96.75, 33.11], [-96.89, 33.10], [-96.89, 33.21]]],
+      },
+    }];
+  }
   return {
     source: "demo",
     alerts,
     fetchedAt: minutes(now, scenario === "offline" ? -18 : 0),
-    locationKey: locationKey(DEMO_LOCATION),
+    locationKey: locationKey(getDemoLocation(scenario)),
   };
 }

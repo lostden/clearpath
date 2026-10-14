@@ -114,9 +114,9 @@ function LocationPickerSession({ onClose }: { onClose: () => void }) {
             <View accessibilityLiveRegion="polite" aria-live="polite"><Body>{error}</Body></View>
           </Panel>
         )}
-        <SectionTitle>TEXAS / CITY CENTERS</SectionTitle>
+        <SectionTitle>TEXAS / REFERENCE POINTS</SectionTitle>
         <Body>
-          City centers check one point. Your address may have different
+          City reference points check one point. Your address may have different
           warnings.
         </Body>
         {texasLocations.map((location) => (

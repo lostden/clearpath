@@ -8,7 +8,7 @@ import type { OfficialWildfirePerimeter } from "../src/services/wildfireTypes";
 import type { MapCanvasProps } from "../src/components/MapCanvas";
 import type { AlertSelection } from "../src/components/AlertDetail";
 import type { OfficialEarthquake, RiverGauge } from "../src/services/usgsTypes";
-import { DEMO_LOCATION, getDemoSnapshot } from "../src/data/demo";
+import { DEMO_LOCATION, FRISCO_DEMO_LOCATION, getDemoSnapshot } from "../src/data/demo";
 import { officialAlert, TEST_NOW } from "./fixtures/alerts";
 import { useFeedPreferences } from "../src/state/FeedPreferences";
 
@@ -138,7 +138,7 @@ beforeEach(() => {
   jest.useFakeTimers({ now: TEST_NOW });
   mockBlurMap = undefined;
   feed = {
-    source: "live", alerts: [pointWarning], selectedLocation: location,
+    source: "live", displayTime: TEST_NOW, alerts: [pointWarning], selectedLocation: location,
     snapshot: { source: "live", alerts: [pointWarning], locationKey: "30,-99", fetchedAt: new Date(TEST_NOW - 30_000).toISOString() },
     isLoading: false, isRefreshing: false, error: null, offline: false,
     expiredCount: 0, refresh: jest.fn().mockResolvedValue(undefined), canRefresh: true, storageError: null,
@@ -222,6 +222,31 @@ test("manual mode stays visible and is passed independently from enabled map lay
   await fireEvent.press(screen.getByRole("button", { name: "Refresh weather" }));
   expect(regional.refresh).toHaveBeenCalledTimes(1);
   expect(mapProps(screen).alerts).toEqual(regional.alerts);
+});
+
+test("map keeps independent source states visible while optional reading explanations expand on demand", async () => {
+  const screen = await render(<MapScreen />);
+  expect(screen.getByText("RIVERS / CACHED · UNVERIFIED")).toBeTruthy();
+  expect(screen.queryByText("Nearby Texas stream stations")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "About river observations" }));
+  expect(screen.getByText("Nearby Texas stream stations")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Refresh river observations" })).toBeEnabled();
+});
+
+test.each(["demo", "live"] as const)("Frisco %s keeps the fictional Hunt river reading out of North Texas", async (source) => {
+  feed = { ...feed, source, selectedLocation: FRISCO_DEMO_LOCATION,
+    ...(source === "demo" ? { snapshot: getDemoSnapshot("frisco"), alerts: getDemoSnapshot("frisco").alerts } : {}),
+  };
+  const screen = await render(<MapScreen />);
+  expect(mapProps(screen).showGauges).toBe(source === "live");
+  expect(screen.queryByText("18.6 ft")).toBeNull();
+  if (source === "demo") {
+    expect(screen.queryByRole("switch", { name: "Show simulated observation" })).toBeNull();
+    expect(screen.getByText(/Invented North Texas training scenario/)).toBeTruthy();
+    expect(mapProps(screen).point).toEqual({ latitude: 33.155424, longitude: -96.8225927 });
+  } else {
+    expect(screen.getByRole("switch", { name: "Show river observations" })).toBeTruthy();
+  }
 });
 
 test("saved preference hydration blocks requests for every map feed", async () => {

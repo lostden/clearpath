@@ -15,6 +15,7 @@ type Props = {
   loading?: boolean;
   error?: boolean;
   onOpenAlert: (alert: OfficialAlert) => void;
+  priorityExplanations?: ReadonlyMap<string, string>;
 };
 export function SituationPanel({
   alerts,
@@ -22,6 +23,7 @@ export function SituationPanel({
   loading = false,
   error = false,
   onOpenAlert,
+  priorityExplanations,
 }: Props) {
   const first = alerts[0];
   const cached = source === "cached";
@@ -91,6 +93,9 @@ export function SituationPanel({
             {first.headline || first.event}
           </Text>
           <Text style={s.agency}>{first.agency}</Text>
+          {priorityExplanations?.get(first.id) && <Body>
+            {priorityExplanations.get(first.id)!.split(". ")[0]}. Urgency {first.urgency}; severity {first.severity}; certainty {first.certainty}.
+          </Body>}
           <View style={s.instruction}>
             <Text style={s.instructionLabel}>
               {source === "demo"
