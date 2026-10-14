@@ -47,7 +47,20 @@ Through the Simulator's native UI, Codex verified:
 
 Text entry used the simulator's hardware-keyboard path. A software keyboard was observed, but complete keyboard avoidance, larger text, VoiceOver, native GPS/local-notice permissions/delivery, offline cold start and physical background/movement remain unverified. The owned server was stopped and simulator returned to Shutdown without erasing data; user Metro 8081 was not changed.
 
-The user now reports having tested current iPhone source and intends to provide results, but no device/iOS/client version or individual pass/fail results have arrived. **Do not count that general report as a physical pass.** Follow [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md) for the remaining evidence.
+At the October 13 checkpoint, the user reported having tested but had not provided individual results; no physical pass was counted at that point. The later specific confirmation below supersedes that pending core-workflow status.
+
+### User-reported physical iPhone acceptance — October 14, 2026
+
+After receiving the four exact checks below, the user replied: **“for the checks you gave me above all tests pass.”** Record these as user-reported physical passes, not tests independently observed by Codex. The request covered current ClearPath 1.1.0 from this checkout; application source remains `33d9b50b9c8fab1953f28f88235b341b6adce301`, with documentation-only commits afterward. The existing Metro on port 8081 was confirmed running from this checkout. In response to the device/version question, the user supplied **“57.0.27 or 57.0.28 and 26.6.1.”** Preserve that uncertainty: exact client patch/version identification, device model, execution time and individual test operator remain unconfirmed; October 14 is the report date. Do not substitute the simulator's model/iOS/Expo Go metadata for this physical report.
+
+| Check supplied to the user | Reported result |
+| --- | --- |
+| Startup: open HOME → MAP → PREPARE without an error | **PASS — user report** |
+| Home → Explore simulated demo → North Texas flood → Read simulated warning → Read Flooding guide; Flooding opens | **PASS — user report** |
+| In that demo, MAP shows map tiles and two fictional warning areas; zoom and drag | **PASS — user report** |
+| Check one kit item, enter Demo meeting point and save Demo Contact / 202-555-0147; wait for SAVED ON THIS PHONE, fully close Expo Go, reopen with Metro running and read back all three | **PASS — user report** |
+
+These results support recording those core app workflows. They do not establish independent offline cold startup, selected-point restoration, native GPS/notification permission or delivery, background-follow behavior, all map record/geometry interactions, complete keyboard/safe-area/VoiceOver acceptance or every row of the longer checklist. The user was instructed to preserve existing data; cleanup of fictional test values has not been separately confirmed. Codex's iPhone Mirroring attempt reached “iPhone in Use” and timed out; it did not independently observe these physical tests. See [IPHONE_CHECKLIST.md](docs/cac-2026/IPHONE_CHECKLIST.md) for remaining checks.
 
 ## Historical October 9–11 evidence
 

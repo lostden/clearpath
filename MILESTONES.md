@@ -1,6 +1,6 @@
 # Milestone ledger
 
-## Current status — October 13, 2026 / source 1.1.0
+## Current status — October 14, 2026 / source 1.1.0
 
 Tested application commit: `33d9b50b9c8fab1953f28f88235b341b6adce301`. The user authorized AI-assisted implementation of the formerly blank module. Historical student-boundary language below describes the earlier plan, not the current source.
 
@@ -8,9 +8,9 @@ Tested application commit: `33d9b50b9c8fab1953f28f88235b341b6adce301`. The user 
 | --- | --- |
 | 1–4 | Existing foundation retained; future NWS issuance/cancellation and rollback freshness repaired with regressions |
 | 5 | Explainable pure engine implemented/integrated and reviewed; 41 engine tests plus Home cases. AI-assisted, not independently student-written |
-| 6 | Existing official layers retained; Frisco demo/preset and guide navigation added. Native iPhone maps/permissions still need acceptance |
-| 7 | Targeted disclosures, visible operational diagnostics and source attribution implemented; automated storage/failure checks pass. Physical restart, movement and assistive-technology checks remain |
-| 8 | 46 suites / 924 app tests, 37 server tests, lint/typecheck and iOS/Android JS exports pass; browser workflow and later limited native iOS simulator workflow/Apple map/online restart persistence verified. **READY AFTER MANUAL PHONE VERIFICATION** for recording, not final submission certification |
+| 6 | Existing official layers retained; Frisco demo/preset and guide navigation added. User reports physical demo map tiles/two areas/zoom/drag and warning→Flooding guide pass; permissions and additional map interactions remain unverified |
+| 7 | Targeted disclosures, visible operational diagnostics and source attribution implemented; automated storage/failure checks pass. User reports kit/meeting/contact restoration after closing/reopening Expo Go with Metro available. Independent offline cold start, movement and assistive-technology checks remain |
+| 8 | 46 suites / 924 app tests, 37 server tests, lint/typecheck and iOS/Android JS exports pass; browser and limited iOS simulator checks verified. Four core physical iPhone passes reported October 14. **READY TO RECORD accepted core app workflows**, with incomplete device metadata and remaining contribution/video/submission work |
 
 Finish physical checks by October 20–21, then record and submit with a buffer. Current handoff and remaining authorship/submission evidence: [VIDEO_READINESS.md](docs/cac-2026/VIDEO_READINESS.md). No new native binary, deployment, remote push or final script was produced.
 

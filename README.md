@@ -4,13 +4,13 @@ ClearPath is a native Android/iOS emergency information assistant focused on Tex
 
 Current source is **1.1.0**, tested application commit `33d9b50b9c8fab1953f28f88235b341b6adce301` on `codex/cac-2026-readiness`. It adds explainable warning ordering, future-issuance safeguards, warning-to-guide navigation, Frisco resources and a fictional North Texas demo. The engine and this increment are AI-assisted at the user's explicit authorization, not independently student-written. See [STUDENT_CONTRIBUTIONS.md](STUDENT_CONTRIBUTIONS.md), [AI_USAGE.md](AI_USAGE.md) and the [video-readiness handoff](docs/cac-2026/VIDEO_READINESS.md).
 
-Typecheck/lint, **924 app tests**, **37 watcher tests** and both native JavaScript exports passed October 13. Mobile-width browser checks and a later **iOS simulator** run verified the main workflow, Apple basemap/fixture rendering and saved preparation after an online Expo Go restart. **Physical iPhone acceptance still awaits specific results.** No 1.1.0 native binary was built; the older Android APK below does not contain these changes. Evidence and limits are preserved in [TESTING.md](TESTING.md).
+Typecheck/lint, **924 app tests**, **37 watcher tests** and both native JavaScript exports passed October 13. Mobile-width browser checks and a later **iOS simulator** run verified the main workflow, Apple basemap/fixture rendering and saved preparation after an online Expo Go restart. On October 14 the user reported **four core physical iPhone checks PASS**: startup/tabs, North Texas warning→Flooding guide, demo map tiles/areas/zoom/drag, and kit/meeting/contact restoration after reopening Expo Go with Metro available. Device/client metadata and broader native checks remain incomplete. No 1.1.0 native binary was built; the older Android APK below does not contain these changes. Evidence and limits are preserved in [TESTING.md](TESTING.md).
 
 ## Run on a phone
 
 ### Current source on Mac and iPhone
 
-From this checkout, run `npm start -- --lan`, keep the Mac awake, and scan the current QR code with the iPhone Camera using an Expo Go compatible with SDK 57. Use the same reachable Wi-Fi network. Follow the [physical iPhone checklist](docs/cac-2026/IPHONE_CHECKLIST.md); physical startup/maps, permissions, keyboard and persistence still need recorded results. The initial simulator launch failed; a later IPv4 localhost retry succeeded as documented in TESTING.md. Expo Go is a development transport and does not establish independent offline cold startup.
+From this checkout, run `npm start -- --lan`, keep the Mac awake, and scan the current QR code with the iPhone Camera using an Expo Go compatible with SDK 57. Use the same reachable Wi-Fi network. The [physical iPhone checklist](docs/cac-2026/IPHONE_CHECKLIST.md) records the user's four core passes and remaining permissions, keyboard, accessibility, additional map interactions and offline checks. The initial simulator launch failed; a later IPv4 localhost retry succeeded as documented in TESTING.md. Expo Go is a development transport and does not establish independent offline cold startup.
 
 ### Install the preview over USB
 
