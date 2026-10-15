@@ -1,6 +1,6 @@
 # CAC 2026 checkpoint
 
-Updated October 14, 2026. Branch **`codex/cac-2026-readiness`**. Tested application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, source **1.1.0**; starting master commit `11520e30f4448da0585e8bfc3c79f1e70da54477` preserved. Documentation-only handoff changes follow the application commit; resolve checkout HEAD with `git log -1 --oneline`.
+Updated October 15, 2026. Branch **`codex/cac-2026-readiness`**. Tested application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, source **1.1.0**; starting master commit `11520e30f4448da0585e8bfc3c79f1e70da54477` preserved. Documentation-only handoff changes follow the application commit; resolve checkout HEAD with `git log -1 --oneline`.
 
 ## Authorization and status
 
@@ -14,7 +14,7 @@ User authorized ordinary implementation, tests, documentation and local commits,
 - Verified Frisco Census reference preset and four official local/regional links; isolated fictional North Texas demo added, four old scenarios retained, legacy Hunt river omitted in Frisco.
 - Secondary settings/coverage/privacy disclosures; operational errors/status remain visible outside controls. AI-assisted attribution explicit.
 - Inactive cloud ISO status contract fixed with real watcher-output regression; nested worktrees excluded from Jest discovery. No dependency versions changed.
-- Local source-review ZIP prepared from snapshot `15af3af55cf7ee6c378a70f8a512a3f74d400706`: 202 tracked files verified against Git blobs, 2,443,310 bytes; licenses/AI/test records included, ignored credentials/dependencies excluded. Hash, local artifact links and reviewer setup are in [SOURCE_HANDOFF.md](SOURCE_HANDOFF.md). No upload or fresh-copy runtime claim.
+- Local source-review ZIP prepared from snapshot `15af3af55cf7ee6c378a70f8a512a3f74d400706`: 202 tracked files verified against Git blobs, 2,443,310 bytes; licenses/AI/test records included, ignored credentials/dependencies excluded. October 15 fresh extraction additionally passed copied-cache installation, typecheck/lint and both Hermes exports without changing archived files. Hash, local artifact links and reviewer setup are in [SOURCE_HANDOFF.md](SOURCE_HANDOFF.md). No upload, native build or fresh-copy phone-runtime claim.
 
 ## Executed verification
 
@@ -29,6 +29,7 @@ User authorized ordinary implementation, tests, documentation and local commits,
 - Read-only audits: **67 (51 high / 16 moderate)** full; **61 (45 high / 16 moderate)** omit-dev; zero critical. Five underlying advisories remain, including potentially relevant Router URL decoding. No safe SDK-compatible automatic fix established; see DEPENDENCY_REVIEW.md.
 - Subsequent online Expo install-check exited 1 with six SDK 57 patch recommendations. Published patches and the URL-decoder chain were reviewed read-only; no current ClearPath failure/advisory remediation was established. Tested graph retained for recording; recommendation remains an explicit maintenance item in DEPENDENCY_REVIEW.md, not a passing compatibility check.
 - Independent review found/rechecked two repairs: missing clock-admission recovery timer and Home diagnostics hidden by collapsed settings. No remaining material code finding known. `git diff --check` passed before application commit.
+- October 15 fresh source-ZIP extraction on Node 22.23.3 / npm 10.9.9: offline `npm ci` with install scripts disabled installed 1,134 packages using a separate copied cache; typecheck, uncached lint and Android/iOS Hermes exports all exited 0 (3.6/3.3 MB, 37 assets). All 202 archived files remained byte-identical. No online install, full test rerun or native/phone acceptance added; details in TESTING.md.
 
 ## Unverified / limitations
 

@@ -12,12 +12,18 @@ Prepared October 14, 2026 for possible judge source/app-access requests. This lo
 
 All **202 archived files** match their Git snapshot blobs byte for byte. Package version is 1.1.0. AI_USAGE.md, STUDENT_CONTRIBUTIONS.md, TESTING.md, the project LICENSE and both font licenses are included. Only tracked files were archived: .git, node_modules, .expo and local environment files are absent; the two .env.example templates are included. Known credential-file/private-key/token patterns were checked without printing values. The original Git history is preserved in the checkout.
 
-This verifies packaging integrity, not a new dependency installation, fresh-clone runtime test, native binary, security certification or final contest acceptance. Remaining dependency findings and recommended SDK patches are documented in DEPENDENCY_REVIEW.md.
+The original packaging check verified integrity. The later fresh-extraction checks below additionally verify dependency installation, static checks and JavaScript exports. Neither establishes native compilation, phone acceptance of the extracted copy, security certification or final contest acceptance. Remaining dependency findings and recommended SDK patches are documented in DEPENDENCY_REVIEW.md.
+
+### Fresh-extraction verification — October 15, 2026
+
+Codex verified the ZIP's SHA-256 and 202-file count, then extracted it into a new temporary directory. With Node **22.23.3** / npm **10.9.9**, `npm ci --offline --ignore-scripts --no-audit --no-fund` installed **1,134 packages** using a separate copy of the existing local npm cache. Install scripts stayed disabled; deprecation warnings appeared. This was not an online registry installation or a dependency upgrade.
+
+In that extracted project, `npm run typecheck` and `CI=1 EXPO_NO_DOTENV=1 npm run lint -- --no-cache` both exited 0. `CI=1 EXPO_NO_DOTENV=1 EXPO_NO_TELEMETRY=1 npm run export:native -- --output-dir <temporary-output>` also exited 0: Android **3.6 MB**, iOS **3.3 MB**, **37 assets**. Existing NO_COLOR/FORCE_COLOR environment warnings appeared. These are Hermes JavaScript bundles, not native binaries. All archived source files remained byte-identical after verification; the accepted checkout and dependency graph were unchanged. No simulator/phone UI, full Jest rerun, offline cold startup or live-service acceptance was performed in the fresh copy.
 
 ## Reviewer setup
 
 1. Extract the ZIP and open its ClearPath-1.1.0 folder. Read README.md, TESTING.md and AI_USAGE.md first.
-2. Install dependencies in that extracted copy with npm ci. Recorded packaging shell was Node 22.23.3 / npm 10.9.9; no fresh install was performed for this ZIP.
+2. Install dependencies in that extracted copy with `npm ci --ignore-scripts`. The October 15 check used Node 22.23.3 / npm 10.9.9 and an offline cache; a new reviewer may need registry connectivity. The verified JavaScript-export workflow kept dependency install scripts disabled. Native build requirements must be reviewed separately.
 3. Run npm start -- --lan. Keep the host awake and use a compatible SDK 57 Expo Go on the same reachable network, following README.md. The current physical iPhone's core workflow has user-reported passes; exact client/model metadata remain incomplete.
 4. HOME → Explore simulated demo → NORTH TEXAS FLOOD → Read simulated warning → Read Flooding guide. MAP shows fictional areas; PREPARE includes kit/plan/contacts. Preserve SIMULATED DEMO labels and use fictional saved values.
 5. For source verification, npm run typecheck, npm run lint and npm test are available; watcher tests use node --test server/watcher.test.mjs. Existing results are in TESTING.md. Do not claim a command passed in the extracted copy until it actually runs.

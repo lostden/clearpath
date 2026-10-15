@@ -66,6 +66,20 @@ These results support recording those core app workflows. They do not establish 
 
 Application source/config/dependencies remain unchanged from the tested 1.1.0 application commit. The exact code-footage command `npm test -- --runTestsByPath tests/priority.test.ts tests/alerts.test.ts tests/nws.test.ts --cacheDirectory=/private/tmp/clearpath-cac-video-jest` passed **3 suites / 74 tests**. This focused run is separate from the historical full 924-test result. The script has **343 spoken words**, Manas 171 / Shiven 172, and ten contiguous scenes totaling 160 planned seconds. Counts and continuity are document checks; actual spoken/edited runtime, footage, 1080p export and public access have not been measured or verified. Official recording/export/upload references were consulted; no footage was recorded or published by Codex.
 
+### Fresh source-ZIP verification — October 15, 2026
+
+Codex extracted `artifacts/ClearPath-1.1.0-review-15af3af.zip` into a new temporary directory after verifying SHA-256 **42c922b7b9a6340e0b4268877cade0b692e492730595f288e51aaae361eb563e** and its 202-file count. This is snapshot `15af3af55cf7ee6c378a70f8a512a3f74d400706`, whose application source is the accepted `33d9b50` increment. Node **22.23.3** / npm **10.9.9** were used.
+
+| Executed check in the extracted project | Result |
+| --- | --- |
+| `npm ci --offline --ignore-scripts --no-audit --no-fund --cache <separate-copy-of-local-cache>` | Exit 0; **1,134 packages** installed; deprecation warnings; no install scripts or online registry access |
+| `npm run typecheck` | Exit 0 |
+| `CI=1 EXPO_NO_DOTENV=1 npm run lint -- --no-cache` | Exit 0 |
+| `CI=1 EXPO_NO_DOTENV=1 EXPO_NO_TELEMETRY=1 npm run export:native -- --output-dir <temporary-output>` | Exit 0; Android **3.6 MB**, iOS **3.3 MB**, **37 assets**; Hermes JS exports, with existing NO_COLOR/FORCE_COLOR warnings |
+| Compare all 202 archived files against the extracted copy after checks | Byte-identical, including package.json and package-lock.json |
+
+Fresh-copy dependency/static/bundling reproducibility is established for this host and copied-cache workflow. The full application/server tests were not rerun, and no native compilation, extracted-copy phone UI, live-feed acceptance, online clean install or offline cold startup is established. No dependency was upgraded, accepted application source changed, service deployed or artifact uploaded. See [SOURCE_HANDOFF.md](docs/cac-2026/SOURCE_HANDOFF.md) for reviewer setup; the ZIP hash remains unchanged.
+
 ## Historical October 9–11 evidence
 
 Eight historical `artifacts/*-preview.jpg` links below refer to earlier local, ignored captures that are absent from this Mac checkout. Their dated records are preserved, but those image files could not be re-inspected here. Current browser captures are saved with the CAC handoff.
