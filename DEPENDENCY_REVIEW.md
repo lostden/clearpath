@@ -1,6 +1,14 @@
 # Dependency review — October 10, 2026
 
-## Current recheck — October 13, 2026
+## Current recheck — October 15, 2026
+
+Read-only `npm audit --json --fetch-retries=0 --fetch-timeout=15000 --cache <temporary-cache>` exited **1** with **65 findings: 49 high, 16 moderate, zero critical**. The same five underlying advisory packages remain. No dependency or lockfile changed; the difference from October 13's 67 findings is not an implemented remediation. `--omit=dev` was not rerun. Current audit JSON and registry summary are in `/private/tmp/clearpath-cac-maintenance-20261015-audit.json` and `clearpath-cac-maintenance-20261015-summary.json`.
+
+Public npm metadata now lists SDK 57 Router **57.0.27**, still depending on `query-string@^7.1.3`; that chain retains the affected decoder. The [maintainer advisory](https://github.com/SamVerschueren/decode-uri-component/security/advisories/GHSA-vcc3-ghjq-m6fr) still names decoder 0.5.0 as patched. Current query-string 9.5.1 uses decoder `^0.5.0`, but both use ESM; this does not establish compatibility with Router's CommonJS consumer. Published Router 57.0.25→57.0.27 contents have no changed JavaScript files. Changes include native publication/config artifacts and increased Expo package peer/dependency minimums; native artifact behavior was not certified by this comparison. Package metadata is available from the official registry for [Router 57.0.27](https://registry.npmjs.org/expo-router/57.0.27) and [query-string 9.5.1](https://registry.npmjs.org/query-string/9.5.1).
+
+**Decision:** retain the accepted recording candidate. This review establishes neither a current ClearPath failure fixed by the newer Router patch nor a complete SDK-compatible advisory remedy. Audit suggestions still cross major/SDK boundaries. No install, forced override, patch upgrade or native build was performed; maintenance remains open. The October 13 six-package recommendations below are historical, not today's complete alignment result.
+
+## Previous recheck — October 13, 2026
 
 Read-only `npm audit --json` now reports **67 findings: 51 high, 16 moderate, zero critical**; `npm audit --json --omit=dev` reports **61: 45 high, 16 moderate**. Both exit 1 because findings remain. The full count differs from the earlier 65; the five underlying advisory packages are still `braces`, `node-forge`, `decode-uri-component`, `sprintf-js` and `uuid`. No dependency versions changed in 1.1.0; the lockfile diff changes only the root app version. Do not attribute count movement to a package change without evidence.
 

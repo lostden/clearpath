@@ -80,6 +80,10 @@ Codex extracted `artifacts/ClearPath-1.1.0-review-15af3af.zip` into a new tempor
 
 Fresh-copy dependency/static/bundling reproducibility is established for this host and copied-cache workflow. The full application/server tests were not rerun, and no native compilation, extracted-copy phone UI, live-feed acceptance, online clean install or offline cold startup is established. No dependency was upgraded, accepted application source changed, service deployed or artifact uploaded. See [SOURCE_HANDOFF.md](docs/cac-2026/SOURCE_HANDOFF.md) for reviewer setup; the ZIP hash remains unchanged.
 
+### Dependency maintenance recheck — October 15, 2026
+
+In the accepted checkout, read-only `npm audit --json --fetch-retries=0 --fetch-timeout=15000 --cache <temporary-cache>` exited **1** with **65 findings: 49 high, 16 moderate, zero critical**, from the same five advisory roots. This is a fresh audit result, not a passing check or a dependency repair. No `--omit=dev` recheck was run. Public registry metadata and Router 57.0.25→57.0.27 package contents were reviewed; the affected query-string/decoder chain persists and no JavaScript files changed. The six-package Expo alignment check was not rerun. `npm run typecheck` and `CI=1 EXPO_NO_DOTENV=1 npm run lint -- --no-cache` were rerun and exited 0; the full application/server tests were not rerun. The recording candidate remains unchanged; see DEPENDENCY_REVIEW.md for the exact conclusion and limits.
+
 ## Historical October 9–11 evidence
 
 Eight historical `artifacts/*-preview.jpg` links below refer to earlier local, ignored captures that are absent from this Mac checkout. Their dated records are preserved, but those image files could not be re-inspected here. Current browser captures are saved with the CAC handoff.
