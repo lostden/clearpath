@@ -1,0 +1,187 @@
+1
+00:00:00,000 --> 00:00:04,263
+Weather warnings can be hard to turn into
+action.
+
+2
+00:00:04,263 --> 00:00:08,526
+ClearPath connects official weather
+information with preparation for Texas
+
+3
+00:00:08,526 --> 00:00:09,000
+families.
+
+4
+00:00:10,000 --> 00:00:11,214
+I’m Manas.
+
+5
+00:00:11,464 --> 00:00:16,928
+And I’m Shiven. This demonstration uses a
+clearly labeled,
+
+6
+00:00:16,928 --> 00:00:22,393
+fictional North Texas flood at a public
+Frisco reference
+
+7
+00:00:22,393 --> 00:00:23,000
+point.
+
+8
+00:00:24,000 --> 00:00:29,182
+Warnings retain their instructions and
+classifications. Here, the app
+
+9
+00:00:29,182 --> 00:00:34,364
+explains its display order: urgency first,
+then severity and
+
+10
+00:00:34,364 --> 00:00:38,970
+certainty. Every current warning remains
+accessible. This organizes
+
+11
+00:00:38,970 --> 00:00:43,000
+information; it does not predict personal
+danger.
+
+12
+00:00:44,000 --> 00:00:48,781
+From this warning, tap Read Flooding
+guide. It opens
+
+13
+00:00:48,781 --> 00:00:53,562
+existing preparedness guidance with its
+source and review date.
+
+14
+00:00:53,562 --> 00:00:58,344
+The useful connection is warning to
+preparation, while current
+
+15
+00:00:58,344 --> 00:01:01,000
+official instructions remain the
+authority.
+
+16
+00:01:02,000 --> 00:01:06,966
+On Map, two fictional warning areas show
+geographic context.
+
+17
+00:01:06,966 --> 00:01:11,931
+A short pan and zoom make them easy to
+
+18
+00:01:11,931 --> 00:01:16,897
+explore. These shapes do not measure
+flooding or identify
+
+19
+00:01:16,897 --> 00:01:18,000
+safe routes.
+
+20
+00:01:19,000 --> 00:01:24,559
+Prepare brings together a kit, family
+plan, and saved
+
+21
+00:01:24,559 --> 00:01:30,118
+contacts. Check drinking water and save a
+meeting place.
+
+22
+00:01:30,118 --> 00:01:35,676
+Local links connect users to Frisco and
+North Texas
+
+23
+00:01:35,676 --> 00:01:40,000
+resources. Changes show their local save
+status.
+
+24
+00:01:41,000 --> 00:01:45,645
+ClearPath uses TypeScript, React Native,
+Expo, and Expo Router.
+
+25
+00:01:45,645 --> 00:01:49,774
+This pure prioritization function receives
+warnings, location, source
+
+26
+00:01:49,774 --> 00:01:54,419
+evidence, and time. It preserves source
+records, applies stable
+
+27
+00:01:54,419 --> 00:01:57,000
+ordering, and returns an explanation.
+
+28
+00:01:58,000 --> 00:02:01,892
+One reliability problem involved a
+future-dated cancellation hiding a
+
+29
+00:02:01,892 --> 00:02:05,784
+valid warning. The AI-assisted repair
+validates issuance before processing
+
+30
+00:02:05,784 --> 00:02:09,676
+replacements or cancellations. These
+regression tests retain the current
+
+31
+00:02:09,676 --> 00:02:13,568
+warning in either input order, while
+allowing bounded clock
+
+32
+00:02:13,568 --> 00:02:14,000
+skew.
+
+33
+00:02:15,000 --> 00:02:19,564
+I developed the concept, directed
+requirements, and reviewed results.
+
+34
+00:02:19,814 --> 00:02:24,378
+My earlier AI-assisted work included the
+demo, map, and
+
+35
+00:02:24,378 --> 00:02:28,943
+checklist. I performed our four core
+iPhone checks. Codex
+
+36
+00:02:28,943 --> 00:02:33,000
+extensively assisted implementation,
+tests, and this video package.
+
+37
+00:02:34,000 --> 00:02:37,167
+I learned mobile frameworks and feature
+development.
+
+38
+00:02:37,417 --> 00:02:41,036
+I learned testing, debugging, shipping,
+and backend development.
+
+39
+00:02:41,286 --> 00:02:44,000
+ClearPath connects warnings with practical
+preparation.

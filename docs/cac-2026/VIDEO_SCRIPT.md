@@ -1,5 +1,8 @@
 # ClearPath — word-for-word two-person script
 
+> Historical October 14 version. For the upcoming recording, use the [October 21 complete package](../cac-2026-video/README.md), including its 292-word script and 2:45 timeline. This older record is preserved for traceability.
+
+
 Prepared October 14, 2026 after the user delegated the video-stage sequence. Source: ClearPath 1.1.0, application commit 33d9b50b9c8fab1953f28f88235b341b6adce301. Names use the order supplied: Manas = concept/product/review; Shiven = earlier AI-assisted demo/map/checklist development and four core iPhone checks. Confirm that name-to-role mapping before filming.
 
 Target edit: **2:40**. Spoken text: **343 words** (Manas 171, Shiven 172; whitespace count). Timing is a planning estimate, not a measured recording. Rehearse aloud; allow natural breaths and taps, and keep the final cut within 2:30–2:50. Do not rush to fit a take. See [exact filming plan](VIDEO_PRODUCTION.md).

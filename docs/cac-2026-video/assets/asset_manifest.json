@@ -1,0 +1,78 @@
+{
+  "preparedDate": "2026-10-21",
+  "styleSource": "src/ui/tokens.ts and src/ui/components.tsx Brand",
+  "fonts": [
+    "ArchivoBlack.ttf",
+    "RobotoMono.ttf",
+    "RobotoMonoBold.ttf"
+  ],
+  "assets": [
+    {
+      "name": "01_title",
+      "width": 1920,
+      "height": 1080,
+      "transparent": false
+    },
+    {
+      "name": "02_architecture",
+      "width": 1920,
+      "height": 1080,
+      "transparent": false
+    },
+    {
+      "name": "03_stack",
+      "width": 1920,
+      "height": 1080,
+      "transparent": false
+    },
+    {
+      "name": "04_roles_ai",
+      "width": 1920,
+      "height": 1080,
+      "transparent": false
+    },
+    {
+      "name": "05_end",
+      "width": 1920,
+      "height": 1080,
+      "transparent": false
+    },
+    {
+      "name": "06_phone_canvas",
+      "width": 1920,
+      "height": 1080,
+      "transparent": false
+    },
+    {
+      "name": "label_01_simulated",
+      "width": 1120,
+      "height": 180,
+      "transparent": true
+    },
+    {
+      "name": "label_02_order",
+      "width": 1120,
+      "height": 180,
+      "transparent": true
+    },
+    {
+      "name": "label_03_guide",
+      "width": 1120,
+      "height": 180,
+      "transparent": true
+    },
+    {
+      "name": "label_04_prepare",
+      "width": 1120,
+      "height": 180,
+      "transparent": true
+    },
+    {
+      "name": "label_05_ai",
+      "width": 1120,
+      "height": 180,
+      "transparent": true
+    }
+  ],
+  "notProductScreenshots": true
+}

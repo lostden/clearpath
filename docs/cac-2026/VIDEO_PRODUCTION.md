@@ -1,5 +1,8 @@
 # ClearPath — filming and editing plan
 
+> Historical October 14 version. For the upcoming recording, use the [October 21 complete package](../cac-2026-video/README.md), including its 292-word script and 2:45 timeline. This older record is preserved for traceability.
+
+
 Prepared October 14, 2026. **Start with app footage, then voice/camera, then edit.** The user delegated what to complete first after accepting four core iPhone tests and supplying Manas, Shiven and Shiven's phone-test attribution. No app code change is required for this package.
 
 Source: **1.1.0 / application commit 33d9b50b9c8fab1953f28f88235b341b6adce301 / codex/cac-2026-readiness**. Use current Expo Go footage, not the older 1.0.0 Android APK. Names follow the supplied order: Manas = concept/requirements/review; Shiven = earlier AI-assisted demo/map/checklist work and iPhone tests. Confirm that mapping before speaking personal claims.

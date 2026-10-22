@@ -27,6 +27,8 @@ The video script uses the reported product/review role for Manas and AI-assisted
 
 Before narration, each student should be able to trace one real source record through validation, lifecycle, display ordering and UI; explain cached versus live and why future cancellation is rejected; and honestly state what they personally changed or tested. Understanding a generated implementation does not change its authorship.
 
+On October 21, Codex prepared the complete pre-recording package in `docs/cac-2026-video/`, including the balanced 292-word script, storyboard, presentation graphics, draft captions and editing/capture checklists. It uses the same reported roles and learning areas above. This production work does not establish a new student coding contribution, physical test or recorded performance. Both students still review their own factual statements before filming.
+
 ## Historical original student boundary — October 9–11
 
 The exercise and pending ledger below are retained verbatim as earlier context. They do not describe the now-implemented engine or require pretending that it was student-written.

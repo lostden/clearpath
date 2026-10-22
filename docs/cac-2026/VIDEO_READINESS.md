@@ -1,5 +1,8 @@
 # ClearPath video-readiness handoff
 
+> This is the dated October 14 handoff. Use the [October 21 complete pre-recording package](../cac-2026-video/README.md) for the upcoming shoot; it includes current automated results and the 292-word / 2:45 plan. The historical assessment below is preserved.
+
+
 **Status: READY TO RECORD the accepted core app workflows.** Updated October 14, 2026 after Shiven's four reported physical-phone passes and the user's delegation of video-stage ordering. The [two-person script](VIDEO_SCRIPT.md), [exact storyboard/filming plan](VIDEO_PRODUCTION.md) and [submission checklist/draft answers](SUBMISSION_CHECKLIST.md) are now prepared. Device/client metadata remain incomplete; additional feature checks and contribution limits remain below. Actual footage, rehearsal/export duration, public access and submission have not been verified.
 
 ## Exact source and evidence

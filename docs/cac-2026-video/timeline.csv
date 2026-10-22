@@ -1,0 +1,20 @@
+start_seconds,end_seconds,start_time,end_time,picture,audio,note
+0,10,0:00,0:10,A01_home.mov,V01_Manas,Small title overlay; prepared actual demo Home
+10,14,0:10,0:14,C01_intro.mov,Camera audio: Manas then Shiven,Both names; landscape faces
+14,24,0:14,0:24,A01_home.mov,C01 audio continues,Simulation/public training point; warning opens
+24,44,0:24,0:44,A02_warning.mov,V03_Shiven,Instructions/explanation/classifications
+44,62,0:44,1:02,A03_guide.mov,V04_Manas,Guide opens; source/date
+62,79,1:02,1:19,A04_map.mov,V05_Shiven,Both fictional areas; pan/zoom
+79,84,1:19,1:24,A05_kit.mov,V06_Manas,Actual checkbox/save feedback
+84,89,1:24,1:29,A06_plan.mov,V06_Manas continues,Fictional meeting place
+89,94,1:29,1:34,A07_contacts.mov,V06_Manas continues,Fictional contact only
+94,101,1:34,1:41,A08_links.mov,V06_Manas continues,In-app official links
+101,106,1:41,1:46,assets/02_architecture.png,V07_Shiven,Core flow graphic
+106,111,1:46,1:51,M01a_context.mov,V07_Shiven continues,Priority context
+111,118,1:51,1:58,M01b_priority.mov,V07_Shiven continues,Lifecycle/order/explanations
+118,124,1:58,2:04,M02_issuance.mov,V08_Manas,Issue-time guard
+124,129,2:04,2:09,M03_current.mov,V08_Manas continues,Admission before replacement
+129,135,2:09,2:15,M04_regression.mov,V08_Manas continues,Two input orders in real regression
+135,154,2:15,2:34,A09_recap.mov,V09a_Manas then V09b_Shiven,Working app + roles and extensive AI disclosure
+154,164,2:34,2:44,C02_close.mov,"Camera audio: Manas, Shiven, Manas",Learning + closing
+164,165,2:44,2:45,assets/05_end.png,No new speech,One-second final hold; no added outro

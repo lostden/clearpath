@@ -1,6 +1,18 @@
 # ClearPath verification record
 
-## Current verification — October 13, 2026 / source 1.1.0
+## Pre-recording package verification — October 21, 2026
+
+Accepted app source remains `33d9b50b9c8fab1953f28f88235b341b6adce301` / 1.1.0. Reviewed checkout HEAD before the new production package was `18971d2`; its later changes were documentation only. No application, server, test, configuration or dependency change was made for this package.
+
+- `npm run typecheck`: exit 0.
+- `CI=1 EXPO_NO_DOTENV=1 npm run lint -- --no-cache`: exit 0.
+- `npm test -- --cacheDirectory=/private/tmp/clearpath-cac-video-20261021-jest`: exit 0; **46 suites / 924 tests**, 24.766 seconds, no Jest console warnings.
+- Initial `node --test server/watcher.test.mjs`: exit 1, **34 pass / 3 fail**; each failing HTTP test reported `listen EPERM 127.0.0.1` under the sandbox. No server code was changed. Rerun with loopback permission using `node --test --test-reporter=spec server/watcher.test.mjs`: exit 0, **37/37**, 692.562 ms. External services remained mocked; temporary local listeners only, no actual cloud activation or push.
+- Production validation: **292 spoken words / 146 each**, ten contiguous scenes totaling **165 estimated seconds**, 116 seconds planned actual app footage, **39 draft SRT cues** matching the script, PNG/SVG assets and code-line/local-link checks. Static graphics were inspected visually; a missing mono-font arrow was replaced by explicit ordering words. Caption verification caught and corrected a hyphenated word split. Final details: [package verification report](docs/cac-2026-video/verification_report.json).
+
+These are automated/document/static-graphic checks. No new physical phone acceptance, measured rehearsal, app/code/camera footage, native build, final movie, publication or submission occurred. The prior four phone passes remain Shiven’s October 14 user report, with the same scope/metadata limits below. [Current production package](docs/cac-2026-video/README.md).
+
+## Accepted implementation verification — October 13, 2026 / source 1.1.0
 
 Application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, branch `codex/cac-2026-readiness`, starting from clean `11520e30f4448da0585e8bfc3c79f1e70da54477`. This source was not packaged into a new native binary. The older Android evidence below applies only to its named builds.
 

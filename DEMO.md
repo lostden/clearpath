@@ -1,5 +1,8 @@
 # Demonstration
 
+Current filming instructions: [October 21 pre-recording package](docs/cac-2026-video/README.md). It provides the reproducible North Texas setup, exact clips, 292-word script, graphics and draft subtitles. The dated checkpoints below remain historical evidence.
+
+
 ## Current recording checkpoint — source 1.1.0, October 14
 
 **READY TO RECORD the accepted core app workflows**, based on Shiven's four reported physical iPhone passes. Use tested application commit `33d9b50b9c8fab1953f28f88235b341b6adce301`, not the older 1.0.0 Android APK. The user delegated video-stage ordering and supplied names/learning areas. Use the [Manas/Shiven script](docs/cac-2026/VIDEO_SCRIPT.md), [exact storyboard and filming plan](docs/cac-2026/VIDEO_PRODUCTION.md), and [submission checklist/draft answers](docs/cac-2026/SUBMISSION_CHECKLIST.md). Actual footage/export, public access and submission remain unverified. The earlier readiness handoff and [additional phone checks](docs/cac-2026/IPHONE_CHECKLIST.md) retain their evidence limits.

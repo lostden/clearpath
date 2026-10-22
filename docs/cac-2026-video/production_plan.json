@@ -1,0 +1,207 @@
+{
+  "preparedDate": "2026-10-21",
+  "appVersion": "1.1.0",
+  "applicationCommit": "33d9b50b9c8fab1953f28f88235b341b6adce301",
+  "reviewedHead": "18971d2",
+  "branch": "codex/cac-2026-readiness",
+  "plannedDurationSeconds": 165,
+  "timingStatus": "Estimated; retime to actual recorded voices and interactions",
+  "scenes": [
+    {
+      "id": 1,
+      "start": 0,
+      "end": 10,
+      "title": "Problem and purpose",
+      "lines": [
+        {
+          "speaker": "Manas",
+          "text": "Weather warnings can be hard to turn into action. ClearPath connects official weather information with preparation for Texas families."
+        }
+      ],
+      "visual": "A01_home.mov; prepared North Texas Home. App visible from frame one; title as a small overlay, not a separate introduction.",
+      "actions": "Before recording: HOME → Explore simulated demo. During this shot: hold the headline, public Frisco training point and SIMULATED DEMO label; no taps.",
+      "overlay": "CLEARPATH / Warnings → preparation / Texas families",
+      "transition": "Hard cut to brief presenter introduction.",
+      "benefit": "Purpose and audience established in the first ten seconds.",
+      "words": 19
+    },
+    {
+      "id": 2,
+      "start": 10,
+      "end": 24,
+      "title": "Creators and simulation",
+      "lines": [
+        {
+          "speaker": "Manas",
+          "text": "I’m Manas."
+        },
+        {
+          "speaker": "Shiven",
+          "text": "And I’m Shiven. This demonstration uses a clearly labeled, fictional North Texas flood at a public Frisco reference point."
+        }
+      ],
+      "visual": "C01_intro.mov at 0:10–0:14; then A01_home.mov at 0:14–0:24. Use camera audio as voiceover after the cut.",
+      "actions": "Both students look at the lens for their names. Cut back to the already selected North Texas scenario. Near the end, tap Read simulated warning.",
+      "overlay": "Manas / Shiven; then SIMULATED DEMO • FICTIONAL NORTH TEXAS",
+      "transition": "Cut on the warning opening; remove the navigation wait only.",
+      "benefit": "Both creators identified; fictional provenance established before details.",
+      "words": 21
+    },
+    {
+      "id": 3,
+      "start": 24,
+      "end": 44,
+      "title": "Warning and explanation",
+      "lines": [
+        {
+          "speaker": "Shiven",
+          "text": "Warnings retain their instructions and classifications. Here, the app explains its display order: urgency first, then severity and certainty. Every current warning remains accessible. This organizes information; it does not predict personal danger."
+        }
+      ],
+      "visual": "A02_warning.mov, full portrait warning with a real detail crop alongside if needed.",
+      "actions": "Hold SIMULATED INSTRUCTIONS. Tap Why this warning is shown here; hold its explanation. Gently scroll to ISSUANCE / TIMES for the classifications; use a clean cut back to the guide button. Do not close the warning yet.",
+      "overlay": "EXPLAINED DISPLAY ORDER / Not a personal danger prediction",
+      "transition": "Cut on Read Flooding guide in the next shot.",
+      "benefit": "Explains technical behavior through its visible result; preserves source information.",
+      "words": 33
+    },
+    {
+      "id": 4,
+      "start": 44,
+      "end": 62,
+      "title": "Warning to guidance",
+      "lines": [
+        {
+          "speaker": "Manas",
+          "text": "From this warning, tap Read Flooding guide. It opens existing preparedness guidance with its source and review date. The useful connection is warning to preparation, while current official instructions remain the authority."
+        }
+      ],
+      "visual": "A03_guide.mov; exact warning-to-Prepare transition, then the expanded Flooding guide.",
+      "actions": "Tap Read Flooding guide. Confirm PREPARE / FIELD GUIDES with Flooding expanded. Scroll just enough to show Reviewed 2026-10-09 and Open National Weather Service — Flood safety source. Do not open the website.",
+      "overlay": "WARNING → GUIDE / Source and review date shown",
+      "transition": "Hard cut to MAP; no decorative transition.",
+      "benefit": "Complete user workflow and practical action; trustworthy provenance.",
+      "words": 32
+    },
+    {
+      "id": 5,
+      "start": 62,
+      "end": 79,
+      "title": "Fictional map context",
+      "lines": [
+        {
+          "speaker": "Shiven",
+          "text": "On Map, two fictional warning areas show geographic context. A short pan and zoom make them easy to explore. These shapes do not measure flooding or identify safe routes."
+        }
+      ],
+      "visual": "A04_map.mov, full portrait Apple map with both supplied fictional areas.",
+      "actions": "Tap MAP. Ensure Warning areas is ON. Hold both areas, make one small pan and one gentle pinch zoom, then hold still. Do not select a different scenario or enable live layers.",
+      "overlay": "FICTIONAL WARNING AREAS / Not measured flooding or safe routes",
+      "transition": "Hard cut to PREPARE → KIT.",
+      "benefit": "Native mobile interaction and local context without overstating geography.",
+      "words": 29
+    },
+    {
+      "id": 6,
+      "start": 79,
+      "end": 101,
+      "title": "Practical preparation",
+      "lines": [
+        {
+          "speaker": "Manas",
+          "text": "Prepare brings together a kit, family plan, and saved contacts. Check drinking water and save a meeting place. Local links connect users to Frisco and North Texas resources. Changes show their local save status."
+        }
+      ],
+      "visual": "A05_kit.mov 1:19–1:24; A06_plan.mov 1:24–1:29; A07_contacts.mov 1:29–1:34; A08_links.mov 1:34–1:41.",
+      "actions": "PREPARE → KIT: tap Drinking water once. FAMILY PLAN: show Demo meeting point and LOCAL COPY / SAVED ON THIS PHONE. CONTACTS: show only Demo Contact / 202-555-0147. LOCAL LINKS: hold City of Frisco emergency preparedness and NWS Fort Worth/Dallas. These values are prepared off camera; do not stage a fake restart.",
+      "overlay": "PREPARE / KIT · PLAN · CONTACTS / Saved on this phone",
+      "transition": "Hard cut to the architecture graphic and actual code.",
+      "benefit": "Useful household tools and local official references; no false offline claim.",
+      "words": 34
+    },
+    {
+      "id": 7,
+      "start": 101,
+      "end": 118,
+      "title": "Real architecture and ordering code",
+      "lines": [
+        {
+          "speaker": "Shiven",
+          "text": "ClearPath uses TypeScript, React Native, Expo, and Expo Router. This pure prioritization function receives warnings, location, source evidence, and time. It preserves source records, applies stable ordering, and returns an explanation."
+        }
+      ],
+      "visual": "assets/02_architecture.png 1:41–1:46; M01a_context.mov 1:46–1:51; M01b_priority.mov 1:51–1:58. The stack graphic is backup.",
+      "actions": "Show the supplied core-flow graphic for five seconds. Capture priority.ts lines 9–15 in one stationary shot, then lines 129–147 in another. Keep the 101–104 signature as an optional insert. No rapid scrolling or source edits.",
+      "overlay": "TypeScript · React Native · Expo SDK 57 · Expo Router / AI-ASSISTED IMPLEMENTATION",
+      "transition": "Hard cut to issuance validation.",
+      "benefit": "Connects technologies and actual data flow to a meaningful used function.",
+      "words": 31
+    },
+    {
+      "id": 8,
+      "start": 118,
+      "end": 135,
+      "title": "Reliability challenge and regression",
+      "lines": [
+        {
+          "speaker": "Manas",
+          "text": "One reliability problem involved a future-dated cancellation hiding a valid warning. The AI-assisted repair validates issuance before processing replacements or cancellations. These regression tests retain the current warning in either input order, while allowing bounded clock skew."
+        }
+      ],
+      "visual": "M02_issuance.mov 1:58–2:04; M03_current.mov 2:04–2:09; M04_regression.mov 2:09–2:15.",
+      "actions": "Show alerts.ts lines 3–8, then 79–89, then tests/alerts.test.ts lines 75–88. Highlight the filter before uniqueAlerts and both reversed-input assertions. This is actual source, not a fabricated alert screen.",
+      "overlay": "VALIDATE ISSUANCE BEFORE CANCELLATION / AI-assisted repair / 60-second skew allowance",
+      "transition": "Hard cut back to the working app for contributions.",
+      "benefit": "Concrete engineering challenge, solution and regression evidence; honest authorship.",
+      "words": 37
+    },
+    {
+      "id": 9,
+      "start": 135,
+      "end": 154,
+      "title": "Contributions and AI disclosure",
+      "lines": [
+        {
+          "speaker": "Manas",
+          "text": "I developed the concept, directed requirements, and reviewed results."
+        },
+        {
+          "speaker": "Shiven",
+          "text": "My earlier AI-assisted work included the demo, map, and checklist. I performed our four core iPhone checks. Codex extensively assisted implementation, tests, and this video package."
+        }
+      ],
+      "visual": "A09_recap.mov; working North Texas Home, then Prepare with only fictional values. Optional presenter picture-in-picture in the unused margin.",
+      "actions": "Record a calm Home/Prepare recap; do not create new activity just for this narration. Keep the simulation label when showing warnings. Add the exact role captions in the right margin; the full roles card is a backup.",
+      "overlay": "Manas: concept · requirements · review / Shiven: earlier AI-assisted demo, map, checklist · four iPhone checks / Codex: extensive implementation, tests, video planning",
+      "transition": "Hard cut to both presenters.",
+      "benefit": "Accurate personal contribution and broad AI disclosure; no independent-code claim.",
+      "words": 35
+    },
+    {
+      "id": 10,
+      "start": 154,
+      "end": 165,
+      "title": "Learning and close",
+      "lines": [
+        {
+          "speaker": "Manas",
+          "text": "I learned mobile frameworks and feature development."
+        },
+        {
+          "speaker": "Shiven",
+          "text": "I learned testing, debugging, shipping, and backend development."
+        },
+        {
+          "speaker": "Manas",
+          "text": "ClearPath connects warnings with practical preparation."
+        }
+      ],
+      "visual": "C02_close.mov 2:34–2:44, then assets/05_end.png 2:44–2:45. Keep final narration finished before the end-card hold.",
+      "actions": "Both presenters in the same landscape framing as the introduction. Speak the supplied learning areas naturally. Hold the final card one second; no additional credits after 2:45.",
+      "overlay": "CLEARPATH / Warnings → practical preparation / Manas + Shiven",
+      "transition": "End at 2:45; no extra outro.",
+      "benefit": "Personal learning and concise purpose-led closing.",
+      "words": 21
+    }
+  ]
+}
