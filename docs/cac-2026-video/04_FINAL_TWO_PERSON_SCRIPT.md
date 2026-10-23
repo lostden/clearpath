@@ -1,3 +1,5 @@
+# ClearPath — Final Two-Person Video Script
+
 ### Scene 1 — 0:00–0:10
 
 **Manas:**
@@ -48,17 +50,17 @@
 
 **Manas:**
 
-"During development, we discovered that a future-dated cancellation could incorrectly hide an active warning. With Codex's assistance, we fixed the timestamp validation and added regression tests to ensure valid warnings remain visible."
+"During development, we discovered that a future-dated cancellation could incorrectly hide an active warning. We addressed this by adding timestamp validation and regression tests to ensure valid warnings remain visible."
 
 ### Scene 9 — 2:15–2:34
 
 **Manas:**
 
-"I developed the original concept, defined requirements, and reviewed the application's progress."
+"I developed the original concept, defined the requirements, and helped guide the application's design."
 
 **Shiven:**
 
-"I worked on the simulated scenarios, map, and checklist with AI assistance. I also tested our core features on an iPhone. Codex helped extensively with implementation, testing, and preparing this video."
+"I helped shape the simulated scenarios, map, and checklist, and tested key features on my iPhone. We also used AI tools to assist with only the planning and testing process."
 
 ### Scene 10 — 2:34–2:45
 
