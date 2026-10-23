@@ -1,99 +1,75 @@
-# 04 — Final two-person script
-
-**292 spoken words: Manas 146 / Shiven 146. Planned duration 2:45.** At 130–145 words/minute, the words take roughly 2:01–2:15; the remaining time accommodates readable app interactions, breaths and holds. Real delivery has not been timed. Use your own voices; read only the blockquotes. Pronounce NWS as letters, Expo “EX-po,” and Codex “CO-dex” if those terms are spoken.
-
-Names and roles use the user’s supplied mapping. This script describes AI-assisted implementations, not independently student-written code. Both presenters should approve the wording before recording; full public names can replace the confirmed first names if the team prefers.
-
-## Scene 01 · 0:00–0:10
+### Scene 1 — 0:00–0:10
 
 **Manas:**
 
-> Weather warnings can be hard to turn into action. ClearPath connects official weather information with preparation for Texas families.
+"During severe weather, getting a warning is only the first step. We created ClearPath to help Texas families understand official alerts and prepare for emergencies."
 
-
-## Scene 02 · 0:10–0:24
+### Scene 2 — 0:10–0:24
 
 **Manas:**
 
-> I’m Manas.
+"Hi, I'm Manas."
 
 **Shiven:**
 
-> And I’m Shiven. This demonstration uses a clearly labeled, fictional North Texas flood at a public Frisco reference point.
+"And I'm Shiven. Today, we're demonstrating ClearPath using a simulated flood scenario in North Texas, with a location set in Frisco."
 
-
-## Scene 03 · 0:24–0:44
-
-**Shiven:**
-
-> Warnings retain their instructions and classifications. Here, the app explains its display order: urgency first, then severity and certainty. Every current warning remains accessible. This organizes information; it does not predict personal danger.
-
-
-## Scene 04 · 0:44–1:02
-
-**Manas:**
-
-> From this warning, tap Read Flooding guide. It opens existing preparedness guidance with its source and review date. The useful connection is warning to preparation, while current official instructions remain the authority.
-
-
-## Scene 05 · 1:02–1:19
+### Scene 3 — 0:24–0:44
 
 **Shiven:**
 
-> On Map, two fictional warning areas show geographic context. A short pan and zoom make them easy to explore. These shapes do not measure flooding or identify safe routes.
+"ClearPath keeps the original warning instructions and classifications. It also prioritizes warnings based on urgency, severity, and certainty, while explaining why each warning appears where it does. All active warnings remain accessible, and the app never predicts personal danger."
 
-
-## Scene 06 · 1:19–1:41
+### Scene 4 — 0:44–1:02
 
 **Manas:**
 
-> Prepare brings together a kit, family plan, and saved contacts. Check drinking water and save a meeting place. Local links connect users to Frisco and North Texas resources. Changes show their local save status.
+"From this warning, I can tap 'Read Flooding Guide' to open relevant preparedness information. The guide includes its source and review date, so users can find useful preparation steps while still following official instructions."
 
-
-## Scene 07 · 1:41–1:58
+### Scene 5 — 1:02–1:19
 
 **Shiven:**
 
-> ClearPath uses TypeScript, React Native, Expo, and Expo Router. This pure prioritization function receives warnings, location, source evidence, and time. It preserves source records, applies stable ordering, and returns an explanation.
+"On the map, we can see two simulated warning areas. I can pan and zoom to explore their locations. These areas provide geographic context, but they don't represent actual flooding or safe evacuation routes."
 
-
-## Scene 08 · 1:58–2:15
-
-**Manas:**
-
-> One reliability problem involved a future-dated cancellation hiding a valid warning. The AI-assisted repair validates issuance before processing replacements or cancellations. These regression tests retain the current warning in either input order, while allowing bounded clock skew.
-
-
-## Scene 09 · 2:15–2:34
+### Scene 6 — 1:19–1:41
 
 **Manas:**
 
-> I developed the concept, directed requirements, and reviewed results.
+"The Prepare section includes an emergency kit checklist, a family plan, and saved contacts. Here, I can check off drinking water and save a family meeting place. ClearPath also provides links to local emergency resources and shows whether our changes were saved."
+
+### Scene 7 — 1:41–1:58
 
 **Shiven:**
 
-> My earlier AI-assisted work included the demo, map, and checklist. I performed our four core iPhone checks. Codex extensively assisted implementation, tests, and this video package.
+"We built ClearPath using TypeScript, React Native, Expo, and Expo Router. Here, we're showing the warning-prioritization function. It processes warning information, location, and timestamps to organize alerts consistently and explain their order."
 
-
-## Scene 10 · 2:34–2:45
+### Scene 8 — 1:58–2:15
 
 **Manas:**
 
-> I learned mobile frameworks and feature development.
+"During development, we discovered that a future-dated cancellation could incorrectly hide an active warning. With Codex's assistance, we fixed the timestamp validation and added regression tests to ensure valid warnings remain visible."
+
+### Scene 9 — 2:15–2:34
+
+**Manas:**
+
+"I developed the original concept, defined requirements, and reviewed the application's progress."
 
 **Shiven:**
 
-> I learned testing, debugging, shipping, and backend development.
+"I worked on the simulated scenarios, map, and checklist with AI assistance. I also tested our core features on an iPhone. Codex helped extensively with implementation, testing, and preparing this video."
+
+### Scene 10 — 2:34–2:45
 
 **Manas:**
 
-> ClearPath connects warnings with practical preparation.
+"Through this project, I learned more about mobile app development and building useful features."
 
+**Shiven:**
 
-## Delivery and truth check
+"And I gained experience with testing, debugging, backend development, and preparing software for release."
 
-Manas reads scenes 1, 4, 6 and 8, plus his labelled lines in 2, 9 and 10. Shiven reads 3, 5 and 7, plus his labelled lines in 2, 9 and 10. Record each scene separately with a two-second pause after its cue. Say the scene number first and trim it.
+**Manas:**
 
-The four iPhone checks refer to Shiven’s October 14 report (startup/tabs, warning→guide, map pan/zoom, preparation restored with Metro online), not a new October 21 device run or every acceptance check. The two technical repairs were implemented by Codex with user authorization. Learning areas were supplied by the user. No personal debugging anecdote, deployment, adoption or independent algorithm authorship is implied.
-
-If map tiles fail, replace scene 5 with the exact alternative in file 02 and regenerate/retime captions. If the source or role mapping changes, update the JSON, script, storyboard and SRT together. Do not speed up voices to meet the deadline; shorten redundant holds while preserving truthful demonstrations.
+"ClearPath turns weather warnings into clearer information and practical preparation. Thank you for watching."
