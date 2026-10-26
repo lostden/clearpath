@@ -1,6 +1,6 @@
 /**
- * AI-assisted display policy, implemented at the user's explicit authorization.
- * This is not independently student-written code or a personal danger prediction.
+ * Pure, source-aware warning display policy.
+ * Display ordering is not a personal danger prediction.
  * Lifecycle resolution precedes ordering; every remaining warning stays visible.
  */
 import { currentAlerts, validCoordinates } from "@/domain/alerts";

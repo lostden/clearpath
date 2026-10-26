@@ -40,6 +40,15 @@ yarn-error.*
 coverage/
 artifacts/
 
+# Local project records and production material
+/AGENTS.md
+/AI_USAGE.md
+/STUDENT_CONTRIBUTIONS.md
+/MILESTONES.md
+/docs/cac-2026/
+/docs/cac-2026-video/
+/docs/development/
+
 # typescript
 *.tsbuildinfo
 

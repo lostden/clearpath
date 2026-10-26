@@ -37,4 +37,4 @@ On **Home**, the demo controls also offer **Flood**, **Tornado**, **No alerts** 
 
 Choose **Exit demo** or **Return to live mode** to leave the fixtures. Select a public city reference point or enter coordinates to request official warnings. A result with no active warnings does not establish personal safety. Regional map records and selected-point warnings remain separate.
 
-[Project overview](README.md) · [Source and test review](README.md#code-to-inspect) · [Executed verification](TESTING.md) · [Historical filming notes](docs/development/DEMO_HISTORY.md)
+[Project overview](README.md) · [Source and test review](README.md#code-to-inspect) · [Executed verification](TESTING.md)

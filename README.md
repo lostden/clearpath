@@ -65,4 +65,4 @@ The optional server watcher has its own checks: `node --test server/watcher.test
 
 ClearPath preserves official instructions and distinguishes live, cached, unavailable and simulated information. Live feeds, map tiles and external links require internet. Warning display order does not predict personal danger, and the app does not provide verified safe routes or evacuation orders. Closed-app cloud alerts are not configured.
 
-[Official data sources](DATA_SOURCES.md) · [Safety and privacy](SAFETY.md) · [Team, tools and contributions](STUDENT_CONTRIBUTIONS.md) · [Detailed development setup](docs/development/README_HISTORY.md) · [License](LICENSE)
+[Official data sources](DATA_SOURCES.md) · [Safety and privacy](SAFETY.md) · [License](LICENSE)

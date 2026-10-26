@@ -1,6 +1,6 @@
 # Architecture
 
-ClearPath uses Expo Router for navigation, TypeScript for data boundaries, TanStack Query for independent feed requests, and AsyncStorage for selected local state. Fresh installs open in live mode with no selected point and an unverified local result. Demo scenarios require an explicit choice. Version 1.1.0 includes the explainable ordering policy described below; executed checks and device-test scope are in [TESTING.md](TESTING.md). Team roles and development tools are documented in [STUDENT_CONTRIBUTIONS.md](STUDENT_CONTRIBUTIONS.md).
+ClearPath uses Expo Router for navigation, TypeScript for data boundaries, TanStack Query for independent feed requests, and AsyncStorage for selected local state. Fresh installs open in live mode with no selected point and an unverified local result. Demo scenarios require an explicit choice. Version 1.1.0 includes the explainable ordering policy described below; executed checks and device-test scope are in [TESTING.md](TESTING.md).
 
 ## Responsibilities
 
