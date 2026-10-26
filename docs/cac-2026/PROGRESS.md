@@ -1,5 +1,7 @@
 # CAC 2026 checkpoint
 
+October 25 submission repository handoff: the judge-facing `README.md` now provides the app overview, cover, quick start, four-step demo and direct source/test links; `DEMO.md` is a reproducible walkthrough. Older setup/filming instructions are preserved under `docs/development/`, with accurate contribution, assistance, safety and testing records retained. Existing remote script edits through `2361c79` are preserved. Fresh typecheck/uncached lint, 46 suites / 924 app tests, 37 mocked watcher tests, five-route browser export and 61 relative-link checks passed. Application/configuration/dependencies are unchanged. Publication target: GitHub `master`; the owner said they will make the repository public because the connected account can push but lacks visibility-admin permission. No competition submission or video upload is part of this handoff.
+
 Updated October 21, 2026. Branch **`codex/cac-2026-readiness`**. Tested application commit **`33d9b50b9c8fab1953f28f88235b341b6adce301`**, source **1.1.0**; starting master commit `11520e30f4448da0585e8bfc3c79f1e70da54477` preserved. Documentation-only handoff changes follow the application commit; resolve checkout HEAD with `git log -1 --oneline`.
 
 ## Authorization and status

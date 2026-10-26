@@ -1,6 +1,6 @@
 # Architecture
 
-ClearPath uses Expo Router for navigation, TypeScript for data boundaries, TanStack Query for independent feed requests, and AsyncStorage for selected local state. Fresh installs open in live mode with no selected point and an unverified local result. Demo scenarios require an explicit choice. Version 1.1.0 adds the AI-assisted explainable ordering policy described below; executed checks and native limits are in TESTING.md.
+ClearPath uses Expo Router for navigation, TypeScript for data boundaries, TanStack Query for independent feed requests, and AsyncStorage for selected local state. Fresh installs open in live mode with no selected point and an unverified local result. Demo scenarios require an explicit choice. Version 1.1.0 includes the explainable ordering policy described below; executed checks and device-test scope are in [TESTING.md](TESTING.md). Team roles and development tools are documented in [STUDENT_CONTRIBUTIONS.md](STUDENT_CONTRIBUTIONS.md).
 
 ## Responsibilities
 
@@ -14,10 +14,10 @@ ClearPath uses Expo Router for navigation, TypeScript for data boundaries, TanSt
 | `src/domain/` | Validation, identity, update, and expiration helpers |
 | `src/services/` | Foreground GPS/manual points, official USGS adapters, bounded NIFC perimeters and linked NWS zone loader |
 | `src/state/` and `src/hooks/` | Mode/point, feed preferences, independent query observers, freshness/cancellation and local preparation saves |
-| `src/student/` | Pure AI-assisted warning display policy; historical directory name does not establish authorship |
+| `src/student/priority.ts` | Pure warning display ordering and source-aware explanations |
 | Tests | Unit/component coverage; see TESTING.md for actual locations and results |
 
-The earlier blank-module boundary was superseded by explicit October 13 implementation authorization. The engine remains AI-attributed. Approved road-data integration remains pending.
+The display policy is implemented. Road-closure data is not integrated; official road information is available through external reference links.
 
 ## Information flow
 
@@ -76,7 +76,7 @@ With automatic updates enabled, point/regional weather and earthquakes poll at 6
 
 Regional/USGS/NIFC/zone copies do not promise availability after a killed/reopened app. Restored Home copies remain cached and exact-point isolated. AsyncStorage is not encrypted, and no movement history is saved. Preparation has `loading`, `saving`, `saved` and `session` states. Successful hydration does not rewrite unchanged data; edited writes serialize, and only the latest revision can change save status/error. Unreadable preparation is protected from overwrite while session-only edits remain usable. A later edit or explicit **Retry local save** can recover a normal write failure without changing the values; duplicate retry presses are claimed synchronously. Read failures never enable that action.
 
-## Explainable display policy — AI-assisted milestone 5 implementation
+## Explainable display policy
 
 `src/student/priority.ts` accepts immutable normalized records, a valid selected point, explicit time, source and applicability evidence. It rejects mixed demo/official identifiers. Lifecycle resolution precedes ordinal urgency → severity → certainty ordering, then newest issuance and stable identity/source ties. Unknown fields remain visible and are explicitly not low danger. Equal-identity/time conflicts use deterministic source-field selection and disclose the ambiguity. The function returns original alerts plus source-aware reasons; it performs no network, GPS, storage or wall-clock reads. Supplied geometry does not replace NWS point membership, and missing geometry cannot discard a point warning. See its 41 tests and Home integration cases.
 

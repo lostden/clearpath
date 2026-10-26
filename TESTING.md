@@ -1,5 +1,22 @@
 # ClearPath verification record
 
+## Submission repository verification — October 25, 2026
+
+The judge-facing README, demo walkthrough and architecture notes were simplified, an existing 600 × 800 JPEG cover was added, and older setup/filming instructions were preserved under `docs/development/`. Application, server, test, configuration and dependency files are unchanged from source 1.1.0 / application commit `33d9b50b9c8fab1953f28f88235b341b6adce301`. Existing remote script edits through `2361c79` were preserved.
+
+| Check executed | Result |
+| --- | --- |
+| `npm run typecheck` | Exit 0 |
+| `npm run lint -- --no-cache` | Exit 0 |
+| `npm test -- --cacheDirectory=/private/tmp/clearpath-submission-20261025-jest` | Exit 0; 46 suites / 924 tests |
+| `node --test --test-reporter=spec server/watcher.test.mjs` | Exit 0; 37 tests, external services mocked, temporary loopback access permitted |
+| `CI=1 EXPO_NO_DOTENV=1 EXPO_NO_TELEMETRY=1 npx --no-install expo export --platform web --output-dir artifacts/cac-submission/web-preview` | Exit 0; five static routes and a 1.5 MB web bundle. Existing NO_COLOR/FORCE_COLOR warnings and Expo's final forced-exit diagnostic appeared. |
+| Judge-facing and archived setup/demo relative links | All 61 targets exist |
+| Cover format/dimensions | JPEG, 600 × 800 |
+| Tracked text credential/private-key pattern check | No matching values found; no private environment files, credentials or raw recordings added |
+
+This is source/documentation and browser-bundling verification. It does not add a physical-device test, native binary, installed-app offline cold-start result or live emergency-delivery claim. Previous phone-test scope and dependency findings remain in the dated records below and [DEPENDENCY_REVIEW.md](DEPENDENCY_REVIEW.md). Local command logs are retained under ignored `artifacts/cac-submission/`.
+
 ## Pre-recording package verification — October 21, 2026
 
 Accepted app source remains `33d9b50b9c8fab1953f28f88235b341b6adce301` / 1.1.0. Reviewed checkout HEAD before the new production package was `18971d2`; its later changes were documentation only. No application, server, test, configuration or dependency change was made for this package.

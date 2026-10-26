@@ -1,5 +1,7 @@
 # AI assistance disclosure
 
+October 25, 2026 — submission repository cleanup: Codex simplified the README, demonstration walkthrough and architecture documentation; preserved the previous setup/filming records under `docs/development/`; and included the existing real-app cover composition. Codex also performed link, source-integrity, typecheck, lint, app-test, watcher-test and browser-export checks. Team contribution and AI-assistance records remain accurate and available; no independent student authorship or new physical-device acceptance is claimed.
+
 Current source version **1.1.0**, October 13, 2026: the user explicitly authorized Codex implementation of the CAC readiness improvements, including the previously blank `src/student/priority.ts`. That engine, the timestamp repairs, warning-to-guide navigation, Frisco resources/demo, UI refinements, contract fix and their new tests are AI-assisted implementation. The directory name does not establish student authorship. Framework dependencies and the create-expo-app scaffold are external tools.
 
 The user reports receiving coordinator permission for AI-assisted implementation. No written coordinator evidence is in the repository; this record does not establish a blanket waiver. The published [2026 rules](https://www.congressionalappchallenge.us/wp-content/uploads/2026/05/2026-CAC-Rules.pdf) still require disclosure and significant personal contribution/understanding. Record each student's actual work in STUDENT_CONTRIBUTIONS.md; eligibility is not certified here.

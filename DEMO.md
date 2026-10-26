@@ -1,43 +1,40 @@
-# Demonstration
+# ClearPath demo walkthrough
 
-Current filming instructions: [October 21 pre-recording package](docs/cac-2026-video/README.md). It provides the reproducible North Texas setup, exact clips, 292-word script, graphics and draft subtitles. The dated checkpoints below remain historical evidence.
+Start the app using the [README setup steps](README.md#run-the-project). The demo uses bundled fictional data; no current emergency is represented. No login, GPS permission or API key is required. Native basemap tiles and external source links still need internet.
 
+## 1. Explore a warning
 
-## Current recording checkpoint — source 1.1.0, October 14
+On **Home**, scroll to **Training demo** and select **Explore simulated demo**. This starts **North Texas flood** at the Frisco training point.
 
-**READY TO RECORD the accepted core app workflows**, based on Shiven's four reported physical iPhone passes. Use tested application commit `33d9b50b9c8fab1953f28f88235b341b6adce301`, not the older 1.0.0 Android APK. The user delegated video-stage ordering and supplied names/learning areas. Use the [Manas/Shiven script](docs/cac-2026/VIDEO_SCRIPT.md), [exact storyboard and filming plan](docs/cac-2026/VIDEO_PRODUCTION.md), and [submission checklist/draft answers](docs/cac-2026/SUBMISSION_CHECKLIST.md). Actual footage/export, public access and submission remain unverified. The earlier readiness handoff and [additional phone checks](docs/cac-2026/IPHONE_CHECKLIST.md) retain their evidence limits.
+- Confirm **SIMULATED DEMO** is visible.
+- Read the flash-flood example and its original fixture instructions.
+- Select **Read simulated warning**, then **Why this warning is shown here** to inspect the source classifications and display-order explanation.
+- Select **Read Flooding guide** to open the matching bundled preparedness guidance. Its source and review date are visible.
 
-Preferred short workflow: **Home → Explore simulated demo → North Texas flood → Read simulated warning → Why this warning is shown here → Read Flooding guide → KIT / FAMILY PLAN / LOCAL LINKS**. Keep **SIMULATED DEMO** visible. The two Frisco-area warnings, areas and fixed July 4, 2025 clock are invented fixtures, not historical government records. The Frisco map deliberately omits the old Hunt river measurement. Existing Flood, Tornado, No alerts and Outage scenarios remain available.
+The warning text, times and areas are invented training fixtures. Display ordering keeps other current warnings available; it is not a personal-risk prediction.
 
-The explained priority engine is now implemented and AI-assisted; show source classifications and the future-cancellation regression as engineering examples, with honest contribution attribution. Do not claim student-independent implementation, adoption, predictive risk, safe routing or closed-app/cloud alerts. Browser and limited native iOS simulator checks passed. On October 14 the user reported physical startup/tabs, North Texas warning→Flooding guide, demo map tiles/two areas/zoom/drag and kit/meeting/contact restoration after closing/reopening Expo Go with Metro available all passed. Exact device/client metadata, remaining native permission/accessibility/detail interactions and installed-app offline restart remain unverified. The earlier walkthrough below is historical and is superseded by the current handoff.
+## 2. Inspect the map
 
-## Historical October 9–11 demonstration plan
+Open **Map** and explore the two fictional warning areas. Inspect the warning list and available detail controls.
 
-The demonstration must show a functioning native app on a phone. Use clearly simulated scenarios when real warnings are absent; never imply that fictional events are live. The [2026 competition rules](https://www.congressionalappchallenge.us/wp-content/uploads/2026/05/2026-CAC-Rules.pdf) request a 1–3 minute demonstration video with participant names, app name/purpose/audience, tools, and functionality. Keep the final video within three minutes.
+The browser uses a coordinate map labeled **NO BASEMAP / COORDINATE VIEW** and **SCHEMATIC / NOT NAVIGATION**. Mobile uses its configured native basemap when available. Supplied warning areas do not measure flood extent, water depth or safe travel routes.
 
-## Preparation
+## 3. Try preparedness tools
 
-Use the installed ClearPath Android preview for Google Maps on this phone. See README.md for its USB installer. Expo Go remains a development option, but its observed Android client could not display basemap tiles. Verify checklist/contact persistence and scenarios on the actual phone before recording; results are recorded in TESTING.md.
+Open **Prepare** and try:
 
-A fresh installation opens in **live mode**, with no selected point and no verified local warning result. On Home, scroll to **TRAINING DEMO**, press **Explore simulated demo**, and use **Flood**, **Tornado**, **No alerts**, and **Outage**. Flood is a fictional Hunt/Guadalupe exercise frozen at **JUL 04 2025 / 05:15 CDT**, inspired by the Texas flooding; its warning areas and river measurements are not historical observations or live conditions. Confirm **SIMULATED DEMO** stays visible on Home, warning details, and Map. Demo fixtures must not write to the real NWS snapshot or trigger official notifications. Tap the persistent **Exit demo** control or **Return to live mode**, then **Choose location** or the location row at the top; choose a Texas city center, foreground GPS, or precise coordinates. With automatic feeds enabled, selecting the point starts live retrieval. In manual-feed mode use **Refresh official alerts** when the cooldown allows. Later launches restore the one last selected point in live mode; use **Explore simulated demo** to start the recorded scenarios.
+1. **Field Guides:** general preparation guidance with official-source links.
+2. **Kit:** mark an item and inspect the local save status.
+3. **Family Plan:** enter a fictional meeting place and contact.
+4. **Contacts:** add a fictional contact and check the save status.
+5. **Local Links:** inspect the Frisco and regional reference resources.
 
-An outage scenario illustrates cached presentation; it does not prove actual airplane-mode persistence. Test that separately. For independent offline startup, force-close and restart an installed binary with embedded JavaScript; Expo Go/development-client sessions may depend on Metro. Tiles and source websites may need internet even when the local preparedness screen works offline. Never activate an actual emergency telephone call for a demonstration.
+Return to another tab and reopen **Prepare** to inspect saved values. A phone restart test using Expo Go requires the development server to remain available. Do not place a real emergency call while testing.
 
-## Three-minute walkthrough
+## 4. Compare scenarios or live information
 
-| Time | Demonstration |
-| --- | --- |
-| 0:00–0:20 | Introduce participants, ClearPath, and its audience: people in Texas who need official emergency information with less cognitive load. Explain the flooding inspiration. |
-| 0:20–0:45 | Show the native phone tabs and manual/GPS location choice. Explain what a selected point means. |
-| 0:45–1:15 | Select simulated Hill Country flooding. Identify agency classification, time, instructions, all-alert access, and full-warning view. Keep the simulation label visible. |
-| 1:15–1:35 | Switch to tornado and no-alert examples. Explain that no reported alert is not a safety guarantee. |
-| 1:35–1:55 | Show map controls and supplied geometry or the honest missing-map fallback. State that standard directions are not verified evacuation routes. |
-| 1:55–2:15 | Show the simulated outage/cached state with its old retrieval time. Open Prepare, complete a checklist item, and display a local contact. |
-| 2:15–2:40 | Exit demo and retrieve a real NWS point response. Zero active alerts is a valid demonstration outcome; an unavailable feed must be described accurately. |
-| 2:40–3:00 | Explain TypeScript/React Native/Expo, one original student algorithm decision and its tests **after implementation**, and the AI assistance disclosure. |
+On **Home**, the demo controls also offer **Flood**, **Tornado**, **No alerts** and **Outage**. The outage fixture demonstrates cached presentation; an actual offline cold-start test is a separate check.
 
-## Checkpoint limitations to say aloud
+Choose **Exit demo** or **Return to live mode** to leave the fixtures. Select a public city reference point or enter coordinates to request official warnings. A result with no active warnings does not establish personal safety. Regional map records and selected-point warnings remain separate.
 
-At this checkpoint, provider order is preserved and the original student engine is pending. The final demonstration's algorithm segment must be completed after milestone 5. USGS earthquakes/river observations and optional NIFC perimeters are integrated; their source and observation times remain distinct from retrieval times. On October 11 the user confirmed installed Android basemap tiles, demo areas/marker, independent layer toggles, warning details, live NWS records/details, river stations/details, and USGS/NIFC feed displays and available details. This is not a complete accessibility, geometry-touch or offline acceptance audit. Approved road-closure ingestion and shelter occupancy are absent. Cloud notifications are not configured or phone-verified. Do not present a test notification as an emergency or claim uninterrupted background location monitoring.
-
-When recording the eventual submission, use an actual student contribution and accurately summarize the successful checks from TESTING.md. Avoid personal contact information and exact home coordinates in public footage. This plan does not upload or publish a video.
+[Project overview](README.md) · [Source and test review](README.md#code-to-inspect) · [Executed verification](TESTING.md) · [Historical filming notes](docs/development/DEMO_HISTORY.md)
